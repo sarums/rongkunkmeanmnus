@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RongKunKmeanMnus</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════
    CSS VARIABLES & RESET
@@ -28,7 +28,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;font-size:16px;}
-body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Kantumruy Pro','Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
 a{text-decoration:none;color:inherit;}
 button{cursor:pointer;font-family:'Outfit',sans-serif;}
 input,select,textarea{font-family:'Outfit',sans-serif;}
@@ -47,8 +47,9 @@ img{display:block;}
   backdrop-filter:blur(16px);
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;padding:0 1.5rem;gap:1.2rem;
-  transition:background var(--transition);
+  transition:background var(--transition), transform 0.35s cubic-bezier(0.4,0,0.2,1);
 }
+#navbar.hidden{transform:translateY(-100%);}
 [data-theme="light"] #navbar{background:rgba(255,255,255,0.97);}
 .nav-logo{
   font-family:'Bebas Neue',cursive;
@@ -103,6 +104,41 @@ img{display:block;}
 ═══════════════════════════════════════════ */
 .page{display:none;padding-top:62px;min-height:100vh;}
 .page.active{display:block;}
+
+/* ═══════════════════════════════════════════
+   HERO SLIDER
+═══════════════════════════════════════════ */
+.hero-slides{position:absolute;inset:0;}
+.hero-slide{
+  position:absolute;inset:0;opacity:0;
+  transition:opacity 1s ease;pointer-events:none;
+}
+.hero-slide.active{opacity:1;pointer-events:auto;}
+.hero-slide-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0a0d16 0%,#141824 100%);}
+.hero-slide-bg img{width:100%;height:100%;object-fit:cover;opacity:0.4;transition:transform 8s ease;}
+.hero-slide.active .hero-slide-bg img{transform:scale(1.04);}
+.hero-dots{
+  position:absolute;bottom:1.5rem;right:2rem;z-index:10;
+  display:flex;gap:0.4rem;align-items:center;
+}
+.hero-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,0.35);cursor:pointer;
+  transition:all 0.3s;border:none;padding:0;
+}
+.hero-dot.active{width:20px;border-radius:3px;background:var(--accent);}
+.hero-arrows{
+  position:absolute;bottom:1.5rem;right:6rem;z-index:10;
+  display:flex;gap:0.4rem;
+}
+.hero-arrow{
+  width:30px;height:30px;border-radius:50%;
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
+  color:#fff;font-size:0.75rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;
+}
+.hero-arrow:hover{background:var(--accent);border-color:var(--accent);}
 
 /* ═══════════════════════════════════════════
    HERO
@@ -701,13 +737,11 @@ img{display:block;}
 <!-- ═══ HOME PAGE ═══ -->
 <div id="home-page" class="page active">
 
-  <!-- HERO -->
-  <div id="hero" onclick="heroClick()">
-    <div class="hero-bg-img">
-      <img id="heroImg" src="" alt="">
-    </div>
+  <!-- HERO SLIDER -->
+  <div id="hero">
+    <div class="hero-slides" id="heroSlides"></div>
     <div class="hero-gradient"></div>
-    <div class="hero-content">
+    <div class="hero-content" id="heroContent">
       <div class="hero-badge">Featured</div>
       <h1 class="hero-title" id="heroTitle">Watch.<br><em>Discover.</em><br>Stream.</h1>
       <div class="hero-meta">
@@ -716,8 +750,13 @@ img{display:block;}
         <span class="views-chip" id="heroViews">👁 0 views</span>
       </div>
       <p class="hero-desc" id="heroDesc">Your curated hub for Dailymotion & Rumble content.</p>
-      <button class="hero-play">▶ Watch Now</button>
+      <button class="hero-play" id="heroPlayBtn" onclick="heroClick()">▶ Watch Now</button>
     </div>
+    <div class="hero-arrows">
+      <button class="hero-arrow" onclick="slideHero(-1)">‹</button>
+      <button class="hero-arrow" onclick="slideHero(1)">›</button>
+    </div>
+    <div class="hero-dots" id="heroDots"></div>
   </div>
 
   <div class="content-area">
@@ -1065,9 +1104,9 @@ window.showToast = (msg, type='ok') => {
   setTimeout(()=>t.classList.remove('show'), 3200);
 };
 const qs = id => document.getElementById(id);
-const thumb = v => v.platform==='dailymotion'
+const thumb = v => v.customThumb || (v.platform==='dailymotion'
   ? `https://www.dailymotion.com/thumbnail/video/${v.videoId}`
-  : `https://static.rumble.com/img/logo.png`;
+  : `https://static.rumble.com/img/logo.png`);
 
 function fmtViews(n){ if(n>=1000000) return (n/1000000).toFixed(1)+'M'; if(n>=1000) return (n/1000).toFixed(1)+'K'; return n||0; }
 
@@ -1123,9 +1162,18 @@ window.toggleTheme = () => {
   qs('themeBtn').textContent = isDark?'☀️':'🌙';
 };
 
-// ── BACK TO TOP ────────────────────────────────────────
+// ── NAVBAR HIDE/SHOW ON SCROLL ────────────────────────
+let lastScrollY = 0;
 window.addEventListener('scroll', ()=>{
-  qs('btt').classList.toggle('show', window.scrollY>400);
+  const nav = qs('navbar');
+  const sy = window.scrollY;
+  if(sy > lastScrollY && sy > 80){
+    nav.classList.add('hidden');
+  } else {
+    nav.classList.remove('hidden');
+  }
+  lastScrollY = sy;
+  qs('btt').classList.toggle('show', sy>400);
 });
 
 // ── LOAD DATA ─────────────────────────────────────────
@@ -1185,23 +1233,68 @@ function buildNavCats(){
 
 // ── RENDER HOME ───────────────────────────────────────
 function renderHome(){
-  // Featured hero
-  const featured = allVideos.find(v=>v.featured==='yes') || allVideos[0];
-  if(featured){
-    qs('heroTitle').innerHTML = `${featured.title.substring(0,40)}`;
-    qs('heroDesc').textContent = featured.description||'Watch now on RongKunKmeanMnus';
-    qs('heroPlatBadge').textContent = featured.platform==='dailymotion'?'Dailymotion':'Rumble';
-    qs('heroPlatBadge').className = `plat-badge plat-${featured.platform==='dailymotion'?'dm':'rb'}`;
-    qs('heroCatChip').textContent = featured.category||'Featured';
-    qs('heroViews').textContent = '👁 '+fmtViews(featured.views);
-    const img = qs('heroImg');
-    if(featured.platform==='dailymotion'){
-      img.src = `https://www.dailymotion.com/thumbnail/video/${featured.videoId}`;
-    }
-    img.onerror = ()=>{ img.style.display='none'; };
-    window._featuredId = featured.id;
+  // ── HERO SLIDER ──────────────────────────────────────
+  const featuredVids = allVideos.filter(v=>v.featured==='yes').slice(0,6);
+  const heroVids = featuredVids.length ? featuredVids : allVideos.slice(0,5);
+  window._heroVids = heroVids;
+  window._heroIdx = 0;
+
+  function buildHeroSlides(){
+    const slides = qs('heroSlides');
+    const dots = qs('heroDots');
+    if(!slides||!heroVids.length) return;
+    slides.innerHTML = heroVids.map((v,i)=>`
+      <div class="hero-slide ${i===0?'active':''}" data-idx="${i}">
+        <div class="hero-slide-bg">
+          <img src="${thumb(v)}" alt="${v.title}" onerror="this.style.display='none'">
+        </div>
+      </div>`).join('');
+    dots.innerHTML = heroVids.map((_,i)=>`<button class="hero-dot ${i===0?'active':''}" onclick="goHeroSlide(${i})"></button>`).join('');
+    updateHeroContent(0);
   }
+
+  function updateHeroContent(idx){
+    const v = heroVids[idx];
+    if(!v) return;
+    window._featuredId = v.id;
+    qs('heroTitle').innerHTML = v.title.length>50?v.title.substring(0,50)+'…':v.title;
+    qs('heroDesc').textContent = v.description||'Watch now on RongKunKmeanMnus';
+    qs('heroPlatBadge').textContent = v.platform==='dailymotion'?'Dailymotion':'Rumble';
+    qs('heroPlatBadge').className = `plat-badge plat-${v.platform==='dailymotion'?'dm':'rb'}`;
+    qs('heroCatChip').textContent = v.category||'Featured';
+    qs('heroViews').textContent = '👁 '+fmtViews(v.views);
+    // update dots
+    document.querySelectorAll('.hero-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+    // update slides
+    document.querySelectorAll('.hero-slide').forEach((s,i)=>s.classList.toggle('active',i===idx));
+  }
+
+  window.goHeroSlide = (idx)=>{
+    window._heroIdx = idx;
+    updateHeroContent(idx);
+    resetHeroTimer();
+  };
+  window.slideHero = (dir)=>{
+    window._heroIdx = (window._heroIdx + dir + heroVids.length) % heroVids.length;
+    updateHeroContent(window._heroIdx);
+    resetHeroTimer();
+  };
   window.heroClick = ()=>{ if(window._featuredId) openVideo(window._featuredId); };
+
+  // Auto slide every 5s
+  let heroTimer = null;
+  function resetHeroTimer(){
+    clearInterval(heroTimer);
+    if(heroVids.length > 1){
+      heroTimer = setInterval(()=>{
+        window._heroIdx = (window._heroIdx + 1) % heroVids.length;
+        updateHeroContent(window._heroIdx);
+      }, 5000);
+    }
+  }
+
+  buildHeroSlides();
+  resetHeroTimer();
 
   // Trending = top 8 by views
   const trending = [...allVideos].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,8);
