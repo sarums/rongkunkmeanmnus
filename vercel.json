@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/category/:slug", "destination": "/index.html" },
+    { "source": "/video/:id", "destination": "/index.html" },
+    { "source": "/browse", "destination": "/index.html" },
+    { "source": "/search", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
