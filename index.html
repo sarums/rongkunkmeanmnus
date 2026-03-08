@@ -30,8 +30,8 @@
 html{scroll-behavior:smooth;font-size:16px;}
 body{background:var(--bg);color:var(--text);font-family:'Kantumruy Pro','Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
 a{text-decoration:none;color:inherit;}
-button{cursor:pointer;font-family:'Outfit',sans-serif;}
-input,select,textarea{font-family:'Outfit',sans-serif;}
+button{cursor:pointer;font-family:'Kantumruy Pro','Outfit',sans-serif;}
+input,select,textarea{font-family:'Kantumruy Pro','Outfit',sans-serif;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px;}
@@ -106,39 +106,114 @@ img{display:block;}
 .page.active{display:block;}
 
 /* ═══════════════════════════════════════════
-   HERO SLIDER
+   HERO — WE TV STYLE
 ═══════════════════════════════════════════ */
-.hero-slides{position:absolute;inset:0;}
-.hero-slide{
-  position:absolute;inset:0;opacity:0;
-  transition:opacity 1s ease;pointer-events:none;
+#hero{
+  position:relative;
+  height:auto;min-height:unset;
+  background:var(--bg2);
+  overflow:hidden;
+  cursor:default;
 }
-.hero-slide.active{opacity:1;pointer-events:auto;}
-.hero-slide-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0a0d16 0%,#141824 100%);}
-.hero-slide-bg img{width:100%;height:100%;object-fit:cover;opacity:0.4;transition:transform 8s ease;}
-.hero-slide.active .hero-slide-bg img{transform:scale(1.04);}
-.hero-dots{
-  position:absolute;bottom:1.5rem;right:2rem;z-index:10;
-  display:flex;gap:0.4rem;align-items:center;
+.hero-main-slide{
+  position:relative;
+  width:100%;aspect-ratio:16/7;
+  overflow:hidden;background:#000;
+  cursor:pointer;
 }
-.hero-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:rgba(255,255,255,0.35);cursor:pointer;
-  transition:all 0.3s;border:none;padding:0;
+@media(max-width:768px){.hero-main-slide{aspect-ratio:16/9;}}
+.hero-main-slide img.hero-main-img{
+  width:100%;height:100%;object-fit:cover;
+  transition:transform 8s ease, opacity 0.8s ease;
+  opacity:0.75;
 }
-.hero-dot.active{width:20px;border-radius:3px;background:var(--accent);}
-.hero-arrows{
-  position:absolute;bottom:1.5rem;right:6rem;z-index:10;
-  display:flex;gap:0.4rem;
+.hero-main-slide:hover img.hero-main-img{transform:scale(1.03);}
+.hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to right,rgba(8,10,15,0.92) 35%,rgba(8,10,15,0.2) 70%,transparent 100%),
+             linear-gradient(to top,rgba(8,10,15,0.95) 0%,transparent 45%);
 }
+.hero-info{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:2rem 2.5rem;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:1rem;
+}
+.hero-info-left{max-width:560px;}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  background:rgba(230,57,70,0.15);border:1px solid rgba(230,57,70,0.35);
+  color:var(--accent);font-size:0.7rem;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;padding:0.25rem 0.65rem;border-radius:4px;
+  margin-bottom:0.75rem;
+}
+.hero-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.hero-title{
+  font-size:clamp(1.6rem,4vw,2.8rem);font-weight:700;
+  line-height:1.2;margin-bottom:0.6rem;
+}
+.hero-meta{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;flex-wrap:wrap;}
+.hero-desc{
+  color:var(--text2);font-size:0.875rem;line-height:1.6;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  margin-bottom:1.25rem;max-width:480px;
+}
+.hero-play{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  background:var(--accent);color:#fff;
+  font-weight:700;font-size:0.875rem;
+  padding:0.6rem 1.5rem;border-radius:7px;border:none;
+  transition:all var(--transition);
+}
+.hero-play:hover{background:#c1121f;transform:translateY(-2px);}
+.hero-info-right{
+  display:flex;flex-direction:column;align-items:flex-end;gap:0.75rem;
+  flex-shrink:0;
+}
+.hero-nav-btns{display:flex;gap:0.4rem;}
 .hero-arrow{
-  width:30px;height:30px;border-radius:50%;
-  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
-  color:#fff;font-size:0.75rem;cursor:pointer;
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);
+  color:#fff;font-size:0.9rem;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   transition:all 0.2s;
 }
 .hero-arrow:hover{background:var(--accent);border-color:var(--accent);}
+.hero-dots{display:flex;gap:0.35rem;align-items:center;}
+.hero-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,0.3);cursor:pointer;
+  transition:all 0.3s;border:none;padding:0;
+}
+.hero-dot.active{width:22px;border-radius:3px;background:var(--accent);}
+
+/* THUMBNAIL STRIP */
+.hero-strip{
+  display:flex;gap:0;
+  background:var(--bg3);
+  border-top:1px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;
+}
+.hero-strip::-webkit-scrollbar{display:none;}
+.hero-strip-item{
+  flex:0 0 180px;position:relative;
+  aspect-ratio:16/9;overflow:hidden;
+  cursor:pointer;transition:all 0.2s;
+  border-right:1px solid var(--border);
+  opacity:0.55;filter:brightness(0.7);
+}
+@media(max-width:768px){.hero-strip-item{flex:0 0 120px;}}
+.hero-strip-item:hover{opacity:0.85;filter:brightness(1);}
+.hero-strip-item.active{opacity:1;filter:brightness(1);border-bottom:3px solid var(--accent);}
+.hero-strip-item img{width:100%;height:100%;object-fit:cover;}
+.hero-strip-title{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:0.4rem 0.5rem;
+  background:linear-gradient(transparent,rgba(0,0,0,0.85));
+  font-size:0.68rem;font-weight:600;line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 
 /* ═══════════════════════════════════════════
    HERO
@@ -245,6 +320,12 @@ img{display:block;}
   border-radius:var(--radius);overflow:hidden;cursor:pointer;
   transition:all var(--transition);
   animation:fadeUp 0.4s ease both;
+}
+.pl-thumb-icon{
+  position:absolute;bottom:6px;left:6px;
+  background:rgba(230,57,70,0.88);color:#fff;
+  font-size:0.6rem;font-weight:700;letter-spacing:1px;
+  padding:0.2rem 0.5rem;border-radius:3px;
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
 .vcard:hover{transform:translateY(-4px);border-color:rgba(230,57,70,0.4);box-shadow:0 16px 40px rgba(0,0,0,0.5);}
@@ -737,26 +818,34 @@ img{display:block;}
 <!-- ═══ HOME PAGE ═══ -->
 <div id="home-page" class="page active">
 
-  <!-- HERO SLIDER -->
+  <!-- HERO WE TV STYLE -->
   <div id="hero">
-    <div class="hero-slides" id="heroSlides"></div>
-    <div class="hero-gradient"></div>
-    <div class="hero-content" id="heroContent">
-      <div class="hero-badge">Featured</div>
-      <h1 class="hero-title" id="heroTitle">Watch.<br><em>Discover.</em><br>Stream.</h1>
-      <div class="hero-meta">
-        <span class="plat-badge plat-dm" id="heroPlatBadge" style="position:static;font-size:0.7rem;">Dailymotion</span>
-        <span class="cat-chip" id="heroCatChip" style="font-size:0.72rem;">Featured</span>
-        <span class="views-chip" id="heroViews">👁 0 views</span>
+    <!-- Main featured image -->
+    <div class="hero-main-slide" id="heroMainSlide" onclick="heroClick()">
+      <img class="hero-main-img" id="heroMainImg" src="" alt="">
+      <div class="hero-overlay"></div>
+      <div class="hero-info">
+        <div class="hero-info-left">
+          <div class="hero-badge">Featured</div>
+          <h2 class="hero-title" id="heroTitle">RongKunKmeanMnus</h2>
+          <div class="hero-meta">
+            <span class="cat-chip" id="heroCatChip" style="font-size:0.72rem;">Featured</span>
+            <span class="views-chip" id="heroViews">👁 0 views</span>
+          </div>
+          <p class="hero-desc" id="heroDesc">Your curated video hub</p>
+          <button class="hero-play" id="heroPlayBtn">▶ Watch Now</button>
+        </div>
+        <div class="hero-info-right">
+          <div class="hero-nav-btns">
+            <button class="hero-arrow" onclick="event.stopPropagation();slideHero(-1)">‹</button>
+            <button class="hero-arrow" onclick="event.stopPropagation();slideHero(1)">›</button>
+          </div>
+          <div class="hero-dots" id="heroDots"></div>
+        </div>
       </div>
-      <p class="hero-desc" id="heroDesc">Your curated hub for Dailymotion & Rumble content.</p>
-      <button class="hero-play" id="heroPlayBtn" onclick="heroClick()">▶ Watch Now</button>
     </div>
-    <div class="hero-arrows">
-      <button class="hero-arrow" onclick="slideHero(-1)">‹</button>
-      <button class="hero-arrow" onclick="slideHero(1)">›</button>
-    </div>
-    <div class="hero-dots" id="heroDots"></div>
+    <!-- Thumbnail strip -->
+    <div class="hero-strip" id="heroStrip"></div>
   </div>
 
   <div class="content-area">
@@ -1112,12 +1201,12 @@ function fmtViews(n){ if(n>=1000000) return (n/1000000).toFixed(1)+'M'; if(n>=10
 
 function buildCard(v, delay=0){
   const isPlaylist = allPlaylists.some(p=>p.videos&&p.videos.includes(v.id));
-  return `<div class="vcard" style="animation-delay:${delay}ms" onclick="openVideo('${v.id}')">
+  const plData = allPlaylists.find(p=>p.videos&&p.videos.includes(v.id));
+  return `<div class="vcard" style="animation-delay:${delay}ms" onclick="${isPlaylist?`openPlaylistById('${plData?plData.id:''}','${v.id}')`:`openVideo('${v.id}')`}">
     <div class="vcard-thumb">
       <img src="${thumb(v)}" alt="${v.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=thumb-ph>▶</div>'">
-      <span class="plat-badge plat-${v.platform==='dailymotion'?'dm':'rb'}">${v.platform==='dailymotion'?'DM':'Rumble'}</span>
-      ${isPlaylist?'<span class="playlist-badge">📋 Playlist</span>':''}
-      <div class="vcard-overlay"><div class="play-circle">▶</div></div>
+      ${isPlaylist?'<div class="pl-thumb-icon">▶▶</div>':''}
+      <div class="vcard-overlay"><div class="play-circle">${isPlaylist?'▶▶':'▶'}</div></div>
     </div>
     <div class="vcard-body">
       <div class="vcard-title">${v.title}</div>
@@ -1233,23 +1322,23 @@ function buildNavCats(){
 
 // ── RENDER HOME ───────────────────────────────────────
 function renderHome(){
-  // ── HERO SLIDER ──────────────────────────────────────
-  const featuredVids = allVideos.filter(v=>v.featured==='yes').slice(0,6);
-  const heroVids = featuredVids.length ? featuredVids : allVideos.slice(0,5);
+  // ── HERO WE TV SLIDER ────────────────────────────────
+  const featuredVids = allVideos.filter(v=>v.featured==='yes').slice(0,8);
+  const heroVids = featuredVids.length ? featuredVids : allVideos.slice(0,6);
   window._heroVids = heroVids;
   window._heroIdx = 0;
 
-  function buildHeroSlides(){
-    const slides = qs('heroSlides');
-    const dots = qs('heroDots');
-    if(!slides||!heroVids.length) return;
-    slides.innerHTML = heroVids.map((v,i)=>`
-      <div class="hero-slide ${i===0?'active':''}" data-idx="${i}">
-        <div class="hero-slide-bg">
-          <img src="${thumb(v)}" alt="${v.title}" onerror="this.style.display='none'">
-        </div>
+  function buildHeroStrip(){
+    // dots
+    qs('heroDots').innerHTML = heroVids.map((_,i)=>
+      `<button class="hero-dot ${i===0?'active':''}" onclick="event.stopPropagation();goHeroSlide(${i})"></button>`
+    ).join('');
+    // thumbnail strip
+    qs('heroStrip').innerHTML = heroVids.map((v,i)=>`
+      <div class="hero-strip-item ${i===0?'active':''}" onclick="goHeroSlide(${i})">
+        <img src="${thumb(v)}" alt="${v.title}" onerror="this.style.display='none'">
+        <div class="hero-strip-title">${v.title}</div>
       </div>`).join('');
-    dots.innerHTML = heroVids.map((_,i)=>`<button class="hero-dot ${i===0?'active':''}" onclick="goHeroSlide(${i})"></button>`).join('');
     updateHeroContent(0);
   }
 
@@ -1257,16 +1346,25 @@ function renderHome(){
     const v = heroVids[idx];
     if(!v) return;
     window._featuredId = v.id;
-    qs('heroTitle').innerHTML = v.title.length>50?v.title.substring(0,50)+'…':v.title;
+    // main image - fade transition
+    const img = qs('heroMainImg');
+    img.style.opacity='0';
+    setTimeout(()=>{
+      img.src = thumb(v);
+      img.onerror = ()=>{ img.src=''; };
+      img.style.opacity='';
+    }, 300);
+    qs('heroTitle').textContent = v.title.length>60?v.title.substring(0,60)+'…':v.title;
     qs('heroDesc').textContent = v.description||'Watch now on RongKunKmeanMnus';
-    qs('heroPlatBadge').textContent = v.platform==='dailymotion'?'Dailymotion':'Rumble';
-    qs('heroPlatBadge').className = `plat-badge plat-${v.platform==='dailymotion'?'dm':'rb'}`;
     qs('heroCatChip').textContent = v.category||'Featured';
     qs('heroViews').textContent = '👁 '+fmtViews(v.views);
-    // update dots
+    // dots
     document.querySelectorAll('.hero-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
-    // update slides
-    document.querySelectorAll('.hero-slide').forEach((s,i)=>s.classList.toggle('active',i===idx));
+    // strip
+    document.querySelectorAll('.hero-strip-item').forEach((s,i)=>s.classList.toggle('active',i===idx));
+    // scroll strip to active
+    const stripItem = document.querySelectorAll('.hero-strip-item')[idx];
+    if(stripItem) stripItem.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
   }
 
   window.goHeroSlide = (idx)=>{
@@ -1281,19 +1379,19 @@ function renderHome(){
   };
   window.heroClick = ()=>{ if(window._featuredId) openVideo(window._featuredId); };
 
-  // Auto slide every 5s
+  // Auto slide every 6s
   let heroTimer = null;
   function resetHeroTimer(){
     clearInterval(heroTimer);
     if(heroVids.length > 1){
       heroTimer = setInterval(()=>{
-        window._heroIdx = (window._heroIdx + 1) % heroVids.length;
+        window._heroIdx = (window._heroIdx+1) % heroVids.length;
         updateHeroContent(window._heroIdx);
-      }, 5000);
+      }, 6000);
     }
   }
 
-  buildHeroSlides();
+  buildHeroStrip();
   resetHeroTimer();
 
   // Trending = top 8 by views
@@ -1457,6 +1555,16 @@ window.openVideo = async (id) => {
   renderSuggested(v);
 
   goPage('player');
+};
+
+// Open playlist starting from a specific video
+window.openPlaylistById = async (plId, startVidId) => {
+  const pl = allPlaylists.find(p=>p.id===plId);
+  if(!pl||!pl.videos||!pl.videos.length) { openVideo(startVidId); return; }
+  const startIdx = pl.videos.indexOf(startVidId);
+  currentPlaylist = pl;
+  currentPlIndex = startIdx>=0 ? startIdx : 0;
+  await openVideo(pl.videos[currentPlIndex]);
 };
 
 window.copyLink = ()=>{
