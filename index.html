@@ -735,9 +735,18 @@ function fillSection(sec,rowId){
   const el=$(rowId);
   if(!el) return;
 
+  // PLAYLIST type (single) — legacy support
   if(sec.target_type==="playlist"&&sec.target_id){
     const pl=playlists.find(p=>p.id===sec.target_id);
     el.innerHTML=pl?buildPlaylistCard(pl):`<div style="padding:1rem;color:#555;font-size:.82rem">Playlist not found.</div>`;
+    return;
+  }
+  // MULTI_PLAYLIST — show one card per playlist
+  if(sec.target_type==="multi_playlist"&&(sec.playlist_ids||[]).length){
+    const cards=(sec.playlist_ids||[])
+      .map(id=>playlists.find(p=>p.id===id)).filter(Boolean)
+      .map(pl=>buildPlaylistCard(pl)).join("");
+    el.innerHTML=cards||`<div style="padding:1rem;color:#555;font-size:.82rem">No playlists found.</div>`;
     return;
   }
   if(sec.target_type==="single_videos"&&(sec.custom_videos||[]).length){
