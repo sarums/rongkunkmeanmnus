@@ -423,7 +423,7 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
     <div class="login-logo">RKMN <span>ADMIN</span></div>
     <div class="login-sub">Enter your password to access the dashboard</div>
     <label class="login-label">Password</label>
-    <input type="password" class="login-input" id="loginPw" placeholder="••••••••" disabled onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" class="login-input" id="loginPw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="login-err" id="loginErr">Incorrect password. Please try again.</div>
     <button class="login-btn" id="loginBtn" onclick="doLogin()">Login to Dashboard</button>
   </div>
@@ -916,7 +916,6 @@ qs('loginPw').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
 (async()=>{
   const btn=qs('loginBtn'), inp=qs('loginPw');
   if(btn){btn.textContent='Connecting...';btn.disabled=true;}
-  if(inp) inp.disabled=true;
   try{
     const s=await getDoc(doc(db,'settings','main'));
     if(s.exists()){
