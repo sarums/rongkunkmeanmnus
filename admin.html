@@ -55,6 +55,7 @@ input,select,textarea{font-family:'Kantumruy Pro','Outfit',sans-serif;}
   border-radius:8px;transition:opacity 0.2s;
 }
 .login-btn:hover{opacity:0.88;}
+.login-btn:disabled{opacity:0.5;cursor:not-allowed;}
 .login-err{color:var(--red);font-size:0.78rem;margin-top:0.5rem;display:none;}
 
 /* ── LAYOUT ── */
@@ -424,7 +425,7 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
     <label class="login-label">Password</label>
     <input type="password" class="login-input" id="loginPw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="login-err" id="loginErr">Incorrect password. Please try again.</div>
-    <button class="login-btn" onclick="doLogin()">Login to Dashboard</button>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Login to Dashboard</button>
   </div>
 </div>
 
@@ -1412,14 +1413,6 @@ window.saveSettings = async ()=>{
   } catch(e){ showToast('Error',e.message,'err'); }
 };
 
-// Load settings first to get password before showing login
-(async()=>{
-  try {
-    const s=await getDoc(doc(db,'settings','main'));
-    if(s.exists()) siteSettings={...siteSettings,...s.data()};
-  } catch(e){}
-})();
-
 // ══════════════════════════════════════════
 //  HOME SECTIONS MANAGER
 // ══════════════════════════════════════════
@@ -1734,12 +1727,16 @@ window.addCheckedToPlaylist=async plId=>{
   }catch(e){showToast('Error',e.message,'err');}
 };
 
-// Load settings first to get password before showing login
+// Load settings → then enable login button
 (async()=>{
-  try {
+  const btn=qs('loginBtn'), inp=qs('loginPw');
+  if(btn){btn.textContent='Connecting...';btn.disabled=true;}
+  try{
     const s=await getDoc(doc(db,'settings','main'));
     if(s.exists()) siteSettings={...siteSettings,...s.data()};
-  } catch(e){}
+  }catch(e){}
+  if(btn){btn.textContent='Login to Dashboard';btn.disabled=false;}
+  if(inp) inp.focus();
 })();
 
 // ══════════════════════════════════════════
