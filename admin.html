@@ -59,8 +59,7 @@ input,select,textarea{font-family:'Kantumruy Pro','Outfit',sans-serif;}
 .login-err{color:var(--red);font-size:0.78rem;margin-top:0.5rem;display:none;}
 
 /* ── LAYOUT ── */
-#app{display:none;height:100%;flex-direction:column;}
-#app.show{display:flex;}
+#app{display:flex;height:100%;flex-direction:column;}
 
 /* TOPBAR */
 .topbar{
@@ -1999,7 +1998,6 @@ window.saveSecEdit = async id=>{
 };
 
 // ── AUTO START ──
-document.getElementById('app').classList.add('show');
 loadAll();
 </script>
 </body>
