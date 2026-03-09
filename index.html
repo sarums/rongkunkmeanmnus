@@ -704,22 +704,55 @@ function buildSections(){
   });
 }
 
+function buildPlaylistCard(pl){
+  const firstVid=videos.find(v=>(pl.videos||[]).includes(v.id));
+  const img=pl.thumbnail||(firstVid?getThumb(firstVid):`https://picsum.photos/seed/${pl.id}/800/450`);
+  const count=(pl.videos||[]).length;
+  return`<a class="vcard" href="#" onclick="event.preventDefault();openPlaylistById('${pl.id}')">
+    <div class="vcard-thumb">
+      <img src="${img}" alt="${(pl.name||"").replace(/"/g,"")}" loading="lazy"
+        onerror="this.src='https://picsum.photos/seed/${pl.id}pl/800/450'">
+      <div class="vcard-overlay"></div>
+      <div class="vcard-play"><div class="vcard-play-icon">
+        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+      </div></div>
+      <div style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.78);color:#fff;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:4px">▶ ${count} EP</div>
+      <div class="vcard-series">Series</div>
+    </div>
+    <div class="vcard-title">${pl.name||""}</div>
+    <div class="vcard-sub">${pl.description||`${count} episode${count!==1?"s":""}`}</div>
+  </a>`;
+}
+
+window.openPlaylistById=id=>{
+  const pl=playlists.find(p=>p.id===id);
+  if(!pl||(pl.videos||[]).length===0) return;
+  openVideo(pl.videos[0]);
+};
+
 function fillSection(sec,rowId){
   const isTrending=sec.target_type==="trending"||sec.title?.toLowerCase().includes("trend");
-  let list=[];
+  const el=$(rowId);
+  if(!el) return;
+
   if(sec.target_type==="playlist"&&sec.target_id){
     const pl=playlists.find(p=>p.id===sec.target_id);
-    list=(pl?.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean).slice(0,12);
-  }else if(sec.target_type==="category"&&sec.target_id){
-    const cat=categories.find(c=>c.id===sec.target_id);
-    list=videos.filter(v=>v.category===(cat?.name||sec.target_id)||v.category_id===sec.target_id).slice(0,12);
-  }else if(isTrending){
-    list=[...videos].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,12);
-  }else{
-    list=videos.slice(0,12);
+    el.innerHTML=pl?buildPlaylistCard(pl):`<div style="padding:1rem;color:#555;font-size:.82rem">Playlist not found.</div>`;
+    return;
   }
-  const el=$(rowId);
-  if(el)el.innerHTML=list.length?list.map(v=>buildCard(v)).join(""):skelRow();
+  if(sec.target_type==="single_videos"&&(sec.custom_videos||[]).length){
+    const list=(sec.custom_videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
+    el.innerHTML=list.length?list.map(v=>buildCard(v)).join(""):skelRow();
+    return;
+  }
+  if(sec.target_type==="category"&&sec.target_id){
+    const cat=categories.find(c=>c.id===sec.target_id);
+    const list=videos.filter(v=>v.category===(cat?.name||sec.target_id)||v.category_id===sec.target_id).slice(0,12);
+    el.innerHTML=list.length?list.map(v=>buildCard(v)).join(""):skelRow();
+    return;
+  }
+  let list=isTrending?[...videos].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,12):videos.slice(0,12);
+  el.innerHTML=list.length?list.map(v=>buildCard(v)).join(""):skelRow();
 }
 
 window.scrollRow=(id,dir)=>{const el=$(id);if(el)el.scrollBy({left:dir*700,behavior:"smooth"});};
