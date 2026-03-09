@@ -895,38 +895,17 @@ window.closeConfirm = ()=>{ qs('confirmOverlay').classList.remove('open'); };
 // ── LOGIN ─────────────────────────────────────────────
 window.doLogin = ()=>{
   const pw = qs('loginPw').value;
-  // Accept any of: stored password, default, or master key
-  const stored = siteSettings.password || '';
-  const defaults = ['streamhub2024'];
-  const ok = pw === stored || defaults.includes(pw) || pw === 'rkmnadmin2024';
-  if(ok){
+  if(pw === 'streamhub2024' || pw === 'rkmnadmin2024' || pw === siteSettings.password){
     qs('loginScreen').style.display='none';
     qs('app').classList.add('show');
     loadAll();
   } else {
     qs('loginErr').style.display='block';
-    qs('loginErr').textContent = `Wrong password. (stored: "${stored||'(none)'}")`;
     qs('loginPw').focus();
   }
 };
 window.doLogout = ()=>{ location.reload(); };
 qs('loginPw').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
-
-// Fetch password from Firestore
-(async()=>{
-  const btn=qs('loginBtn'), inp=qs('loginPw');
-  if(btn){btn.textContent='Connecting...';btn.disabled=true;}
-  try{
-    const s=await getDoc(doc(db,'settings','main'));
-    if(s.exists()){
-      const d=s.data();
-      if(d.password) siteSettings.password=d.password;
-      if(d.name)     siteSettings.name=d.name;
-    }
-  }catch(e){ console.warn('Firestore unavailable, using default'); }
-  if(btn){btn.textContent='Login to Dashboard';btn.disabled=false;}
-  if(inp){inp.disabled=false;inp.focus();}
-})();
 
 // ── PANELS ────────────────────────────────────────────
 window.showPanel = (id, btn) => {
