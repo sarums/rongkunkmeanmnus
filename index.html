@@ -477,7 +477,6 @@ function pCard(v,rank=0){
         onerror="this.src='https://picsum.photos/seed/${v.id}p/400/600'">
       <div class="pc-shade"></div>
       <div class="pc-play"><div class="pc-play-ico"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div>
-      ${rank>0?`<div class="pc-rank">${rank}</div>`:''}
       ${v.duration?`<div class="pc-dur">${v.duration}</div>`:''}
       ${pl?`<div style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.72);color:#ddd;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.04em">Series</div>`:''}
     </div>
