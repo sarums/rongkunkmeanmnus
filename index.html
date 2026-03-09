@@ -8,8 +8,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--brand:#f27d26;--bg:#0a0a0a;--bg2:#111;--border:rgba(255,255,255,0.07)}
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:#e4e4e7;min-height:100vh;overflow-x:hidden}
-button,input,select,textarea{font-family:inherit}
+body{font-family:'Kantumruy Pro','Outfit',sans-serif;background:var(--bg);color:#e4e4e7;min-height:100vh;overflow-x:hidden}
+button,input,select,textarea{font-family:'Kantumruy Pro','Outfit',sans-serif}
 a{text-decoration:none}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg)}
@@ -77,7 +77,7 @@ a{text-decoration:none}
 /* ── SECTIONS ── */
 .sections{max-width:1560px;margin:0 auto;padding:4px 28px 60px}
 @media(max-width:640px){.sections{padding:12px 12px 48px}}
-.sec{margin-bottom:32px}
+.sec{margin-bottom:28px}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .sec-left{display:flex;align-items:center;gap:10px}
 .sec-ico{width:36px;height:36px;background:rgba(242,125,38,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem}
@@ -87,7 +87,7 @@ a{text-decoration:none}
 
 /* ── ROW ── */
 .row-wrap{position:relative}
-.row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px}
+.row{display:flex;gap:14px;overflow-x:auto;padding-bottom:2px}
 .rbtn{position:absolute;top:50%;transform:translateY(-65%);z-index:5;width:34px;height:54px;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:all .2s;outline:none}
 .rbtn:hover{background:var(--brand);border-color:var(--brand)}
 .row-wrap:hover .rbtn{opacity:1}
@@ -95,9 +95,9 @@ a{text-decoration:none}
 .rbtn.rgt{right:-14px}
 
 /* ── POSTER CARD ── */
-.pc{flex:0 0 148px;cursor:pointer;display:block}
-@media(max-width:640px){.pc{flex:0 0 118px}}
-.pc-img{position:relative;aspect-ratio:2/3;border-radius:9px;overflow:hidden;background:#1a1a1a;margin-bottom:7px}
+.pc{flex:0 0 calc(25% - 8px);min-width:220px;cursor:pointer;display:block}
+@media(max-width:640px){.pc{flex:0 0 calc(50% - 6px);min-width:150px}}
+.pc-img{position:relative;aspect-ratio:16/9;border-radius:9px;overflow:hidden;background:#1a1a1a;margin-bottom:7px}
 .pc-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
 .pc:hover .pc-img img{transform:scale(1.07)}
 .pc-shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,transparent 55%);opacity:0;transition:opacity .3s}
@@ -106,21 +106,21 @@ a{text-decoration:none}
 .pc:hover .pc-play{opacity:1}
 .pc-play-ico{width:40px;height:40px;background:rgba(242,125,38,.92);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(242,125,38,.4)}
 .pc-play-ico svg{fill:#fff;width:14px;height:14px;transform:translateX(1.5px)}
-.pc-rank{position:absolute;bottom:0;left:6px;font-size:3rem;font-weight:900;color:rgba(255,255,255,.92);line-height:1;text-shadow:0 2px 14px rgba(0,0,0,.95);font-family:'Outfit',sans-serif;pointer-events:none}
+.pc-rank{position:absolute;bottom:4px;left:8px;font-size:2.4rem;font-weight:900;color:rgba(255,255,255,.92);line-height:1;text-shadow:0 2px 14px rgba(0,0,0,.95);font-family:'Kantumruy Pro','Outfit',sans-serif;pointer-events:none}
 .pc-dur{position:absolute;bottom:6px;right:6px;font-size:.62rem;font-weight:700;background:rgba(0,0,0,.78);color:#fff;padding:2px 6px;border-radius:4px}
-.pc-title{font-size:.76rem;font-weight:700;color:#d4d4d8;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;transition:color .2s}
+.pc-title{font-size:.82rem;font-weight:700;color:#d4d4d8;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;transition:color .2s}
 .pc:hover .pc-title{color:var(--brand)}
-.pc-sub{font-size:.67rem;font-weight:600;color:#555;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-sub{font-size:.72rem;font-weight:600;color:#555;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── GRID ── */
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
-@media(max-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+@media(max-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}}
 
 /* ── SKELETON ── */
 @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .sk{background:linear-gradient(90deg,#1a1a1a 25%,#222 50%,#1a1a1a 75%);background-size:400% 100%;animation:sh 1.3s infinite;border-radius:8px}
-.sk-card{flex:0 0 148px}
-.sk-poster{aspect-ratio:2/3;border-radius:9px}
+.sk-card{flex:0 0 calc(25% - 8px);min-width:220px}
+.sk-poster{aspect-ratio:16/9;border-radius:9px}
 .sk-t{height:11px;margin-top:7px;width:85%}
 .sk-t2{height:9px;margin-top:4px;width:55%}
 
