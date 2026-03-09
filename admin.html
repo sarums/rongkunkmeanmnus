@@ -617,6 +617,15 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
               <label class="flabel">Description</label>
               <input type="text" class="finput" id="plDesc" placeholder="Short description...">
             </div>
+            <div class="fg full">
+              <label class="flabel">Thumbnail URL <span style="color:#555;font-size:.7rem">(optional cover image)</span></label>
+              <div style="display:flex;gap:.6rem;align-items:flex-start">
+                <input type="text" class="finput" id="plThumb" placeholder="https://...image.jpg" oninput="previewPlThumb()" style="flex:1">
+                <div id="plThumbPreview" style="width:90px;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:var(--bg3);border:1px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.7rem">
+                  No img
+                </div>
+              </div>
+            </div>
           </div>
           <button class="submit-btn green" style="margin-top:1rem;" onclick="createPlaylist()">Create Playlist</button>
         </div>
@@ -1172,13 +1181,21 @@ window.toggleFeatured = async (id)=>{
 };
 
 // ── PLAYLISTS ─────────────────────────────────────────
+window.previewPlThumb = ()=>{
+  const url = qs('plThumb').value.trim();
+  const box = qs('plThumbPreview');
+  if(url){ box.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='Invalid'">`; }
+  else   { box.innerHTML='No img'; }
+};
+
 window.createPlaylist = async ()=>{
-  const name=qs('plName').value.trim(), desc=qs('plDesc').value.trim();
+  const name=qs('plName').value.trim(), desc=qs('plDesc').value.trim(), thumb=qs('plThumb').value.trim();
   if(!name){ showToast('Missing Name','Enter a playlist name','err'); return; }
   try {
-    const ref=await addDoc(collection(db,'playlists'),{name,description:desc,videos:[],createdAt:serverTimestamp()});
-    allPlaylists.push({id:ref.id,name,description:desc,videos:[]});
-    qs('plName').value=''; qs('plDesc').value='';
+    const ref=await addDoc(collection(db,'playlists'),{name,description:desc,thumbnail:thumb,videos:[],createdAt:serverTimestamp()});
+    allPlaylists.push({id:ref.id,name,description:desc,thumbnail:thumb,videos:[]});
+    qs('plName').value=''; qs('plDesc').value=''; qs('plThumb').value='';
+    qs('plThumbPreview').innerHTML='No img';
     showToast('Playlist Created!',`"${name}" is ready`,'ok');
     populateSelects(); renderPlaylists();
   } catch(e){ showToast('Error',e.message,'err'); }
@@ -1188,15 +1205,28 @@ function renderPlaylists(){
   qs('plEmpty').style.display=allPlaylists.length?'none':'block';
   qs('plGrid').innerHTML=allPlaylists.map(pl=>{
     const vids=(pl.videos||[]).map(id=>allVideos.find(v=>v.id===id)).filter(Boolean);
+    // auto thumb: playlist.thumbnail or first video thumb
+    const autoThumb = pl.thumbnail || (vids[0] ? thumbUrl(vids[0]) : '');
     return `<div class="pl-card">
       <div class="pl-card-head">
-        <div>
-          <div class="pl-card-name">📋 ${pl.name}</div>
-          ${pl.description?`<div class="pl-card-meta" style="margin-top:0.25rem;">${pl.description}</div>`:''}
+        <div style="display:flex;align-items:center;gap:.85rem;flex:1;min-width:0">
+          <!-- Thumbnail -->
+          <div style="width:80px;aspect-ratio:16/9;border-radius:7px;overflow:hidden;background:var(--bg3);border:1px solid var(--border2);flex-shrink:0;position:relative">
+            ${autoThumb
+              ? `<img src="${autoThumb}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
+              : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.4rem">📋</div>`}
+            <div style="position:absolute;bottom:3px;right:3px;background:rgba(0,0,0,.75);color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:3px">${vids.length} ep</div>
+          </div>
+          <div style="min-width:0">
+            <div class="pl-card-name">📋 ${pl.name}</div>
+            ${pl.description?`<div class="pl-card-meta" style="margin-top:.2rem">${pl.description}</div>`:''}
+            ${pl.thumbnail?`<div style="font-size:.65rem;color:var(--accent);margin-top:.2rem">🖼 Custom thumbnail set</div>`:'<div style="font-size:.65rem;color:var(--muted);margin-top:.2rem">🖼 Auto thumbnail (from first video)</div>'}
+          </div>
         </div>
         <div class="pl-card-actions">
           <span class="pl-card-meta">${vids.length} video${vids.length!==1?'s':''}</span>
-          <button class="act-btn act-del" onclick="deletePlaylist('${pl.id}','${pl.name.replace(/'/g,'\\\'').substring(0,30)}')">🗑️ Delete</button>
+          <button class="act-btn act-edit" onclick="editPlaylist('${pl.id}')">✏️ Edit</button>
+          <button class="act-btn act-del" onclick="deletePlaylist('${pl.id}','${pl.name.replace(/'/g,"\\'").substring(0,30)}')">🗑️ Delete</button>
         </div>
       </div>
       <div class="pl-items-list">
@@ -1210,12 +1240,62 @@ function renderPlaylists(){
             </div>
             <button class="pl-remove" onclick="removeFromPlaylist('${pl.id}','${v.id}')">Remove</button>
           </div>`).join('')
-        :`<div style="padding:1rem 1.25rem;color:var(--muted);font-size:0.82rem;">No videos in this playlist yet. Add videos from the Edit Video panel.</div>`}
+        :`<div style="padding:1rem 1.25rem;color:var(--muted);font-size:0.82rem;">No videos yet. Add videos from the Edit Video panel.</div>`}
       </div>
     </div>`;
   }).join('');
 }
 
+window.editPlaylist = id=>{
+  const pl = allPlaylists.find(p=>p.id===id);
+  if(!pl) return;
+  const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem" id="plEditOverlay">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.75rem;width:480px;max-width:100%;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <span style="font-size:1rem;font-weight:800">✏️ Edit Playlist</span>
+      <button onclick="document.getElementById('plEditOverlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer">×</button>
+    </div>
+    <label class="flabel">Playlist Name</label>
+    <input type="text" class="finput" id="eplName" value="${pl.name||''}" style="margin-bottom:.75rem">
+    <label class="flabel">Description</label>
+    <input type="text" class="finput" id="eplDesc" value="${pl.description||''}" style="margin-bottom:.75rem">
+    <label class="flabel">Thumbnail URL</label>
+    <div style="display:flex;gap:.6rem;align-items:flex-start;margin-bottom:.75rem">
+      <input type="text" class="finput" id="eplThumb" value="${pl.thumbnail||''}" placeholder="https://...image.jpg" oninput="previewEplThumb()" style="flex:1">
+      <div id="eplThumbPreview" style="width:90px;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:var(--bg3);border:1px solid var(--border2);flex-shrink:0">
+        ${pl.thumbnail
+          ? `<img src="${pl.thumbnail}" style="width:100%;height:100%;object-fit:cover" onerror="this.innerHTML='?'">`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted)">No img</div>`}
+      </div>
+    </div>
+    <button onclick="savePlEdit('${id}')" class="submit-btn" style="width:100%">💾 Save Changes</button>
+  </div>
+</div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+};
+
+window.previewEplThumb = ()=>{
+  const url = document.getElementById('eplThumb')?.value.trim();
+  const box = document.getElementById('eplThumbPreview');
+  if(!box) return;
+  if(url) box.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='Invalid'">`;
+  else    box.innerHTML=`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted)">No img</div>`;
+};
+
+window.savePlEdit = async id=>{
+  const name  = document.getElementById('eplName')?.value.trim();
+  const desc  = document.getElementById('eplDesc')?.value.trim();
+  const thumb = document.getElementById('eplThumb')?.value.trim();
+  if(!name){ showToast('Error','Name is required','err'); return; }
+  try{
+    await updateDoc(doc(db,'playlists',id),{name,description:desc||'',thumbnail:thumb||''});
+    const pl=allPlaylists.find(p=>p.id===id);
+    if(pl){ pl.name=name; pl.description=desc||''; pl.thumbnail=thumb||''; }
+    document.getElementById('plEditOverlay')?.remove();
+    showToast('Saved!','Playlist updated','ok');
+    populateSelects(); renderPlaylists();
+  }catch(e){ showToast('Error',e.message,'err'); }
+};
 window.deletePlaylist = (id, name)=>{
   showConfirm('Delete Playlist?',`"${name}..." will be deleted.`,async()=>{
     try {
