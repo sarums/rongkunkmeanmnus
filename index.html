@@ -50,10 +50,10 @@ a{text-decoration:none}
 
 /* ── HERO ── */
 #hero{position:relative;width:100%;cursor:pointer;background:#000;overflow:hidden}
-@media(min-width:641px){#hero{aspect-ratio:21/9}}
-@media(max-width:640px){#hero{aspect-ratio:16/9}}
-#hImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .6s}
-.h-grad1{position:absolute;inset:0;background:linear-gradient(to top,#000 0%,rgba(0,0,0,.85) 25%,rgba(0,0,0,.2) 60%,transparent 100%)}
+@media(min-width:641px){#hero{height:100vh;max-height:780px}}
+@media(max-width:640px){#hero{height:70vh}}
+#hImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;transition:opacity .6s}
+.h-grad1{position:absolute;inset:0;background:linear-gradient(to top,#0a0a0a 0%,rgba(10,10,10,.85) 20%,rgba(0,0,0,.2) 60%,transparent 100%)}
 .h-grad2{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.55) 0%,transparent 60%)}
 #hContent{position:absolute;bottom:0;left:0;right:0;padding:clamp(20px,4vw,52px);z-index:2}
 .h-badge{display:inline-flex;align-items:center;gap:6px;background:var(--brand);color:#000;font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:9999px;margin-bottom:12px}
@@ -75,8 +75,14 @@ a{text-decoration:none}
 #hNext{right:14px}
 
 /* ── SECTIONS ── */
-.sections{max-width:1560px;margin:0 auto;padding:4px 28px 60px}
+/* Hero bleeds into page */
+#pg-home{position:relative}
+.sections{max-width:1560px;margin:0 auto;padding:4px 28px 60px;position:relative;z-index:2}
 @media(max-width:640px){.sections{padding:12px 12px 48px}}
+/* Persistent background image behind sections */
+#heroBg{position:fixed;inset:0;z-index:0;pointer-events:none}
+#heroBg img{width:100%;height:100%;object-fit:cover;object-position:center top;opacity:.18;filter:blur(2px)}
+#heroBg::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,#0a0a0a 0%,rgba(10,10,10,.92) 30%,rgba(10,10,10,.75) 60%,rgba(10,10,10,.55) 100%)}
 .sec{margin-bottom:28px}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .sec-left{display:flex;align-items:center;gap:10px}
@@ -242,6 +248,8 @@ footer{border-top:1px solid var(--border);padding:48px 32px;text-align:center}
 
 <!-- HOME -->
 <div id="pg-home" class="pg on">
+  <!-- Fixed blurred background -->
+  <div id="heroBg"><img id="heroBgImg" src="" alt=""></div>
   <section id="hero" onclick="heroClick()">
     <img id="hImg" src="" alt="">
     <div class="h-grad1"></div>
@@ -498,7 +506,14 @@ function updateHero(i){
   window._hId=v.id;
   const img=$('hImg');
   img.style.opacity='0';
-  setTimeout(()=>{img.src=thumb(v);img.style.opacity='1';},260);
+  setTimeout(()=>{
+    const src=thumb(v);
+    img.src=src;
+    img.style.opacity='1';
+    // update blurred background
+    const bgImg=$('heroBgImg');
+    if(bgImg)bgImg.src=src;
+  },260);
   $('hTitle').textContent=v.title?.length>70?v.title.slice(0,70)+'…':v.title||'';
   $('hDesc').textContent=v.description||'';
   $('hCat').textContent=v.category||'';
