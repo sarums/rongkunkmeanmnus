@@ -625,24 +625,55 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
 
       <!-- CATEGORIES -->
       <div class="panel" id="panel-categories">
-        <div class="panel-title">Categories / Menu</div>
-        <div class="form-card">
-          <div class="form-card-title">➕ Add New Category</div>
+        <div class="panel-title">🗂️ Menu / Navigation</div>
+        <div class="form-card" style="margin-bottom:1.5rem">
+          <div class="form-card-title">➕ Add Menu Item</div>
           <div class="form-grid">
             <div class="fg">
-              <label class="flabel">Category Name</label>
-              <input type="text" class="finput" id="catName" placeholder="e.g. Cooking">
+              <label class="flabel">Label</label>
+              <input type="text" class="finput" id="catName" placeholder="e.g. Drama, Top Picks...">
             </div>
             <div class="fg">
               <label class="flabel">Icon (Emoji)</label>
-              <input type="text" class="finput" id="catIco" placeholder="🍳" maxlength="4">
+              <input type="text" class="finput" id="catIco" placeholder="🎬" maxlength="4">
+            </div>
+            <div class="fg full">
+              <label class="flabel">Links To</label>
+              <select class="finput" id="catType" onchange="onCatTypeChange()">
+                <option value="category">🏷️ Category page (shows filtered videos)</option>
+                <option value="playlist">📋 Playlist</option>
+                <option value="video">🎬 Single Video</option>
+              </select>
             </div>
           </div>
-          <button class="submit-btn" style="margin-top:1rem;" onclick="addCategory()">Add Category</button>
+          <!-- Playlist picker -->
+          <div id="catPlPick" style="display:none;margin-top:.75rem">
+            <label class="flabel">Select Playlist</label>
+            <select class="finput" id="catPlSelect"></select>
+          </div>
+          <!-- Video picker -->
+          <div id="catVidPick" style="display:none;margin-top:.75rem">
+            <label class="flabel">Search & Select Video</label>
+            <div style="position:relative;margin-bottom:.5rem">
+              <input type="text" class="finput" id="catVidSearch" placeholder="Search video..." oninput="searchCatVid()" style="padding-left:2rem">
+              <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4">🔍</span>
+            </div>
+            <div id="catVidResults" style="max-height:200px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px"></div>
+            <input type="hidden" id="catVidId">
+            <div id="catVidChosen" style="margin-top:.5rem;font-size:.78rem;color:var(--accent)"></div>
+          </div>
+          <button class="submit-btn" style="margin-top:1rem" onclick="addCategory()">➕ Add to Menu</button>
         </div>
-        <div class="cat-grid" id="catGrid"></div>
-        <div class="empty-state" id="catEmpty" style="display:none;">
-          <div class="ico">🏷️</div><h3>No categories</h3><p>Add your first category above</p>
+
+        <div class="form-card">
+          <div class="form-card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>📋 Menu Items</span>
+            <span style="font-size:.72rem;color:var(--text2)">▲▼ to reorder</span>
+          </div>
+          <div id="catGrid" style="display:flex;flex-direction:column;gap:8px;min-height:40px"></div>
+          <div class="empty-state" id="catEmpty" style="display:none;">
+            <div class="ico">🏷️</div><h3>No menu items</h3><p>Add your first item above</p>
+          </div>
         </div>
       </div>
 
@@ -1324,54 +1355,213 @@ window.removeFromPlaylist = async (plId, vidId)=>{
 };
 
 // ── CATEGORIES ────────────────────────────────────────
+// ── MENU TYPE TOGGLE ──────────────────────────────────
+window.onCatTypeChange=()=>{
+  const t=qs('catType').value;
+  qs('catPlPick').style.display  = t==='playlist'?'':'none';
+  qs('catVidPick').style.display = t==='video'?'':'none';
+  if(t==='playlist'){
+    qs('catPlSelect').innerHTML=allPlaylists.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  }
+};
+
+window.searchCatVid=()=>{
+  const q=(qs('catVidSearch').value||'').toLowerCase();
+  const box=qs('catVidResults');
+  const filtered=allVideos.filter(v=>(v.title||'').toLowerCase().includes(q)).slice(0,30);
+  if(!filtered.length){box.innerHTML=`<div style="padding:.6rem;color:var(--text2);font-size:.8rem">No videos found</div>`;return;}
+  box.innerHTML=filtered.map(v=>`
+    <div onclick="pickCatVid('${v.id}','${(v.title||'').replace(/'/g,"\'")}','${getAdminThumb(v)}')"
+      style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+      <img src="${getAdminThumb(v)}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0">
+      <div style="min-width:0">
+        <div style="font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.title||''}</div>
+        <div style="font-size:.67rem;color:var(--text2)">${v.category||''}</div>
+      </div>
+    </div>`).join('');
+};
+
+window.pickCatVid=(id,title)=>{
+  qs('catVidId').value=id;
+  qs('catVidChosen').innerHTML=`✅ Selected: <b>${title}</b>`;
+  qs('catVidResults').innerHTML='';
+  qs('catVidSearch').value=title;
+};
+
+// ── ADD MENU ITEM ──────────────────────────────────────
 window.addCategory = async ()=>{
-  const name=qs('catName').value.trim(), ico=qs('catIco').value.trim()||'📁';
-  if(!name){ showToast('Missing Name','Enter a category name','err'); return; }
+  const name=qs('catName').value.trim();
+  const ico =qs('catIco').value.trim()||'📁';
+  const type=qs('catType').value;
+  if(!name){ showToast('Missing Name','Enter a label','err'); return; }
+
+  let target_id=null;
+  if(type==='playlist'){
+    target_id=qs('catPlSelect').value;
+    if(!target_id){ showToast('Error','Select a playlist','err'); return; }
+  }
+  if(type==='video'){
+    target_id=qs('catVidId').value;
+    if(!target_id){ showToast('Error','Pick a video','err'); return; }
+  }
+
+  const data={name, ico, target_type:type, target_id, display_order:allCategories.length};
   try {
-    const ref=await addDoc(collection(db,'categories'),{name,ico});
-    allCategories.push({id:ref.id,name,ico});
+    const ref=await addDoc(collection(db,'categories'),data);
+    allCategories.push({id:ref.id,...data});
     qs('catName').value=''; qs('catIco').value='';
-    showToast('Category Added!',`"${ico} ${name}" created`,'ok');
+    qs('catVidId').value=''; qs('catVidChosen').innerHTML=''; qs('catVidSearch').value='';
+    qs('catType').value='category'; onCatTypeChange();
+    showToast('Added!',`"${ico} ${name}" added to menu`,'ok');
     populateSelects(); renderCategories();
   } catch(e){ showToast('Error',e.message,'err'); }
 };
 
+// ── RENDER MENU LIST ───────────────────────────────────
 function renderCategories(){
-  qs('catEmpty').style.display=allCategories.length?'none':'block';
-  qs('catGrid').innerHTML=allCategories.map(c=>{
-    const count=allVideos.filter(v=>v.category===c.name).length;
-    return `<div class="cat-card">
-      <div class="cat-card-left">
-        <div class="cat-ico">${c.ico||'📁'}</div>
-        <div><div class="cat-name">${c.name}</div><div class="cat-count">${count} video${count!==1?'s':''}</div></div>
+  const sorted=[...allCategories].sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+  allCategories=sorted;
+  qs('catEmpty').style.display=allCategories.length?'none':'flex';
+  const grid=qs('catGrid');
+
+  grid.innerHTML=allCategories.map((c,i)=>{
+    const typeTag = c.target_type==='playlist'?'📋 Playlist'
+      : c.target_type==='video'?'🎬 Video'
+      : `🏷️ Category`;
+    const sublabel = c.target_type==='playlist'
+      ? (allPlaylists.find(p=>p.id===c.target_id)?.name||'?')
+      : c.target_type==='video'
+      ? (allVideos.find(v=>v.id===c.target_id)?.title||'?')
+      : `${allVideos.filter(v=>v.category===c.name).length} videos`;
+
+    return `<div style="display:flex;align-items:center;gap:.85rem;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem 1rem;transition:border-color .2s"
+        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+      <div style="width:38px;height:38px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">${c.ico||'📁'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.88rem;font-weight:700;color:var(--text)">${c.name}</div>
+        <div style="font-size:.7rem;color:var(--text2);margin-top:1px">${typeTag} · ${sublabel}</div>
       </div>
-      <div class="cat-actions">
-        <button class="cat-edit-btn" onclick="editCategory('${c.id}','${c.name}','${c.ico||''}')">✏️</button>
-        <button class="cat-del-btn" onclick="deleteCategory('${c.id}','${c.name}')">🗑️</button>
+      <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0">
+        <button onclick="moveCat('${c.id}',-1)" style="background:var(--bg4);border:1px solid var(--border2);color:var(--text2);border-radius:4px;width:24px;height:21px;font-size:.65rem;cursor:pointer" ${i===0?'disabled':''}>▲</button>
+        <button onclick="moveCat('${c.id}',1)" style="background:var(--bg4);border:1px solid var(--border2);color:var(--text2);border-radius:4px;width:24px;height:21px;font-size:.65rem;cursor:pointer" ${i===allCategories.length-1?'disabled':''}>▼</button>
       </div>
+      <button class="act-btn act-edit" onclick="editCategory('${c.id}')">✏️</button>
+      <button class="act-btn act-del" onclick="deleteCategory('${c.id}','${c.name}')">🗑️</button>
     </div>`;
   }).join('');
 }
 
-window.editCategory = async (id, name, ico)=>{
-  const newName=prompt('Category name:',name);
-  if(!newName) return;
-  const newIco=prompt('Icon (emoji):',ico)||ico;
-  try {
-    await updateDoc(doc(db,'categories',id),{name:newName,ico:newIco});
-    const c=allCategories.find(x=>x.id===id);
-    if(c){ c.name=newName; c.ico=newIco; }
-    showToast('Updated!',`Category renamed to "${newName}"`,'ok');
+// ── MOVE ORDER ─────────────────────────────────────────
+window.moveCat=async(id,dir)=>{
+  const idx=allCategories.findIndex(c=>c.id===id);
+  const swap=allCategories[idx+dir]; if(!swap)return;
+  const a=allCategories[idx].display_order??idx;
+  const b=swap.display_order??(idx+dir);
+  try{
+    await Promise.all([
+      updateDoc(doc(db,'categories',id),{display_order:b}),
+      updateDoc(doc(db,'categories',swap.id),{display_order:a})
+    ]);
+    allCategories[idx].display_order=b;
+    swap.display_order=a;
+    allCategories.sort((x,y)=>(x.display_order??0)-(y.display_order??0));
+    renderCategories();
+  }catch(e){showToast('Error',e.message,'err');}
+};
+
+// ── EDIT ───────────────────────────────────────────────
+window.editCategory=id=>{
+  const c=allCategories.find(x=>x.id===id); if(!c)return;
+  const typeOpts=[['category','🏷️ Category page'],['playlist','📋 Playlist'],['video','🎬 Single Video']]
+    .map(([v,l])=>`<option value="${v}" ${v===(c.target_type||'category')?'selected':''}>${l}</option>`).join('');
+  const plOpts=allPlaylists.map(p=>`<option value="${p.id}" ${p.id===c.target_id?'selected':''}>${p.name}</option>`).join('');
+  const curVid=c.target_type==='video'?allVideos.find(v=>v.id===c.target_id):null;
+
+  const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem" id="catEditOverlay">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.75rem;width:500px;max-width:100%;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <span style="font-size:1rem;font-weight:800">✏️ Edit Menu Item</span>
+      <button onclick="document.getElementById('catEditOverlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 100px;gap:.75rem;margin-bottom:.75rem">
+      <div><label class="flabel">Label</label><input type="text" class="finput" id="ecName" value="${c.name||''}"></div>
+      <div><label class="flabel">Icon</label><input type="text" class="finput" id="ecIco" value="${c.ico||''}" maxlength="4"></div>
+    </div>
+    <label class="flabel">Links To</label>
+    <select class="finput" id="ecType" onchange="onEcTypeChange()" style="margin-bottom:.75rem">${typeOpts}</select>
+
+    <div id="ecPlPick" style="display:none;margin-bottom:.75rem">
+      <label class="flabel">Select Playlist</label>
+      <select class="finput" id="ecPlSelect">${plOpts}</select>
+    </div>
+    <div id="ecVidPick" style="display:none;margin-bottom:.75rem">
+      <label class="flabel">Search & Select Video</label>
+      <div style="position:relative;margin-bottom:.5rem">
+        <input type="text" class="finput" id="ecVidSearch" placeholder="Search..." oninput="searchEcVid()" style="padding-left:2rem" value="${curVid?curVid.title:''}">
+        <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4">🔍</span>
+      </div>
+      <div id="ecVidResults" style="max-height:180px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px"></div>
+      <input type="hidden" id="ecVidId" value="${c.target_id||''}">
+      <div id="ecVidChosen" style="margin-top:.4rem;font-size:.78rem;color:var(--accent)">${curVid?`✅ ${curVid.title}`:''}</div>
+    </div>
+    <button onclick="saveCatEdit('${id}')" class="submit-btn" style="width:100%;margin-top:.25rem">💾 Save Changes</button>
+  </div>
+</div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+  onEcTypeChange();
+};
+
+window.onEcTypeChange=()=>{
+  const t=document.getElementById('ecType')?.value; if(!t)return;
+  document.getElementById('ecPlPick').style.display = t==='playlist'?'':'none';
+  document.getElementById('ecVidPick').style.display = t==='video'?'':'none';
+};
+window.searchEcVid=()=>{
+  const q=(document.getElementById('ecVidSearch')?.value||'').toLowerCase();
+  const box=document.getElementById('ecVidResults'); if(!box)return;
+  const filtered=allVideos.filter(v=>(v.title||'').toLowerCase().includes(q)).slice(0,30);
+  box.innerHTML=filtered.map(v=>`
+    <div onclick="pickEcVid('${v.id}','${(v.title||'').replace(/'/g,"\'")}') "
+      style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+      <img src="${getAdminThumb(v)}" style="width:50px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0">
+      <div style="min-width:0">
+        <div style="font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.title||''}</div>
+        <div style="font-size:.67rem;color:var(--text2)">${v.category||''}</div>
+      </div>
+    </div>`).join('');
+};
+window.pickEcVid=(id,title)=>{
+  document.getElementById('ecVidId').value=id;
+  document.getElementById('ecVidChosen').innerHTML=`✅ Selected: <b>${title}</b>`;
+  document.getElementById('ecVidResults').innerHTML='';
+  document.getElementById('ecVidSearch').value=title;
+};
+window.saveCatEdit=async id=>{
+  const name=document.getElementById('ecName')?.value.trim();
+  const ico =document.getElementById('ecIco')?.value.trim()||'📁';
+  const type=document.getElementById('ecType')?.value;
+  if(!name){showToast('Error','Label required','err');return;}
+  let target_id=null;
+  if(type==='playlist') target_id=document.getElementById('ecPlSelect')?.value||null;
+  if(type==='video')    target_id=document.getElementById('ecVidId')?.value||null;
+  const updates={name,ico,target_type:type,target_id};
+  try{
+    await updateDoc(doc(db,'categories',id),updates);
+    const c=allCategories.find(x=>x.id===id); if(c)Object.assign(c,updates);
+    document.getElementById('catEditOverlay')?.remove();
+    showToast('Saved!','Menu item updated','ok');
     populateSelects(); renderCategories();
-  } catch(e){ showToast('Error',e.message,'err'); }
+  }catch(e){showToast('Error',e.message,'err');}
 };
 
 window.deleteCategory = (id, name)=>{
-  showConfirm('Delete Category?',`"${name}" will be deleted. Videos won't be affected.`,async()=>{
+  showConfirm('Delete Menu Item?',`"${name}" will be removed from the menu.`,async()=>{
     try {
       await deleteDoc(doc(db,'categories',id));
       allCategories=allCategories.filter(c=>c.id!==id);
-      showToast('Deleted',`Category removed`,'warn');
+      showToast('Deleted','Menu item removed','warn');
       populateSelects(); renderCategories();
     } catch(e){ showToast('Error',e.message,'err'); }
   });
