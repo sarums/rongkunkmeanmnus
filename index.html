@@ -897,16 +897,20 @@ function showCatPage(cat){
   window.scrollTo(0,0);
   $("cat-title").textContent=cat.name;
   $("cat-desc").textContent=`Discover the best ${cat.name} content.`;
-  let list=[];
   const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
+
   if(cat.target_type==="playlist"){
-    ids.forEach(pid=>{ const pl=playlists.find(p=>p.id===pid); if(pl)(pl.videos||[]).forEach(vid=>{ if(!list.find(v=>v.id===vid)){const v=videos.find(x=>x.id===vid);if(v)list.push(v);} }); });
+    // Show one playlist card per playlist — not individual videos
+    const cards=ids.map(pid=>playlists.find(p=>p.id===pid)).filter(Boolean)
+      .map(pl=>buildPlaylistCard(pl)).join("");
+    $("cat-grid").innerHTML=cards||`<div style="padding:2rem;color:#555;text-align:center">No playlists found.</div>`;
   } else if(cat.target_type==="video"){
-    list=ids.map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
+    const list=ids.map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
+    renderGrid($("cat-grid"),list);
   } else {
-    list=videos.filter(v=>v.category===cat.name);
+    const list=videos.filter(v=>v.category===cat.name);
+    renderGrid($("cat-grid"),list);
   }
-  renderGrid($("cat-grid"),list);
 }
 
 // Called from navGo for playlist/video types (URL already pushed)
