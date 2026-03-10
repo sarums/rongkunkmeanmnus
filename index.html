@@ -608,10 +608,12 @@ function buildNav(){
 
   function catClick(c, closeMobile=false){
     const close=closeMobile?';toggleMobileMenu()':'';
-    if(c.target_type==='playlist'&&c.target_id){
-      return `openPlaylistById('${c.target_id}')${close}`;
-    } else if(c.target_type==='video'&&c.target_id){
-      return `openVideo('${c.target_id}')${close}`;
+    const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
+    if(c.target_type==='playlist'&&ids.length){
+      // if multiple playlists open first one; single opens directly
+      return `openPlaylistById('${ids[0]}')${close}`;
+    } else if(c.target_type==='video'&&ids.length){
+      return `openVideo('${ids[0]}')${close}`;
     } else {
       return `openCategory('${c.id}','${encodeURIComponent(c.name)}')${close}`;
     }
