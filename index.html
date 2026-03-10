@@ -567,7 +567,13 @@ function showPage(id,push=true){
   window.scrollTo(0,0);
 }
 window.goHome=e=>{e?.preventDefault();showPage("home");};
-window.goBack=()=>showPage(previousPage);
+window.goBack=()=>{
+  if(previousPage&&previousPage!==location.pathname){
+    history.back();
+  } else {
+    showPage('home');
+  }
+};
 
 function routeFromUrl(push=false){
   const path=location.pathname;
@@ -689,8 +695,10 @@ window.navGo=(id)=>{
 // ── Card ──
 function buildCard(v){
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
+  const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
+  const watchUrl=pl?`/watch/${toSlug(pl.name)}/ep-${epNum}`:`/watch/${toSlug(v.title)}`;
   const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
-  return`<a class="vcard" href="#" onclick="event.preventDefault();${click}">
+  return`<a class="vcard" href="${watchUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
       <img src="${getThumb(v)}" alt="${(v.title||"").replace(/"/g,"")}" loading="lazy"
         onerror="this.src='https://picsum.photos/seed/${v.id}x/800/450'">
@@ -850,8 +858,8 @@ window.seeAll=sid=>{
 
 // ── Watch ──
 window.openVideo=async (id,push=true)=>{
-  // show watch page without pushing generic /watch URL
-  if(id!=='watch')previousPage=location.pathname;
+  // Save current URL as previous page before navigating (for back button)
+  if(push) previousPage=location.pathname;
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
   window.scrollTo(0,0);
   playlistQueue=[];plQueueIdx=0;
@@ -891,8 +899,9 @@ window.openVideo=async (id,push=true)=>{
     playlistQueue=(pl.videos||[]).map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
     plQueueIdx=playlistQueue.findIndex(v=>v.id===id);
     $("playlist-progress").textContent=`${plQueueIdx+1} / ${playlistQueue.length}`;
-    $("playlist-items").innerHTML=playlistQueue.map(pv=>`
-      <div class="pl-item${pv.id===id?" current":""}" onclick="openVideo('${pv.id}')">
+    $("playlist-items").innerHTML=playlistQueue.map((pv,pi)=>`
+      <a class="pl-item${pv.id===id?" current":""}" href="/watch/${toSlug(pl.name)}/ep-${pi+1}"
+        onclick="event.preventDefault();openVideo('${pv.id}')">
         <div class="pl-thumb">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
           ${pv.id===id?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:""}
@@ -901,7 +910,7 @@ window.openVideo=async (id,push=true)=>{
           <div class="pl-title">${pv.title||""}</div>
           ${pv.duration?`<div class="pl-dur">${pv.duration}</div>`:""}
         </div>
-      </div>`).join("");
+      </a>`).join("");
     $("playlist-panel").style.display="";
     if(playlistQueue[plQueueIdx+1])$("watch-next-btn").style.display="";
   }
