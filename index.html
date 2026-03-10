@@ -567,7 +567,22 @@ function showPage(id,push=true){
 }
 window.goHome=e=>{e?.preventDefault();showPage("home");};
 window.goBack=()=>showPage(previousPage);
-window.addEventListener("popstate",e=>{if(e.state?.page)showPage(e.state.page,false);});
+
+function routeFromUrl(push=false){
+  const path=location.pathname;
+  if(path==="/"||path===""){ showPage("home",push); return; }
+  const slug=path.replace(/^\//, '');
+  // Check if slug matches a category name
+  const cat=categories.find(c=>(c.name||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')===slug);
+  if(cat){ openCategory(cat.id, cat.name, push); return; }
+  // fallback
+  showPage("home",push);
+}
+window.addEventListener("popstate",e=>{
+  if(!e.state) return routeFromUrl(false);
+  if(e.state.page==="cat") openCategory(e.state.id,e.state.name,false);
+  else if(e.state.page) showPage(e.state.page,false);
+});
 
 // ── Load Data ──
 async function loadAll(){
@@ -595,6 +610,7 @@ async function loadAll(){
     }
 
     buildNav();buildHero();buildSections();
+    routeFromUrl(false);
   }catch(err){
     console.error(err);
     showToast("Failed to load data","err");
@@ -858,17 +874,26 @@ window.openPlaylist=(plId,startId)=>{
 window.playNext=()=>{const n=playlistQueue[plQueueIdx+1];if(n)openVideo(n.id);};
 
 // ── Category ──
-window.openCategory=(id,name)=>{
-  const decodedName=decodeURIComponent(name);
-  showPage("cat");
-  $("cat-title").textContent=decodedName||id;
-  $("cat-desc").textContent=`Discover the best ${decodedName||""} content.`;
+window.openCategory=(id,name,push=true)=>{
+  const decodedName=decodeURIComponent(name||id);
   const cat=categories.find(c=>c.id===id||c.name===decodedName);
+  const slug=(cat?.name||decodedName).toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
+  if(push) history.pushState({page:'cat',id,name:decodedName},"","/"+slug);
+  window.scrollTo(0,0);
+
+  $("cat-title").textContent=decodedName;
+  $("cat-desc").textContent=`Discover the best ${decodedName} content.`;
+
   let list=[];
-  if(cat?.target_type==="playlist"&&cat.target_id){
-    const pl=playlists.find(p=>p.id===cat.target_id);
-    list=videos.filter(v=>(pl?.videos||[]).includes(v.id));
-  }else{
+  if(cat?.target_type==="playlist"){
+    const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
+    ids.forEach(pid=>{ const pl=playlists.find(p=>p.id===pid); if(pl)(pl.videos||[]).forEach(vid=>{ if(!list.find(v=>v.id===vid)){const v=videos.find(x=>x.id===vid);if(v)list.push(v);} }); });
+  } else if(cat?.target_type==="video"){
+    const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
+    list=ids.map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
+  } else {
     list=videos.filter(v=>v.category===decodedName||v.category===id||v.category_id===id);
   }
   renderGrid($("cat-grid"),list);
