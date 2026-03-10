@@ -603,12 +603,25 @@ async function loadAll(){
 
 // ── Nav ──
 function buildNav(){
-  const cats=categories.slice(0,7);
+  const sorted=[...categories].sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+  const cats=sorted.slice(0,8);
+
+  function catClick(c, closeMobile=false){
+    const close=closeMobile?';toggleMobileMenu()':'';
+    if(c.target_type==='playlist'&&c.target_id){
+      return `openPlaylistById('${c.target_id}')${close}`;
+    } else if(c.target_type==='video'&&c.target_id){
+      return `openVideo('${c.target_id}')${close}`;
+    } else {
+      return `openCategory('${c.id}','${encodeURIComponent(c.name)}')${close}`;
+    }
+  }
+
   $("nav-cats").innerHTML=`<a href="#" onclick="goHome(event)" class="active">Home</a>`
-    +cats.map(c=>`<a href="#" onclick="openCategory('${c.id}','${encodeURIComponent(c.name)}')">${c.name}</a>`).join("");
-  $("mobile-cats").innerHTML=cats.map(c=>`<a href="#" onclick="openCategory('${c.id}','${encodeURIComponent(c.name)}');toggleMobileMenu()">${c.name}</a>`).join("");
+    +cats.map(c=>`<a href="#" onclick="event.preventDefault();${catClick(c)}">${c.ico||''} ${c.name}</a>`).join("");
+  $("mobile-cats").innerHTML=cats.map(c=>`<a href="#" onclick="event.preventDefault();${catClick(c,true)}">${c.ico||''} ${c.name}</a>`).join("");
   $("footer-links").innerHTML=`<a href="#" onclick="goHome(event)">Home</a>`
-    +cats.slice(0,4).map(c=>`<a href="#" onclick="openCategory('${c.id}','${encodeURIComponent(c.name)}')">${c.name}</a>`).join("")
+    +cats.slice(0,4).map(c=>`<a href="#" onclick="event.preventDefault();${catClick(c)}">${c.name}</a>`).join("")
     +`<a href="/admin">Admin</a>`;
 }
 
