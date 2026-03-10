@@ -574,14 +574,19 @@ function routeFromUrl(push=false){
   const slug=path.replace(/^\//, '');
   // Check if slug matches a category name
   const cat=categories.find(c=>(c.name||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')===slug);
-  if(cat){ openCategory(cat.id, cat.name, push); return; }
+  if(cat){ showCatPage(cat); return; }
   // fallback
   showPage("home",push);
 }
 window.addEventListener("popstate",e=>{
   if(!e.state) return routeFromUrl(false);
-  if(e.state.page==="cat") openCategory(e.state.id,e.state.name,false);
-  else if(e.state.page) showPage(e.state.page,false);
+  if(e.state.page==="cat"){
+    const cat=categories.find(c=>c.id===e.state.catId);
+    if(cat) showCatPage(cat);
+    else routeFromUrl(false);
+  } else if(e.state.page){
+    showPage(e.state.page,false);
+  }
 });
 
 // ── Load Data ──
@@ -622,28 +627,38 @@ function buildNav(){
   const sorted=[...categories].sort((a,b)=>(a.display_order||0)-(b.display_order||0));
   const cats=sorted.slice(0,8);
 
-  function catClick(c, closeMobile=false){
-    const close=closeMobile?';toggleMobileMenu()':'';
-    const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
-    if(c.target_type==='playlist'&&ids.length){
-      // if multiple playlists open first one; single opens directly
-      return `openPlaylistById('${ids[0]}')${close}`;
-    } else if(c.target_type==='video'&&ids.length){
-      return `openVideo('${ids[0]}')${close}`;
-    } else {
-      return `openCategory('${c.id}','${encodeURIComponent(c.name)}')${close}`;
-    }
+  // slug: /drama, /music etc — always based on category name
+  function slug(c){ return '/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
+
+  function navLink(c, closeMobile=false){
+    const close=closeMobile?'toggleMobileMenu();':'';
+    return `<a href="${slug(c)}" onclick="event.preventDefault();${close}navGo('${c.id}')">${c.name}</a>`;
   }
 
-  function catSlug(c){ return '/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
-
-  $("nav-cats").innerHTML=`<a href="/" onclick="goHome(event)">Home</a>`
-    +cats.map(c=>`<a href="${catSlug(c)}" onclick="event.preventDefault();${catClick(c)}">${c.name}</a>`).join("");
-  $("mobile-cats").innerHTML=cats.map(c=>`<a href="${catSlug(c)}" onclick="event.preventDefault();${catClick(c,true)}">${c.name}</a>`).join("");
+  $("nav-cats").innerHTML=`<a href="/" onclick="goHome(event)">Home</a>`+cats.map(c=>navLink(c)).join("");
+  $("mobile-cats").innerHTML=cats.map(c=>navLink(c,true)).join("");
   $("footer-links").innerHTML=`<a href="/" onclick="goHome(event)">Home</a>`
-    +cats.slice(0,4).map(c=>`<a href="${catSlug(c)}" onclick="event.preventDefault();${catClick(c)}">${c.name}</a>`).join("")
+    +cats.slice(0,4).map(c=>`<a href="${slug(c)}" onclick="event.preventDefault();navGo('${c.id}')">${c.name}</a>`).join("")
     +`<a href="/admin">Admin</a>`;
 }
+
+// Single entry point for all nav category clicks
+window.navGo=(id)=>{
+  const c=categories.find(x=>x.id===id); if(!c)return;
+  const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
+  // Always update URL to /slug first
+  const slug='/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  history.pushState({page:'cat',catId:id},"",slug);
+  // Then show content
+  if(c.target_type==='playlist'&&ids.length){
+    // show playlist videos on category page
+    openCategoryById(id);
+  } else if(c.target_type==='video'&&ids.length){
+    openCategoryById(id);
+  } else {
+    openCategory(id, c.name, false); // false = don't pushState again
+  }
+};
 
 // ── Card ──
 function buildCard(v){
@@ -876,29 +891,39 @@ window.openPlaylist=(plId,startId)=>{
 window.playNext=()=>{const n=playlistQueue[plQueueIdx+1];if(n)openVideo(n.id);};
 
 // ── Category ──
-window.openCategory=(id,name,push=true)=>{
-  const decodedName=decodeURIComponent(name||id);
-  const cat=categories.find(c=>c.id===id||c.name===decodedName);
-  const slug=(cat?.name||decodedName).toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-
+// Show category page content by category object
+function showCatPage(cat){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
-  if(push) history.pushState({page:'cat',id,name:decodedName},"","/"+slug);
   window.scrollTo(0,0);
-
-  $("cat-title").textContent=decodedName;
-  $("cat-desc").textContent=`Discover the best ${decodedName} content.`;
-
+  $("cat-title").textContent=cat.name;
+  $("cat-desc").textContent=`Discover the best ${cat.name} content.`;
   let list=[];
-  if(cat?.target_type==="playlist"){
-    const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
+  const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
+  if(cat.target_type==="playlist"){
     ids.forEach(pid=>{ const pl=playlists.find(p=>p.id===pid); if(pl)(pl.videos||[]).forEach(vid=>{ if(!list.find(v=>v.id===vid)){const v=videos.find(x=>x.id===vid);if(v)list.push(v);} }); });
-  } else if(cat?.target_type==="video"){
-    const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
+  } else if(cat.target_type==="video"){
     list=ids.map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
   } else {
-    list=videos.filter(v=>v.category===decodedName||v.category===id||v.category_id===id);
+    list=videos.filter(v=>v.category===cat.name);
   }
   renderGrid($("cat-grid"),list);
+}
+
+// Called from navGo for playlist/video types (URL already pushed)
+window.openCategoryById=(id)=>{
+  const cat=categories.find(c=>c.id===id); if(!cat)return;
+  showCatPage(cat);
+};
+
+// Legacy / direct call — also pushes URL
+window.openCategory=(id,name,push=true)=>{
+  const decodedName=decodeURIComponent(name||id);
+  const cat=categories.find(c=>c.id===id||c.name===decodedName)||{id,name:decodedName,target_type:'category'};
+  if(push){
+    const slug='/'+cat.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+    history.pushState({page:'cat',catId:id},"",slug);
+  }
+  showCatPage(cat);
 };
 
 window.copyLink=()=>navigator.clipboard.writeText(location.href).then(()=>showToast("Link copied!","ok"));
