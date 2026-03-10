@@ -875,7 +875,7 @@ function buildNav(){
   $("mobile-cats").innerHTML=cats.map(c=>navLink(c,true)).join("");
   $("footer-links").innerHTML=`<a href="/" onclick="goHome(event)">Home</a>`
     +cats.slice(0,4).map(c=>`<a href="${slug(c)}" onclick="event.preventDefault();navGo('${c.id}')">${c.name}</a>`).join("")
-    +`<a href="/admin">Admin</a>`;
+    +`<a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a><a href="/admin">Admin</a>`;
 }
 
 // Single entry point for all nav category clicks
