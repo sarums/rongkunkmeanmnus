@@ -701,6 +701,7 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
                 <option value="latest">✨ Latest (auto newest)</option>
                 <option value="multi_playlist">📋 Playlists (pick multiple)</option>
                 <option value="single_videos">🎬 Single Videos (manual pick)</option>
+                <option value="category">🏷️ Category</option>
               </select>
             </div>
           </div>
@@ -727,6 +728,12 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
             <div id="secVidResults" style="max-height:200px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:.8rem"></div>
             <label class="flabel" style="margin-bottom:.4rem;display:block">Selected Videos <span id="secSelCount" style="color:var(--accent)">(0)</span></label>
             <div id="secSelVids" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px"></div>
+          </div>
+
+          <!-- Category picker -->
+          <div id="secCatPicker" style="display:none;margin-top:1rem">
+            <label class="flabel" style="margin-bottom:.6rem;display:block">Select Category</label>
+            <select class="finput" id="secCatSelect"></select>
           </div>
 
           <div style="display:flex;align-items:center;gap:.75rem;margin-top:1.25rem">
@@ -1415,8 +1422,13 @@ window.onSecTypeChange = ()=>{
   const t = qs('secType').value;
   qs('secPlPicker').style.display    = t==='multi_playlist' ? '' : 'none';
   qs('secVideoPicker').style.display = t==='single_videos'  ? '' : 'none';
+  qs('secCatPicker') && (qs('secCatPicker').style.display = t==='category' ? '' : 'none');
   if(t==='multi_playlist'){ secSelectedPls=[]; renderSecPlList(); }
   if(t==='single_videos') { secSelectedVids=[]; renderSecSelVids(); searchSecVids(); }
+  if(t==='category'){
+    const sel=qs('secCatSelect'); if(!sel)return;
+    sel.innerHTML=allCategories.map(c=>`<option value="${c.name}">${c.ico||''} ${c.name}</option>`).join('');
+  }
 };
 
 // ── Multi-playlist picker ──
@@ -1512,6 +1524,11 @@ window.addSection = async ()=>{
     if(!secSelectedVids.length){ showToast('Error','Pick at least one video','err'); return; }
     data.custom_videos=[...secSelectedVids];
   }
+  if(type==='category'){
+    const cat=qs('secCatSelect')?.value;
+    if(!cat){ showToast('Error','Pick a category','err'); return; }
+    data.target_id=cat;
+  }
 
   try{
     const ref=await addDoc(collection(db,'home_sections'),data);
@@ -1548,6 +1565,8 @@ async function renderSections(){
       typeLabel=`📋 ${names.length} playlist${names.length!==1?'s':''}: ${names.slice(0,3).join(', ')}${names.length>3?'…':''}`;
     } else if(sec.target_type==='single_videos'){
       typeLabel=`🎬 ${(sec.custom_videos||[]).length} video(s)`;
+    } else if(sec.target_type==='category'){
+      typeLabel=`🏷️ Category: ${sec.target_id||'?'}`;
     } else if(sec.target_type==='trending'){ typeLabel='🔥 Auto Trending';
     } else { typeLabel='✨ Auto Latest'; }
 
@@ -1607,50 +1626,157 @@ window.deleteSec=async id=>{
   try{ await deleteDoc(doc(db,'home_sections',id)); allSections=allSections.filter(s=>s.id!==id); renderSections(); showToast('Deleted','Section removed','ok'); }catch(e){showToast('Error',e.message,'err');}
 };
 
+// ── full edit modal state ──
+let esSelectedVids=[], esSelectedPls=[];
+
 window.editSec=id=>{
   const sec=allSections.find(s=>s.id===id); if(!sec)return;
-  const vidsList=(sec.custom_videos||[]).map(vid=>{const v=allVideos.find(x=>x.id===vid);return v?`<div style="font-size:.75rem;color:var(--text2);padding:2px 0">• ${v.title||vid}</div>`:''}).join('');
-  const plList=(sec.playlist_ids||[]).map(pid=>{const p=allPlaylists.find(x=>x.id===pid);return p?`<div style="font-size:.75rem;color:var(--text2);padding:2px 0">📋 ${p.name}</div>`:''}).join('');
+  esSelectedVids=[...(sec.custom_videos||[])];
+  esSelectedPls=[...(sec.playlist_ids||[])];
 
-  const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem" id="secEditOverlay">
-  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.75rem;width:500px;max-width:100%;max-height:85vh;overflow-y:auto">
+  const iconMap={'Flame':'🔥','Sparkles':'✨','Star':'⭐','Video':'🎬','Music':'🎵','TrendingUp':'📈','Grid':'▦','List':'📋'};
+  const iconOpts=Object.entries(iconMap).map(([v,e])=>`<option value="${v}" ${v===sec.icon?'selected':''}>${e} ${v}</option>`).join('');
+  const typeOpts=[['trending','🔥 Trending (auto)'],['latest','✨ Latest (auto)'],['multi_playlist','📋 Playlists'],['single_videos','🎬 Single Videos'],['category','🏷️ Category']]
+    .map(([v,l])=>`<option value="${v}" ${v===sec.target_type?'selected':''}>${l}</option>`).join('');
+
+  const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem" id="secEditOverlay">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.75rem;width:580px;max-width:100%;max-height:90vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
       <span style="font-size:1rem;font-weight:800">✏️ Edit Section</span>
-      <button onclick="document.getElementById('secEditOverlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer">×</button>
+      <button onclick="document.getElementById('secEditOverlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;line-height:1">×</button>
     </div>
-    <label class="flabel">Title</label>
-    <input type="text" class="finput" id="esTitle" value="${sec.title||''}" style="margin-bottom:.75rem">
-    <label class="flabel">Icon</label>
-    <select class="finput" id="esIcon" style="margin-bottom:.75rem">
-      ${['Flame','Sparkles','Star','Video','Music','TrendingUp','Grid','List'].map(ic=>`<option value="${ic}" ${ic===sec.icon?'selected':''}>${ic}</option>`).join('')}
-    </select>
-    ${sec.target_type==='multi_playlist'?`
-    <div style="padding:.75rem;background:var(--bg3);border-radius:8px;margin-bottom:.75rem">
-      <div style="font-size:.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">PLAYLISTS IN THIS SECTION</div>
-      ${plList||'<div style="color:var(--muted);font-size:.75rem">None</div>'}
-      <div style="color:var(--accent);font-size:.7rem;margin-top:6px">To change playlists, delete and re-create this section.</div>
-    </div>`:''}
-    ${sec.target_type==='single_videos'?`
-    <div style="padding:.75rem;background:var(--bg3);border-radius:8px;margin-bottom:.75rem">
-      <div style="font-size:.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">VIDEOS (${(sec.custom_videos||[]).length})</div>
-      ${vidsList}
-      <div style="color:var(--accent);font-size:.7rem;margin-top:6px">To change videos, delete and re-create this section.</div>
-    </div>`:''}
-    <button onclick="saveSecEdit('${id}')" class="submit-btn" style="width:100%;margin-top:.5rem">💾 Save Changes</button>
+    <div style="display:grid;grid-template-columns:1fr 160px;gap:.75rem;margin-bottom:.75rem">
+      <div><label class="flabel">Title</label><input type="text" class="finput" id="esTitle" value="${sec.title||''}"></div>
+      <div><label class="flabel">Icon</label><select class="finput" id="esIcon">${iconOpts}</select></div>
+    </div>
+    <label class="flabel">Content Type</label>
+    <select class="finput" id="esType" onchange="onEsTypeChange()" style="margin-bottom:1rem">${typeOpts}</select>
+
+    <div id="esPlPicker" style="display:none;margin-bottom:1rem">
+      <label class="flabel" style="margin-bottom:.5rem;display:flex;justify-content:space-between">
+        <span>Select Playlists</span><span id="esPlCount" style="color:var(--accent);font-weight:600">${esSelectedPls.length} selected</span>
+      </label>
+      <div style="position:relative;margin-bottom:.5rem">
+        <input type="text" class="finput" id="esPlSearch" placeholder="Search playlists..." oninput="renderEsPlList(this.value)" style="padding-left:2rem">
+        <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4">🔍</span>
+      </div>
+      <div id="esPlList" style="max-height:220px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:10px"></div>
+    </div>
+
+    <div id="esVidPicker" style="display:none;margin-bottom:1rem">
+      <label class="flabel" style="margin-bottom:.5rem;display:flex;justify-content:space-between">
+        <span>Pick Videos</span><span id="esVidCount" style="color:var(--accent);font-weight:600">${esSelectedVids.length} selected</span>
+      </label>
+      <div style="position:relative;margin-bottom:.5rem">
+        <input type="text" class="finput" placeholder="Search videos..." oninput="searchEsVids(this.value)" style="padding-left:2rem">
+        <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4">🔍</span>
+      </div>
+      <div id="esVidResults" style="max-height:190px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:.6rem"></div>
+      <div style="font-size:.7rem;color:var(--text2);font-weight:700;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.06em">Selected</div>
+      <div id="esSelVids" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px;padding:5px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px"></div>
+    </div>
+
+    <div id="esCatPicker" style="display:none;margin-bottom:1rem">
+      <label class="flabel">Select Category</label>
+      <select class="finput" id="esCatSelect">
+        ${allCategories.map(c=>`<option value="${c.name}" ${c.name===sec.target_id?'selected':''}>${c.ico||''} ${c.name}</option>`).join('')}
+      </select>
+    </div>
+
+    <button onclick="saveSecEdit('${id}')" class="submit-btn" style="width:100%;margin-top:.25rem">💾 Save Changes</button>
   </div>
 </div>`;
   document.body.insertAdjacentHTML('beforeend',html);
+  onEsTypeChange();
+};
+
+window.onEsTypeChange=()=>{
+  const t=document.getElementById('esType')?.value; if(!t)return;
+  document.getElementById('esPlPicker').style.display  = t==='multi_playlist'?'':'none';
+  document.getElementById('esVidPicker').style.display = t==='single_videos'?'':'none';
+  document.getElementById('esCatPicker').style.display = t==='category'?'':'none';
+  if(t==='multi_playlist') renderEsPlList('');
+  if(t==='single_videos')  { renderEsSelVids(); searchEsVids(''); }
+};
+
+window.renderEsPlList=(q='')=>{
+  const box=document.getElementById('esPlList'); if(!box)return;
+  const filtered=allPlaylists.filter(p=>(p.name||'').toLowerCase().includes((q||'').toLowerCase()));
+  if(!filtered.length){box.innerHTML=`<div style="padding:.75rem;color:var(--text2);font-size:.8rem">No playlists</div>`;return;}
+  box.innerHTML=filtered.map(pl=>{
+    const checked=esSelectedPls.includes(pl.id);
+    const thumb=getPlThumb(pl);
+    return `<label style="display:flex;align-items:center;gap:.75rem;padding:.55rem .85rem;cursor:pointer;border-bottom:1px solid var(--border);background:${checked?'rgba(232,160,32,.08)':''}">
+      <input type="checkbox" value="${pl.id}" ${checked?'checked':''} onchange="toggleEsPl('${pl.id}',this.checked)" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+      ${thumb?`<img src="${thumb}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0">`:`<div style="width:52px;aspect-ratio:16/9;background:var(--bg4);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0">📋</div>`}
+      <div style="min-width:0;flex:1">
+        <div style="font-size:.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${pl.name}</div>
+        <div style="font-size:.67rem;color:var(--text2)">${(pl.videos||[]).length} videos</div>
+      </div>
+    </label>`;
+  }).join('');
+};
+window.toggleEsPl=(id,checked)=>{
+  if(checked&&!esSelectedPls.includes(id)) esSelectedPls.push(id);
+  if(!checked) esSelectedPls=esSelectedPls.filter(x=>x!==id);
+  const cnt=document.getElementById('esPlCount'); if(cnt)cnt.textContent=`${esSelectedPls.length} selected`;
+};
+window.searchEsVids=(q='')=>{
+  const box=document.getElementById('esVidResults'); if(!box)return;
+  const filtered=allVideos.filter(v=>!esSelectedVids.includes(v.id)&&(v.title||'').toLowerCase().includes((q||'').toLowerCase())).slice(0,40);
+  if(!filtered.length){box.innerHTML=`<div style="padding:.6rem .9rem;color:var(--text2);font-size:.8rem">No videos found</div>`;return;}
+  box.innerHTML=filtered.map(v=>`
+    <div onclick="addEsVid('${v.id}')" style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+      <img src="${getAdminThumb(v)}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.title||''}</div>
+        <div style="font-size:.67rem;color:var(--text2)">${v.category||''}</div>
+      </div>
+      <span style="color:var(--accent);font-size:1.3rem;line-height:1;flex-shrink:0">+</span>
+    </div>`).join('');
+};
+window.addEsVid=id=>{ if(!esSelectedVids.includes(id)) esSelectedVids.push(id); renderEsSelVids(); searchEsVids(document.querySelector('#esVidPicker input')?.value||''); };
+window.removeEsVid=id=>{ esSelectedVids=esSelectedVids.filter(x=>x!==id); renderEsSelVids(); searchEsVids(document.querySelector('#esVidPicker input')?.value||''); };
+window.renderEsSelVids=()=>{
+  const cnt=document.getElementById('esVidCount'); if(cnt)cnt.textContent=`${esSelectedVids.length} selected`;
+  const wrap=document.getElementById('esSelVids'); if(!wrap)return;
+  if(!esSelectedVids.length){wrap.innerHTML=`<span style="font-size:.73rem;color:var(--muted);padding:3px">None yet — search above</span>`;return;}
+  wrap.innerHTML=esSelectedVids.map(id=>{
+    const v=allVideos.find(x=>x.id===id);
+    return v?`<div style="display:flex;align-items:center;gap:4px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:3px 7px 3px 3px">
+      <img src="${getAdminThumb(v)}" style="width:36px;aspect-ratio:16/9;object-fit:cover;border-radius:3px">
+      <span style="font-size:.7rem;font-weight:600;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.title||''}</span>
+      <button onclick="removeEsVid('${id}')" style="background:none;border:none;color:var(--red);font-size:.9rem;cursor:pointer;padding:0;line-height:1;margin-left:2px">×</button>
+    </div>`:'';
+  }).join('');
 };
 
 window.saveSecEdit=async id=>{
   const title=document.getElementById('esTitle')?.value.trim();
   const icon =document.getElementById('esIcon')?.value;
+  const type =document.getElementById('esType')?.value;
   if(!title){showToast('Error','Title required','err');return;}
+  const updates={title,icon,target_type:type,target_id:null,playlist_ids:[],custom_videos:[]};
+  if(type==='multi_playlist'){
+    if(!esSelectedPls.length){showToast('Error','Select at least one playlist','err');return;}
+    updates.playlist_ids=[...esSelectedPls];
+  }
+  if(type==='single_videos'){
+    if(!esSelectedVids.length){showToast('Error','Select at least one video','err');return;}
+    updates.custom_videos=[...esSelectedVids];
+  }
+  if(type==='category'){
+    const cat=document.getElementById('esCatSelect')?.value;
+    if(!cat){showToast('Error','Select a category','err');return;}
+    updates.target_id=cat;
+  }
   try{
-    await updateDoc(doc(db,'home_sections',id),{title,icon});
-    const s=allSections.find(x=>x.id===id); if(s){s.title=title;s.icon=icon;}
+    await updateDoc(doc(db,'home_sections',id),updates);
+    const s=allSections.find(x=>x.id===id); if(s)Object.assign(s,updates);
     document.getElementById('secEditOverlay')?.remove();
-    showToast('Saved!','Section updated','ok'); renderSections();
+    showToast('Saved!','Section updated','ok');
+    renderSections();
   }catch(e){showToast('Error',e.message,'err');}
 };
 
