@@ -618,8 +618,8 @@ function buildNav(){
   }
 
   $("nav-cats").innerHTML=`<a href="#" onclick="goHome(event)" class="active">Home</a>`
-    +cats.map(c=>`<a href="#" onclick="event.preventDefault();${catClick(c)}">${c.ico||''} ${c.name}</a>`).join("");
-  $("mobile-cats").innerHTML=cats.map(c=>`<a href="#" onclick="event.preventDefault();${catClick(c,true)}">${c.ico||''} ${c.name}</a>`).join("");
+    +cats.map(c=>`<a href="#" onclick="event.preventDefault();${catClick(c)}">${c.name}</a>`).join("");
+  $("mobile-cats").innerHTML=cats.map(c=>`<a href="#" onclick="event.preventDefault();${catClick(c,true)}">${c.name}</a>`).join("");
   $("footer-links").innerHTML=`<a href="#" onclick="goHome(event)">Home</a>`
     +cats.slice(0,4).map(c=>`<a href="#" onclick="event.preventDefault();${catClick(c)}">${c.name}</a>`).join("")
     +`<a href="/admin">Admin</a>`;
