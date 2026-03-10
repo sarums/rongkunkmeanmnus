@@ -1362,27 +1362,28 @@ window.removeFromPlaylist = async (plId, vidId)=>{
 
 // ── CATEGORIES ────────────────────────────────────────
 // ── MENU TYPE TABS ────────────────────────────────────
+let catSelPls=[], catSelVids=[];
+
 window.setCatType=(t)=>{
   qs('catType').value=t;
   ['Cat','Pl','Vid'].forEach(x=>qs('catTypeBtn'+x)?.classList.remove('active'));
   qs('catTypeBtn'+(t==='category'?'Cat':t==='playlist'?'Pl':'Vid'))?.classList.add('active');
   qs('catPlPick').style.display  = t==='playlist'?'':'none';
   qs('catVidPick').style.display = t==='video'?'':'none';
-  if(t==='playlist') renderCatPlList('');
-  if(t==='video')    renderCatVidList('');
+  if(t==='playlist'){ catSelPls=[]; renderCatPlList(''); }
+  if(t==='video')   { catSelVids=[]; renderCatVidList(''); }
 };
 
 window.renderCatPlList=(q='')=>{
   const box=qs('catPlList'); if(!box)return;
-  const cur=qs('catPlId').value;
   const filtered=allPlaylists.filter(p=>(p.name||'').toLowerCase().includes((q||'').toLowerCase()));
   if(!filtered.length){box.innerHTML=`<div style="padding:.75rem;color:var(--text2);font-size:.8rem">No playlists</div>`;return;}
   box.innerHTML=filtered.map(pl=>{
-    const sel=pl.id===cur;
+    const chk=catSelPls.includes(pl.id);
     const thumb=getPlThumb(pl);
-    return `<label style="display:flex;align-items:center;gap:.75rem;padding:.6rem .85rem;cursor:pointer;border-bottom:1px solid var(--border);background:${sel?'rgba(232,160,32,.08)':''}">
-      <input type="radio" name="catPlRadio" value="${pl.id}" ${sel?'checked':''} onchange="qs('catPlId').value='${pl.id}'"
-        style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+    return `<label style="display:flex;align-items:center;gap:.75rem;padding:.6rem .85rem;cursor:pointer;border-bottom:1px solid var(--border);background:${chk?'rgba(232,160,32,.08)':''}">
+      <input type="checkbox" value="${pl.id}" ${chk?'checked':''} onchange="toggleCatPl('${pl.id}',this.checked)"
+        style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">
       ${thumb?`<img src="${thumb}" style="width:54px;aspect-ratio:16/9;object-fit:cover;border-radius:5px;flex-shrink:0">`
              :`<div style="width:54px;aspect-ratio:16/9;background:var(--bg4);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center">📋</div>`}
       <div style="min-width:0;flex:1">
@@ -1392,17 +1393,20 @@ window.renderCatPlList=(q='')=>{
     </label>`;
   }).join('');
 };
+window.toggleCatPl=(id,chk)=>{
+  if(chk&&!catSelPls.includes(id)) catSelPls.push(id);
+  if(!chk) catSelPls=catSelPls.filter(x=>x!==id);
+};
 
 window.renderCatVidList=(q='')=>{
   const box=qs('catVidList'); if(!box)return;
-  const cur=qs('catVidId').value;
-  const filtered=allVideos.filter(v=>(v.title||'').toLowerCase().includes((q||'').toLowerCase())).slice(0,50);
+  const filtered=allVideos.filter(v=>(v.title||'').toLowerCase().includes((q||'').toLowerCase())).slice(0,60);
   if(!filtered.length){box.innerHTML=`<div style="padding:.75rem;color:var(--text2);font-size:.8rem">No videos</div>`;return;}
   box.innerHTML=filtered.map(v=>{
-    const sel=v.id===cur;
-    return `<label style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);background:${sel?'rgba(232,160,32,.08)':''}">
-      <input type="radio" name="catVidRadio" value="${v.id}" ${sel?'checked':''} onchange="qs('catVidId').value='${v.id}'"
-        style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+    const chk=catSelVids.includes(v.id);
+    return `<label style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);background:${chk?'rgba(232,160,32,.08)':''}">
+      <input type="checkbox" value="${v.id}" ${chk?'checked':''} onchange="toggleCatVid('${v.id}',this.checked)"
+        style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">
       <img src="${getAdminThumb(v)}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0"
         onerror="this.src='https://picsum.photos/seed/${v.id}/160/90'">
       <div style="min-width:0;flex:1">
@@ -1412,27 +1416,31 @@ window.renderCatVidList=(q='')=>{
     </label>`;
   }).join('');
 };
+window.toggleCatVid=(id,chk)=>{
+  if(chk&&!catSelVids.includes(id)) catSelVids.push(id);
+  if(!chk) catSelVids=catSelVids.filter(x=>x!==id);
+};
 
 // ── ADD MENU ITEM ──────────────────────────────────────
 window.addCategory = async ()=>{
   const name=qs('catName').value.trim();
   const type=qs('catType').value;
   if(!name){ showToast('Missing Name','Enter a label','err'); return; }
-  let target_id=null;
+  let target_ids=[];
   if(type==='playlist'){
-    target_id=qs('catPlId').value;
-    if(!target_id){ showToast('Error','Select a playlist','err'); return; }
+    target_ids=[...catSelPls];
+    if(!target_ids.length){ showToast('Error','Tick at least one playlist','err'); return; }
   }
   if(type==='video'){
-    target_id=qs('catVidId').value;
-    if(!target_id){ showToast('Error','Pick a video','err'); return; }
+    target_ids=[...catSelVids];
+    if(!target_ids.length){ showToast('Error','Tick at least one video','err'); return; }
   }
-  const data={name, ico:'', target_type:type, target_id, display_order:allCategories.length};
+  const data={name, ico:'', target_type:type, target_ids, target_id:target_ids[0]||null, display_order:allCategories.length};
   try {
     const ref=await addDoc(collection(db,'categories'),data);
     allCategories.push({id:ref.id,...data});
-    qs('catName').value='';
-    qs('catPlId').value=''; qs('catVidId').value=''; qs('catVidSearch').value='';
+    qs('catName').value=''; qs('catVidSearch').value='';
+    catSelPls=[]; catSelVids=[];
     setCatType('category');
     showToast('Added!',`"${name}" added to menu`,'ok');
     populateSelects(); renderCategories();
@@ -1445,10 +1453,11 @@ function renderCategories(){
   qs('catEmpty').style.display=allCategories.length?'none':'flex';
   qs('catGrid').innerHTML=allCategories.map((c,i)=>{
     const typeTag = c.target_type==='playlist'?'📋 Playlist': c.target_type==='video'?'🎬 Video':'🏷️ Category';
+    const ids=c.target_ids||[c.target_id].filter(Boolean);
     const sublabel = c.target_type==='playlist'
-      ? (allPlaylists.find(p=>p.id===c.target_id)?.name||'?')
+      ? (ids.length>1?`${ids.length} playlists`:allPlaylists.find(p=>p.id===ids[0])?.name||'?')
       : c.target_type==='video'
-      ? (allVideos.find(v=>v.id===c.target_id)?.title||'?')
+      ? (ids.length>1?`${ids.length} videos`:allVideos.find(v=>v.id===ids[0])?.title||'?')
       : `${allVideos.filter(v=>v.category===c.name).length} videos`;
     return `<div style="display:flex;align-items:center;gap:.85rem;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem 1rem;transition:border-color .2s"
         onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
@@ -1485,9 +1494,14 @@ window.moveCat=async(id,dir)=>{
 };
 
 // ── EDIT ───────────────────────────────────────────────
+// edit modal selection state
+let ecSelPls=[], ecSelVids=[];
+
 window.editCategory=id=>{
   const c=allCategories.find(x=>x.id===id); if(!c)return;
   const curType=c.target_type||'category';
+  ecSelPls=[...(c.target_ids||(c.target_id?[c.target_id]:[])).filter(x=>allPlaylists.find(p=>p.id===x))];
+  ecSelVids=[...(c.target_ids||(c.target_id?[c.target_id]:[])).filter(x=>allVideos.find(v=>v.id===x))];
 
   const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem" id="catEditOverlay">
   <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.75rem;width:560px;max-width:100%;max-height:90vh;overflow-y:auto">
@@ -1510,17 +1524,15 @@ window.editCategory=id=>{
         <input type="text" class="finput" placeholder="Search playlists..." oninput="renderEcPlList(this.value)" style="padding-left:2rem">
         <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4">🔍</span>
       </div>
-      <div id="ecPlList" style="max-height:220px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;margin-bottom:.75rem"></div>
-      <input type="hidden" id="ecPlId" value="${curType==='playlist'?c.target_id||'':''}">
+      <div id="ecPlList" style="max-height:240px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;margin-bottom:.75rem"></div>
     </div>
 
     <div id="ecVidPick" style="${curType==='video'?'':'display:none'}">
       <div style="position:relative;margin-bottom:.5rem">
-        <input type="text" class="finput" id="ecVidSearch" placeholder="Search videos..." oninput="renderEcVidList(this.value)" style="padding-left:2rem">
+        <input type="text" class="finput" placeholder="Search videos..." oninput="renderEcVidList(this.value)" style="padding-left:2rem">
         <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4">🔍</span>
       </div>
-      <div id="ecVidList" style="max-height:220px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;margin-bottom:.75rem"></div>
-      <input type="hidden" id="ecVidId" value="${curType==='video'?c.target_id||'':''}">
+      <div id="ecVidList" style="max-height:240px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;margin-bottom:.75rem"></div>
     </div>
 
     <button onclick="saveCatEdit('${id}')" class="submit-btn" style="width:100%">💾 Save Changes</button>
@@ -1537,21 +1549,20 @@ window.setEcType=(t)=>{
   document.getElementById('ecTypeBtn'+(t==='category'?'Cat':t==='playlist'?'Pl':'Vid'))?.classList.add('active');
   document.getElementById('ecPlPick').style.display  = t==='playlist'?'':'none';
   document.getElementById('ecVidPick').style.display = t==='video'?'':'none';
-  if(t==='playlist') renderEcPlList('');
-  if(t==='video')    renderEcVidList('');
+  if(t==='playlist'){ ecSelPls=[]; renderEcPlList(''); }
+  if(t==='video')   { ecSelVids=[]; renderEcVidList(''); }
 };
 
 window.renderEcPlList=(q='')=>{
   const box=document.getElementById('ecPlList'); if(!box)return;
-  const cur=document.getElementById('ecPlId')?.value||'';
   const filtered=allPlaylists.filter(p=>(p.name||'').toLowerCase().includes((q||'').toLowerCase()));
   if(!filtered.length){box.innerHTML=`<div style="padding:.75rem;color:var(--text2);font-size:.8rem">No playlists</div>`;return;}
   box.innerHTML=filtered.map(pl=>{
-    const sel=pl.id===cur;
+    const chk=ecSelPls.includes(pl.id);
     const thumb=getPlThumb(pl);
-    return `<label style="display:flex;align-items:center;gap:.75rem;padding:.6rem .85rem;cursor:pointer;border-bottom:1px solid var(--border);background:${sel?'rgba(232,160,32,.08)':''}">
-      <input type="radio" name="ecPlRadio" value="${pl.id}" ${sel?'checked':''} onchange="document.getElementById('ecPlId').value='${pl.id}'"
-        style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+    return `<label style="display:flex;align-items:center;gap:.75rem;padding:.6rem .85rem;cursor:pointer;border-bottom:1px solid var(--border);background:${chk?'rgba(232,160,32,.08)':''}">
+      <input type="checkbox" value="${pl.id}" ${chk?'checked':''} onchange="toggleEcPl('${pl.id}',this.checked)"
+        style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">
       ${thumb?`<img src="${thumb}" style="width:54px;aspect-ratio:16/9;object-fit:cover;border-radius:5px;flex-shrink:0">`
              :`<div style="width:54px;aspect-ratio:16/9;background:var(--bg4);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0">📋</div>`}
       <div style="min-width:0;flex:1">
@@ -1561,17 +1572,20 @@ window.renderEcPlList=(q='')=>{
     </label>`;
   }).join('');
 };
+window.toggleEcPl=(id,chk)=>{
+  if(chk&&!ecSelPls.includes(id)) ecSelPls.push(id);
+  if(!chk) ecSelPls=ecSelPls.filter(x=>x!==id);
+};
 
 window.renderEcVidList=(q='')=>{
   const box=document.getElementById('ecVidList'); if(!box)return;
-  const cur=document.getElementById('ecVidId')?.value||'';
-  const filtered=allVideos.filter(v=>(v.title||'').toLowerCase().includes((q||'').toLowerCase())).slice(0,50);
+  const filtered=allVideos.filter(v=>(v.title||'').toLowerCase().includes((q||'').toLowerCase())).slice(0,60);
   if(!filtered.length){box.innerHTML=`<div style="padding:.75rem;color:var(--text2);font-size:.8rem">No videos</div>`;return;}
   box.innerHTML=filtered.map(v=>{
-    const sel=v.id===cur;
-    return `<label style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);background:${sel?'rgba(232,160,32,.08)':''}">
-      <input type="radio" name="ecVidRadio" value="${v.id}" ${sel?'checked':''} onchange="document.getElementById('ecVidId').value='${v.id}'"
-        style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+    const chk=ecSelVids.includes(v.id);
+    return `<label style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);background:${chk?'rgba(232,160,32,.08)':''}">
+      <input type="checkbox" value="${v.id}" ${chk?'checked':''} onchange="toggleEcVid('${v.id}',this.checked)"
+        style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">
       <img src="${getAdminThumb(v)}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0">
       <div style="min-width:0;flex:1">
         <div style="font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.title||''}</div>
@@ -1580,15 +1594,25 @@ window.renderEcVidList=(q='')=>{
     </label>`;
   }).join('');
 };
+window.toggleEcVid=(id,chk)=>{
+  if(chk&&!ecSelVids.includes(id)) ecSelVids.push(id);
+  if(!chk) ecSelVids=ecSelVids.filter(x=>x!==id);
+};
 
 window.saveCatEdit=async id=>{
   const name=document.getElementById('ecName')?.value.trim();
   const type=document.getElementById('ecType')?.value;
   if(!name){showToast('Error','Label required','err');return;}
-  let target_id=null;
-  if(type==='playlist') target_id=document.getElementById('ecPlId')?.value||null;
-  if(type==='video')    target_id=document.getElementById('ecVidId')?.value||null;
-  const updates={name, ico:'', target_type:type, target_id};
+  let target_ids=[];
+  if(type==='playlist'){
+    target_ids=[...ecSelPls];
+    if(!target_ids.length){showToast('Error','Tick at least one playlist','err');return;}
+  }
+  if(type==='video'){
+    target_ids=[...ecSelVids];
+    if(!target_ids.length){showToast('Error','Tick at least one video','err');return;}
+  }
+  const updates={name, ico:'', target_type:type, target_ids, target_id:target_ids[0]||null};
   try{
     await updateDoc(doc(db,'categories',id),updates);
     const c=allCategories.find(x=>x.id===id); if(c)Object.assign(c,updates);
