@@ -3,7 +3,8 @@
     { "source": "/admin",          "destination": "/admin.html" },
     { "source": "/watch/:slug",    "destination": "/index.html" },
     { "source": "/watch/:pl/:ep",  "destination": "/index.html" },
-    { "source": "/search",         "destination": "/index.html" },
+    { "source": "/search",          "destination": "/index.html" },
+    { "source": "/history",         "destination": "/index.html" },
     { "source": "/(.*)",           "destination": "/index.html" }
   ]
 }
