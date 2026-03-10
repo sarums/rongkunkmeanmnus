@@ -506,6 +506,7 @@ let previousPage="home",lastScrollY=0,searchOpen=false,mobileMenuOpen=false;
 
 // ── Helpers ──
 const $=id=>document.getElementById(id);
+function toSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').slice(0,80); }
 const fmtViews=n=>n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(1)+"K":String(n||0);
 
 const getThumb=v=>v.customThumb||v.thumbnail||
@@ -570,17 +571,42 @@ window.goBack=()=>showPage(previousPage);
 
 function routeFromUrl(push=false){
   const path=location.pathname;
-  if(path==="/"||path===""){ showPage("home",push); return; }
+  if(path==="/"||path===""){ showPage("home",false); return; }
+
+  // /watch/playlist-slug/ep-N  or  /watch/video-slug
+  if(path.startsWith("/watch/")){
+    const parts=path.slice(7).split("/"); // remove '/watch/'
+    if(parts.length>=2){
+      // playlist video: /watch/playlist-slug/ep-N
+      const plSlug=parts[0];
+      const epNum=parseInt((parts[1]||'').replace('ep-',''))||1;
+      const pl=playlists.find(p=>toSlug(p.name)===plSlug);
+      if(pl&&(pl.videos||[]).length){
+        const vid=videos.find(v=>v.id===pl.videos[epNum-1])||videos.find(v=>v.id===pl.videos[0]);
+        if(vid){ openVideo(vid.id,false); return; }
+      }
+    }
+    if(parts.length===1){
+      // single video: /watch/video-slug
+      const vSlug=parts[0];
+      const vid=videos.find(v=>toSlug(v.title)===vSlug);
+      if(vid){ openVideo(vid.id,false); return; }
+    }
+    showPage("home",false); return;
+  }
+
+  // Category slug
   const slug=path.replace(/^\//, '');
-  // Check if slug matches a category name
-  const cat=categories.find(c=>(c.name||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')===slug);
+  const cat=categories.find(c=>toSlug(c.name)===slug);
   if(cat){ showCatPage(cat); return; }
-  // fallback
-  showPage("home",push);
+
+  showPage("home",false);
 }
 window.addEventListener("popstate",e=>{
   if(!e.state) return routeFromUrl(false);
-  if(e.state.page==="cat"){
+  if(e.state.page==="watch"&&e.state.videoId){
+    openVideo(e.state.videoId,false);
+  } else if(e.state.page==="cat"){
     const cat=categories.find(c=>c.id===e.state.catId);
     if(cat) showCatPage(cat);
     else routeFromUrl(false);
@@ -772,11 +798,7 @@ function buildPlaylistCard(pl){
   </a>`;
 }
 
-window.openPlaylistById=id=>{
-  const pl=playlists.find(p=>p.id===id);
-  if(!pl||(pl.videos||[]).length===0) return;
-  openVideo(pl.videos[0]);
-};
+
 
 function fillSection(sec,rowId){
   const isTrending=sec.target_type==="trending"||sec.title?.toLowerCase().includes("trend");
@@ -827,8 +849,11 @@ window.seeAll=sid=>{
 };
 
 // ── Watch ──
-window.openVideo=async id=>{
-  showPage("watch");
+window.openVideo=async (id,push=true)=>{
+  // show watch page without pushing generic /watch URL
+  if(id!=='watch')previousPage=location.pathname;
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
+  window.scrollTo(0,0);
   playlistQueue=[];plQueueIdx=0;
   $("player-iframe").src="";
   $("playlist-panel").style.display="none";
@@ -836,6 +861,19 @@ window.openVideo=async id=>{
   $("suggested-list").innerHTML=skelRow(3);
 
   const v=videos.find(x=>x.id===id);if(!v)return;
+
+  // Build watch URL
+  if(push){
+    const pl2=playlists.find(p=>(p.videos||[]).includes(id));
+    if(pl2){
+      const epNum=(pl2.videos||[]).indexOf(id)+1;
+      const watchUrl=`/watch/${toSlug(pl2.name)}/ep-${epNum}`;
+      history.pushState({page:'watch',videoId:id},"",watchUrl);
+    } else {
+      history.pushState({page:'watch',videoId:id},"",`/watch/${toSlug(v.title)}`);
+    }
+  }
+
   $("player-iframe").src=getEmbedUrl(v);
   $("watch-title").textContent=v.title||"";
   $("watch-source").textContent=v.platform||v.source||"";
@@ -889,6 +927,11 @@ window.openPlaylist=(plId,startId)=>{
   openVideo(pl.videos[i>=0?i:0]);
 };
 window.playNext=()=>{const n=playlistQueue[plQueueIdx+1];if(n)openVideo(n.id);};
+window.openPlaylistById=id=>{
+  const pl=playlists.find(p=>p.id===id);
+  if(!pl||(pl.videos||[]).length===0) return;
+  openVideo(pl.videos[0]);
+};
 
 // ── Category ──
 // Show category page content by category object
