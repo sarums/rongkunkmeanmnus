@@ -163,6 +163,38 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* ══ VIDEO CARD ══ */
 .vcard { flex: 0 0 calc(25% - 11px); min-width: 220px; cursor: pointer; display: block; }
+
+/* ══ PLAYLIST CARD MULTI-THUMB (Netflix style) ══ */
+.pl-multithumb { position:relative; aspect-ratio:16/9; border-radius:10px; overflow:hidden; background:#111; margin-bottom:8px; }
+.pl-multithumb-grid { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; width:100%; height:100%; gap:2px; }
+.pl-multithumb-grid img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .4s; }
+.vcard:hover .pl-multithumb-grid img { transform:scale(1.06); }
+.pl-multithumb-single img { width:100%; height:100%; object-fit:cover; transition:transform .4s; }
+.vcard:hover .pl-multithumb-single img { transform:scale(1.06); }
+.pl-multithumb-overlay { position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,transparent 55%);opacity:0;transition:opacity .3s; }
+.vcard:hover .pl-multithumb-overlay { opacity:1; }
+.pl-multithumb-play { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s; }
+.vcard:hover .pl-multithumb-play { opacity:1; }
+.pl-ep-badge { position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.82);color:#fff;font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:4px;letter-spacing:.04em; }
+.pl-series-badge { position:absolute;top:6px;left:6px;background:var(--brand);color:#000;font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase; }
+
+/* ══ CONTINUE WATCHING ══ */
+.cw-section { margin-bottom:32px; padding-bottom:32px; border-bottom:1px solid var(--border); }
+.cw-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+.cw-card { flex:0 0 180px; cursor:pointer; position:relative; }
+.cw-thumb { position:relative; aspect-ratio:16/9; border-radius:8px; overflow:hidden; background:#1a1a1a; margin-bottom:6px; }
+.cw-thumb img { width:100%; height:100%; object-fit:cover; transition:transform .3s; }
+.cw-card:hover .cw-thumb img { transform:scale(1.05); }
+.cw-play { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);opacity:0;transition:opacity .2s; }
+.cw-card:hover .cw-play { opacity:1; }
+.cw-play-icon { width:34px;height:34px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center; }
+.cw-play-icon svg { fill:#fff;width:11px;height:11px;transform:translateX(1px); }
+.cw-progress { position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.15); }
+.cw-progress-bar { height:100%;background:var(--brand);border-radius:0 3px 3px 0; width:40%; }
+.cw-title { font-size:.72rem;font-weight:700;color:#bbb;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3; }
+.cw-card:hover .cw-title { color:var(--brand); }
+.cw-meta { font-size:.65rem;color:#555;margin-top:2px; }
+@media(max-width:640px){ .cw-card { flex:0 0 140px; } }
 @media (max-width: 640px) { .vcard { flex: 0 0 calc(50% - 6px); min-width: 150px; } }
 
 .vcard-thumb { position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #1a1a1a; margin-bottom: 8px; }
@@ -944,16 +976,42 @@ function updateHero(i){
   const img=$("hero-img");
   img.style.opacity="0";
   setTimeout(()=>{img.src=getThumb(v);img.style.opacity="1";},260);
-  $("hero-title").textContent=v.title?.length>70?v.title.slice(0,70)+"…":v.title||"";
-  $("hero-desc").textContent=v.description||"";
+
+  // Title — clean truncation
+  $("hero-title").textContent=v.title?.length>72?v.title.slice(0,72)+"…":v.title||"";
+
+  // Description — show real desc or smart fallback
+  const desc=v.description||(v.category?`A ${v.category} video from ${v.platform||'our collection'}.`:"");
+  $("hero-desc").textContent=desc;
+  $("hero-desc").style.display=desc?"":"none";
+
+  // Category badge
   $("hero-cat").textContent=v.category||"";
-  $("hero-views").textContent=fmtViews(v.views||0)+" views";
+  $("hero-cat").style.display=v.category?"":"none";
+
+  // Views — only show if > 0
+  const vw=v.views||0;
+  $("hero-views").textContent=vw>0?fmtViews(vw)+" views":"";
+  $("hero-views").style.display=vw>0?"":"none";
+
+  // Update hero button href
+  const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
+  const heroUrl=pl?`/watch/${toSlug(pl.name)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${toSlug(v.title)}`;
+  $("hero-watch-btn")?.setAttribute("data-url",heroUrl);
+
   document.querySelectorAll(".hero-dot").forEach((d,j)=>d.classList.toggle("active",j===i));
 }
 
 window.goToHeroSlide=i=>{heroIndex=i;updateHero(i);resetHeroTimer();};
 window.slideHero=d=>{heroIndex=(heroIndex+d+heroVideos.length)%heroVideos.length;updateHero(heroIndex);resetHeroTimer();};
-window.heroClick=()=>{if(window._currentHeroId)openVideo(window._currentHeroId);};
+window.heroClick=()=>{
+  if(!window._currentHeroId)return;
+  const v=videos.find(x=>x.id===window._currentHeroId);
+  if(!v)return;
+  const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
+  if(pl) openPlaylist(pl.id,v.id);
+  else openVideo(v.id);
+};
 
 function resetHeroTimer(){
   clearInterval(heroTimer);
@@ -961,8 +1019,49 @@ function resetHeroTimer(){
 }
 
 // ── Sections ──
+function buildContinueWatching(container){
+  const history=getHistory();
+  if(!history.length) return;
+  const cwVids=history.map(id=>videos.find(v=>v.id===id)).filter(Boolean).slice(0,12);
+  if(!cwVids.length) return;
+
+  const sec=document.createElement('div');
+  sec.className='cw-section';
+  sec.innerHTML=`
+    <div class="section-header" style="margin-bottom:12px">
+      <div class="section-left">
+        <div class="section-icon">⏱</div>
+        <span class="section-title">Continue Watching</span>
+      </div>
+      <a href="/history" onclick="event.preventDefault();showHistoryPage()" class="section-more">See All ›</a>
+    </div>
+    <div class="cw-row hide-scroll">
+      ${cwVids.map(v=>{
+        const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
+        const url=pl?`/watch/${toSlug(pl.name)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${toSlug(v.title)}`;
+        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
+        return`<div class="cw-card" onclick="${click}">
+          <div class="cw-thumb">
+            <img src="${getThumb(v)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
+            <div class="cw-play"><div class="cw-play-icon">
+              <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+            </div></div>
+            <div class="cw-progress"><div class="cw-progress-bar"></div></div>
+          </div>
+          <div class="cw-title">${v.title||''}</div>
+          <div class="cw-meta">${v.category||''}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  container.appendChild(sec);
+}
+
 function buildSections(){
   const container=$("home-sections");container.innerHTML="";
+
+  // Continue Watching at top
+  buildContinueWatching(container);
+
   const active=sections.filter(s=>s.is_active!==0&&s.is_active!=="0");
   const list=active.length?active:[
     {id:"trending",title:"Trending Now",icon:"Flame",target_type:"trending"},
@@ -978,7 +1077,7 @@ function buildSections(){
           <div class="section-icon">${ICONS[sec.icon]||"▶"}</div>
           <span class="section-title">${sec.title}</span>
         </div>
-        <a href="#" class="section-more" onclick="event.preventDefault();seeAll('${sec.id}')">View All ›</a>
+        <a href="/${toSlug(sec.title)}" class="section-more" onclick="event.preventDefault();seeAll('${sec.id}')">View All ›</a>
       </div>
       <div class="row-wrap">
         <button class="row-btn prev" onclick="scrollRow('${rowId}',-1)">&#8249;</button>
@@ -991,19 +1090,30 @@ function buildSections(){
 }
 
 function buildPlaylistCard(pl){
-  const firstVid=videos.find(v=>(pl.videos||[]).includes(v.id));
-  const img=pl.thumbnail||(firstVid?getThumb(firstVid):`https://picsum.photos/seed/${pl.id}/800/450`);
   const count=(pl.videos||[]).length;
-  return`<a class="vcard" href="#" onclick="event.preventDefault();openPlaylistById('${pl.id}')">
-    <div class="vcard-thumb">
-      <img src="${img}" alt="${(pl.name||"").replace(/"/g,"")}" loading="lazy"
-        onerror="this.src='https://picsum.photos/seed/${pl.id}pl/800/450'">
-      <div class="vcard-overlay"></div>
-      <div class="vcard-play"><div class="vcard-play-icon">
+  const thumbVids=(pl.videos||[]).slice(0,4).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
+  const watchUrl=`/watch/${toSlug(pl.name)}/ep-1`;
+
+  // Netflix-style multi-thumb grid
+  let thumbHtml='';
+  if(thumbVids.length>=4){
+    thumbHtml=`<div class="pl-multithumb-grid">
+      ${thumbVids.map(v=>`<img src="${getThumb(v)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">`).join('')}
+    </div>`;
+  } else {
+    const img=pl.thumbnail||(thumbVids[0]?getThumb(thumbVids[0]):`https://picsum.photos/seed/${pl.id}/800/450`);
+    thumbHtml=`<div class="pl-multithumb-single"><img src="${img}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pl.id}/800/450'"></div>`;
+  }
+
+  return`<a class="vcard" href="${watchUrl}" onclick="event.preventDefault();openPlaylistById('${pl.id}')">
+    <div class="pl-multithumb">
+      ${thumbHtml}
+      <div class="pl-multithumb-overlay"></div>
+      <div class="pl-multithumb-play"><div class="vcard-play-icon">
         <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
       </div></div>
-      <div style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.78);color:#fff;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:4px">▶ ${count} EP</div>
-      <div class="vcard-series">Series</div>
+      <div class="pl-ep-badge">▶ ${count} EP</div>
+      <div class="pl-series-badge">Series</div>
     </div>
     <div class="vcard-title">${pl.name||""}</div>
     <div class="vcard-sub">${pl.description||`${count} episode${count!==1?"s":""}`}</div>
@@ -1049,15 +1159,33 @@ function fillSection(sec,rowId){
 window.scrollRow=(id,dir)=>{const el=$(id);if(el)el.scrollBy({left:dir*700,behavior:"smooth"});};
 window.seeAll=sid=>{
   const sec=sections.find(s=>s.id===sid);
-  if(sec?.target_type==="category"&&sec.target_id){
+  if(!sec){ showPage("cat"); return; }
+
+  // Category type — go to proper /slug URL
+  if(sec.target_type==="category"&&sec.target_id){
     const cat=categories.find(c=>c.id===sec.target_id);
-    openCategory(sec.target_id,cat?.name||sec.title);
-  }else{
-    $("cat-title").textContent="All Videos";
-    $("cat-desc").textContent="Browse all videos in the collection.";
-    renderGrid($("cat-grid"),videos);
-    showPage("cat");
+    if(cat){ navGo(cat.id); return; }
   }
+
+  // For any other type — build a virtual category page
+  const slug='/'+toSlug(sec.title||'all');
+  history.pushState({page:'cat',secId:sid},"",slug);
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
+  window.scrollTo(0,0);
+  $("cat-title").textContent=sec.title||"All Videos";
+  $("cat-desc").textContent=`Browse all ${sec.title||""} content.`;
+  updateMeta({title:sec.title, desc:`Browse all ${sec.title} content`, url:location.href});
+
+  let list=[];
+  if(sec.target_type==="multi_playlist"||sec.target_type==="playlist"){
+    const ids=sec.playlist_ids||[sec.target_id].filter(Boolean);
+    ids.forEach(pid=>{ const pl=playlists.find(p=>p.id===pid); if(pl)(pl.videos||[]).forEach(vid=>{ if(!list.find(v=>v.id===vid)){const v=videos.find(x=>x.id===vid);if(v)list.push(v);} }); });
+  } else if(sec.target_type==="single_videos"){
+    list=(sec.custom_videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
+  } else {
+    list=[...videos].sort((a,b)=>sec.target_type==="trending"?(b.views||0)-(a.views||0):0);
+  }
+  renderGrid($("cat-grid"),list);
 };
 
 // ── Watch ──
