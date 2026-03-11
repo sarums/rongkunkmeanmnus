@@ -275,8 +275,6 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .comment-name-input:focus { border-color:var(--brand); }
 .comment-name-input:disabled { opacity:.5; cursor:not-allowed; }
 .name-locked-badge { font-size:.65rem; color:#22c55e; font-weight:700; white-space:nowrap; }
-.name-clear-btn { font-size:.62rem; color:#555; background:none; border:none; cursor:pointer; padding:2px 5px; border-radius:4px; transition:color .2s; }
-.name-clear-btn:hover { color:#ef4444; }
 .comment-text-input { width:100%; background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:9px 12px; color:var(--text); font-size:.82rem; outline:none; resize:none; min-height:72px; font-family:inherit; transition:border-color .2s; }
 .comment-text-input:focus { border-color:var(--brand); }
 .comment-submit { margin-top:6px; padding:7px 18px; background:var(--brand); color:#000; font-size:.76rem; font-weight:800; border:none; border-radius:9999px; cursor:pointer; transition:all .2s; }
@@ -669,9 +667,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
             <div class="comment-avatar" id="comment-avatar">U</div>
             <div class="comment-input-wrap">
               <div class="comment-name-row">
-                <input class="comment-name-input" id="comment-name" placeholder="Your name (locked after first comment)" maxlength="40">
+                <input class="comment-name-input" id="comment-name" placeholder="Your name (can't be changed after posting)" maxlength="40">
                 <span class="name-locked-badge" id="name-locked-badge" style="display:none">✓ Locked</span>
-                <button class="name-clear-btn" id="name-clear-btn" style="display:none" onclick="clearSavedName()" title="Reset name">✕ Reset</button>
               </div>
               <textarea class="comment-text-input" id="comment-text" placeholder="Write a comment..." maxlength="500"></textarea>
               <button class="comment-submit" onclick="submitComment()">Post Comment</button>
@@ -1586,28 +1583,19 @@ let _allComments=[];
 // ── Locked name logic ──
 function getSavedName(){ return localStorage.getItem(NAME_KEY)||''; }
 function setSavedName(n){ localStorage.setItem(NAME_KEY,n); }
-window.clearSavedName=()=>{
-  if(!confirm('Reset your name? You can set a new name on your next comment.'))return;
-  localStorage.removeItem(NAME_KEY);
-  initNameField();
-};
-
 function initNameField(){
   const saved=getSavedName();
   const inp=$('comment-name');
   const badge=$('name-locked-badge');
-  const clrBtn=$('name-clear-btn');
   const avatar=$('comment-avatar');
   if(!inp)return;
   if(saved){
     inp.value=saved; inp.disabled=true;
     if(badge)badge.style.display='';
-    if(clrBtn)clrBtn.style.display='';
     if(avatar){avatar.textContent=saved[0].toUpperCase();avatar.style.background=strColor(saved);}
   } else {
     inp.value=''; inp.disabled=false;
     if(badge)badge.style.display='none';
-    if(clrBtn)clrBtn.style.display='none';
     if(avatar){avatar.textContent='U';avatar.style.background='';}
   }
 }
