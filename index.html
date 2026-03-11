@@ -269,6 +269,37 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
 .player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
 
+/* ── MINI PLAYER (YouTube mobile style) ── */
+.mini-player {
+  display: none;
+  position: fixed;
+  bottom: 70px; right: 12px;
+  width: 260px;
+  background: #111;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.7);
+  z-index: 300;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s, opacity .2s;
+  animation: miniSlideIn .25s ease both;
+}
+@keyframes miniSlideIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+.mini-player.active { display: block; }
+@media (min-width: 961px) { .mini-player { bottom: 24px; } }
+
+.mini-player-video { width: 100%; aspect-ratio: 16/9; background: #000; position: relative; }
+.mini-player-video iframe { width: 100%; height: 100%; border: none; display: block; pointer-events: none; }
+.mini-player-bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #111; }
+.mini-player-title { flex: 1; font-size: .7rem; font-weight: 700; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-player-btn { background: none; border: none; color: #aaa; cursor: pointer; padding: 4px; border-radius: 6px; transition: color .2s; flex-shrink: 0; }
+.mini-player-btn:hover { color: #fff; }
+.mini-player-btn svg { width: 16px; height: 16px; display: block; }
+/* Placeholder keeps space for the real player when mini is active */
+.player-placeholder { display: none; aspect-ratio: 16/9; background: #0a0a0a; border-radius: 14px; }
+@media (max-width: 960px) { .player-placeholder { border-radius: 0; } }
+.player-placeholder.active { display: block; }
+
 /* Mobile info padding */
 @media (max-width: 960px) {
   .watch-info-wrap { padding: 0 14px; }
@@ -643,9 +674,27 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
       <!-- Left col: Player + Info + Comments -->
       <div class="watch-col-left">
 
-        <div class="player-outer">
+        <div class="player-outer" id="player-outer">
           <div class="player-wrap">
             <iframe id="player-iframe" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+          </div>
+        </div>
+        <!-- Placeholder keeps layout space when mini player is active -->
+        <div class="player-placeholder" id="player-placeholder"></div>
+
+        <!-- Mini floating player -->
+        <div class="mini-player" id="mini-player" onclick="expandMiniPlayer()">
+          <div class="mini-player-video">
+            <iframe id="mini-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+          </div>
+          <div class="mini-player-bar">
+            <span class="mini-player-title" id="mini-title"></span>
+            <button class="mini-player-btn" onclick="event.stopPropagation();expandMiniPlayer()" title="Expand">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            </button>
+            <button class="mini-player-btn" onclick="event.stopPropagation();closeMiniPlayer()" title="Close">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
           </div>
         </div>
 
@@ -1005,7 +1054,13 @@ const NP = {
 };
 
 function showPage(id,push=true){
-  if(id!=="watch")previousPage=id;
+  if(id!=="watch"){
+    previousPage=id;
+    // Tear down mini player when leaving watch
+    if(_miniObserver){ _miniObserver.disconnect(); _miniObserver=null; }
+    deactivateMiniPlayer();
+    $('mini-iframe') && ($('mini-iframe').src='');
+  }
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push)history.pushState({page:id},"",id==="home"?"/":"/"+id);
   window.scrollTo(0,0);
@@ -1548,6 +1603,8 @@ window.openVideo=async (id,push=true)=>{
   loadReactions(id);
   loadComments(id);
   NP.done();
+  // Setup mini player observer
+  setTimeout(setupMiniPlayer, 300);
 };
 
 window.openPlaylist=(plId,startId)=>{
@@ -1913,6 +1970,70 @@ window.deleteComment=async(id)=>{
     await loadComments(_commentVideoId);
   }catch(e){showToast('Failed to delete','err');}
 };
+
+// ── MINI PLAYER ──────────────────────────────────────
+let _miniActive = false;
+let _miniObserver = null;
+
+function setupMiniPlayer() {
+  // Only on watch page
+  const outer = document.getElementById('player-outer');
+  if (!outer || _miniObserver) return;
+
+  _miniObserver = new IntersectionObserver((entries) => {
+    const entry = entries[0];
+    const watchActive = document.getElementById('page-watch')?.classList.contains('active');
+    if (!watchActive) return;
+
+    if (!entry.isIntersecting && !_miniActive) {
+      activateMiniPlayer();
+    } else if (entry.isIntersecting && _miniActive) {
+      deactivateMiniPlayer();
+    }
+  }, { threshold: 0.1 });
+
+  _miniObserver.observe(outer);
+}
+
+function activateMiniPlayer() {
+  const src = $('player-iframe')?.src;
+  if (!src || src === '' || src === 'about:blank') return;
+  _miniActive = true;
+  // Copy iframe src to mini
+  $('mini-iframe').src = src;
+  $('mini-title').textContent = $('watch-title')?.textContent || '';
+  $('mini-player').classList.add('active');
+  $('player-placeholder').classList.add('active');
+  $('player-outer').style.visibility = 'hidden';
+  $('player-outer').style.position = 'absolute';
+  $('player-outer').style.opacity = '0';
+}
+
+function deactivateMiniPlayer() {
+  if (!_miniActive) return;
+  _miniActive = false;
+  $('mini-player').classList.remove('active');
+  $('player-placeholder').classList.remove('active');
+  $('player-outer').style.visibility = '';
+  $('player-outer').style.position = '';
+  $('player-outer').style.opacity = '';
+  $('mini-iframe').src = '';
+}
+
+window.expandMiniPlayer = () => {
+  // Scroll back to top to show main player
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => deactivateMiniPlayer(), 300);
+};
+
+window.closeMiniPlayer = () => {
+  deactivateMiniPlayer();
+  // Stop main player too
+  $('player-iframe').src = '';
+};
+
+// Reset mini player when navigating away from watch page
+const _origShowPage = window.showPage || function(){};
 
 // ── KEYBOARD SHORTCUTS ──
 document.addEventListener('keydown',e=>{
