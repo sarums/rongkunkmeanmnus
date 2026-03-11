@@ -259,8 +259,13 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 @media (max-width: 960px) {
   .watch-layout { grid-template-columns: 1fr; padding: 0 0 80px; gap: 0; }
   /* On mobile, right column (suggested) goes BELOW left column (info+comments) */
+  .watch-col-left  { order: 1; display:flex; flex-direction:column; }
   .watch-col-right { order: 2; padding: 0 14px; }
-  .watch-col-left  { order: 1; }
+  /* Mobile order: video+info → playlist → comments → suggested */
+  .watch-info-wrap  { order: 1; }
+  #playlist-panel   { order: 2; margin: 12px 14px; }
+  .comments-section { order: 3; padding: 24px 14px 0; margin-top:0; }
+  .watch-col-right  { order: 4; }
 }
 
 /* ── Player ── */
@@ -803,11 +808,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           </div>
           <div id="comments-list"></div>
         </div>
-        </div><!-- end watch-info-wrap -->
-      </div><!-- end watch-col-left -->
 
-      <!-- Right col: Playlist + Suggested (desktop sidebar / mobile below) -->
-      <div class="watch-col-right">
+        <!-- Playlist (below comments on mobile, in left col) -->
         <div class="playlist-panel" id="playlist-panel" style="display:none">
           <div class="playlist-header">
             <span class="playlist-label">Playlist</span>
@@ -816,6 +818,11 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           <div class="playlist-items hide-scroll" id="playlist-items"></div>
         </div>
 
+        </div><!-- end watch-info-wrap -->
+      </div><!-- end watch-col-left -->
+
+      <!-- Right col: Suggested (desktop sidebar / mobile below) -->
+      <div class="watch-col-right">
         <h3 class="suggested-title">Suggested</h3>
         <div id="suggested-list"></div>
       </div>
