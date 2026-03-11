@@ -229,10 +229,9 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .watch-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
 @media (max-width: 960px) { .watch-layout { grid-template-columns: 1fr; padding: 0 0 40px; } }
 
-/* ── Sticky player ── */
-.player-outer { position: sticky; top: 60px; z-index: 100; background: #000; }
-@media (max-width: 960px) { .player-outer { margin: 0; border-radius: 0; } }
-@media (min-width: 961px) { .player-outer { border-radius: 14px; overflow: hidden; } }
+/* ── Sticky player mobile only ── */
+.player-outer { background: #000; border-radius: 14px; overflow: hidden; }
+@media (max-width: 960px) { .player-outer { position: sticky; top: 60px; z-index: 100; border-radius: 0; } }
 
 .player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
 .player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
