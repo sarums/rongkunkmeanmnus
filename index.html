@@ -235,8 +235,9 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .watch-source-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 8px; }
 .watch-source-badge { padding: 2px 9px; background: #4338ca; border-radius: 4px; font-size: .67rem; font-weight: 800; color: #fff; text-transform: uppercase; }
 .watch-cat-label { font-size: .8rem; color: #777; font-weight: 600; }
-.watch-next-btn { margin-left: auto; padding: 8px 20px; background: var(--brand); color: #000; font-size: .77rem; font-weight: 800; border-radius: 9999px; border: none; cursor: pointer; transition: all .2s; }
+.watch-next-btn { margin-left: auto; padding: 7px 16px 7px 10px; background: var(--brand); color: #000; font-size: .77rem; font-weight: 800; border-radius: 9999px; border: none; cursor: pointer; transition: background .2s; display:flex; align-items:center; gap:7px; }
 .watch-next-btn:hover { background: #fff; }
+.countdown-ring { flex-shrink:0; }
 .watch-title { font-size: 1.25rem; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 10px; }
 .watch-meta { display: flex; align-items: center; gap: 18px; padding: 13px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 10px; }
 .watch-stat label { font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; color: #555; display: block; }
@@ -531,7 +532,13 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           <span id="watch-source" class="watch-source-badge"></span>
           <span id="watch-cat"    class="watch-cat-label"></span>
           <button id="watch-next-btn" class="watch-next-btn" onclick="playNext()" style="display:none">
-            Next ›
+            <svg class="countdown-ring" viewBox="0 0 36 36" width="22" height="22">
+              <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="3"/>
+              <circle id="countdown-arc" cx="18" cy="18" r="15" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-dasharray="94.2" stroke-dashoffset="94.2" stroke-linecap="round"
+                transform="rotate(-90 18 18)" style="transition:stroke-dashoffset .25s linear"/>
+            </svg>
+            <span id="next-label">Next Episode</span>
           </button>
         </div>
 
@@ -1198,6 +1205,7 @@ window.openVideo=async (id,push=true)=>{
   $("player-iframe").src="";
   $("playlist-panel").style.display="none";
   $("watch-next-btn").style.display="none";
+  clearCountdown();
   $("suggested-list").innerHTML=skelRow(3);
 
   const v=videos.find(x=>x.id===id);if(!v)return;
@@ -1255,7 +1263,10 @@ window.openVideo=async (id,push=true)=>{
         </div>
       </a>`).join("");
     $("playlist-panel").style.display="";
-    if(playlistQueue[plQueueIdx+1])$("watch-next-btn").style.display="";
+    if(playlistQueue[plQueueIdx+1]){
+      $("watch-next-btn").style.display="";
+      startCountdown();
+    }
   }
 
   // Suggested
@@ -1278,7 +1289,45 @@ window.openPlaylist=(plId,startId)=>{
   const i=pl.videos.indexOf(startId);
   openVideo(pl.videos[i>=0?i:0]);
 };
-window.playNext=()=>{const n=playlistQueue[plQueueIdx+1];if(n)openVideo(n.id);};
+let _countdownTimer=null;
+const COUNTDOWN_SEC=5;
+const ARC_LEN=94.2; // 2π × r(15)
+
+function clearCountdown(){
+  if(_countdownTimer){ clearInterval(_countdownTimer); _countdownTimer=null; }
+  const arc=$('countdown-arc');
+  const lbl=$('next-label');
+  if(arc) arc.style.strokeDashoffset=ARC_LEN;
+  if(lbl) lbl.textContent='Next Episode';
+}
+
+function startCountdown(){
+  clearCountdown();
+  const next=playlistQueue[plQueueIdx+1];
+  if(!next) return;
+  let remaining=COUNTDOWN_SEC;
+  const arc=$('countdown-arc');
+  const lbl=$('next-label');
+
+  function tick(){
+    if(arc) arc.style.strokeDashoffset=ARC_LEN*(remaining/COUNTDOWN_SEC);
+    if(lbl) lbl.textContent=`Next in ${remaining}s`;
+    if(remaining<=0){
+      clearCountdown();
+      openVideo(next.id);
+      return;
+    }
+    remaining--;
+  }
+  tick();
+  _countdownTimer=setInterval(tick,1000);
+}
+
+window.playNext=()=>{
+  clearCountdown();
+  const n=playlistQueue[plQueueIdx+1];
+  if(n) openVideo(n.id);
+};
 window.openPlaylistById=id=>{
   const pl=playlists.find(p=>p.id===id);
   if(!pl||(pl.videos||[]).length===0) return;
