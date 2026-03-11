@@ -258,12 +258,11 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 /* Mobile: single column, YouTube style */
 @media (max-width: 960px) {
   .watch-layout { grid-template-columns: 1fr; padding: 0 0 80px; gap: 0; }
-  /* Order: video+info → playlist → comments → suggested */
-  .watch-col-left  { order: 1; display: flex; flex-direction: column; }
-  .watch-col-right { order: 4; padding: 0 14px; }
-  .watch-info-wrap { order: 1; padding: 0 14px; }
-  #playlist-panel  { order: 2; margin: 8px 14px 0; }
-  .comments-section { order: 3; margin: 0 14px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .watch-col-left  { order: 1; }
+  .watch-col-right { order: 2; padding: 0 14px; }
+  .watch-info-wrap { padding: 0 14px; }
+  #playlist-panel  { margin: 12px 14px 0; }
+  .comments-section { margin: 0 14px; }
 }
 
 /* ── Player ── */
@@ -755,6 +754,15 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           </div>
         </div>
 
+        <!-- Playlist — below Views/Published/Share row -->
+        <div class="playlist-panel" id="playlist-panel" style="display:none">
+          <div class="playlist-header">
+            <span class="playlist-label">Playlist</span>
+            <span class="playlist-progress" id="playlist-progress"></span>
+          </div>
+          <div class="playlist-items hide-scroll" id="playlist-items"></div>
+        </div>
+
         <!-- Like / Dislike -->
         <div class="react-row">
           <button class="react-btn" id="like-btn" onclick="reactVideo('like')">
@@ -770,7 +778,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
         <p id="watch-desc" class="watch-desc"></p>
         <div id="watch-tags"></div>
 
-        <!-- Comments -->
+        <!-- Comments — after description -->
         <div class="comments-section">
           <div class="comments-title">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -808,19 +816,6 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
         </div>
 
         </div><!-- end watch-info-wrap -->
-
-        <!-- Playlist — after title/info, before comments -->
-        <div class="playlist-panel" id="playlist-panel" style="display:none">
-          <div class="playlist-header">
-            <span class="playlist-label">Playlist</span>
-            <span class="playlist-progress" id="playlist-progress"></span>
-          </div>
-          <div class="playlist-items hide-scroll" id="playlist-items"></div>
-        </div>
-
-        <!-- Comments — after playlist -->
-        <div class="comments-section-wrap">
-        </div><!-- end comments-section-wrap -->
       </div><!-- end watch-col-left -->
 
       <!-- Right col: Suggested (desktop sidebar / mobile below) -->
