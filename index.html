@@ -265,6 +265,15 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* ══ COMMENTS ══ */
 .comments-section { margin-top:28px; padding-top:24px; border-top:1px solid var(--border); }
+/* Username setup */
+.username-setup-card { background:var(--bg3); border:1px solid var(--border2); border-radius:14px; padding:20px; margin-bottom:20px; text-align:center; }
+.username-setup-icon { font-size:1.8rem; margin-bottom:8px; }
+.username-setup-title { font-size:.92rem; font-weight:800; color:#fff; margin-bottom:4px; }
+.username-setup-desc { font-size:.75rem; color:#555; margin-bottom:14px; line-height:1.5; }
+.username-setup-row { text-align:left; }
+.username-display-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.username-display-name { font-size:.82rem; font-weight:800; color:#ddd; }
+.username-display-badge { font-size:.62rem; font-weight:800; color:#22c55e; background:rgba(34,197,94,.1); padding:2px 8px; border-radius:9999px; border:1px solid rgba(34,197,94,.2); }
 .comments-title { font-size:.95rem; font-weight:800; color:#fff; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
 .comment-form { display:flex; gap:10px; margin-bottom:20px; }
 .comment-avatar { width:34px; height:34px; border-radius:50%; background:var(--brand); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; color:#000; flex-shrink:0; }
@@ -663,15 +672,32 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             Comments <span id="comment-count" style="font-size:.75rem;color:#555;font-weight:600"></span>
           </div>
-          <div class="comment-form">
-            <div class="comment-avatar" id="comment-avatar">U</div>
-            <div class="comment-input-wrap">
-              <div class="comment-name-row">
-                <input class="comment-name-input" id="comment-name" placeholder="Your name (can't be changed after posting)" maxlength="40">
-                <span class="name-locked-badge" id="name-locked-badge" style="display:none">✓ Locked</span>
+          <!-- Username setup (shown when no name saved) -->
+          <div id="username-setup" style="display:none">
+            <div class="username-setup-card">
+              <div class="username-setup-icon">👤</div>
+              <p class="username-setup-title">Create your username</p>
+              <p class="username-setup-desc">Choose carefully — your username is permanent and cannot be changed.</p>
+              <div class="username-setup-row">
+                <input class="comment-text-input" id="username-input" placeholder="Enter your username..." maxlength="40" style="min-height:unset;padding:9px 14px"
+                  onkeydown="if(event.key==='Enter')confirmUsername()">
+                <button class="comment-submit" style="margin-top:8px;width:100%" onclick="confirmUsername()">Set Username →</button>
               </div>
-              <textarea class="comment-text-input" id="comment-text" placeholder="Write a comment..." maxlength="500"></textarea>
-              <button class="comment-submit" onclick="submitComment()">Post Comment</button>
+            </div>
+          </div>
+
+          <!-- Comment form (shown when name is saved) -->
+          <div id="comment-form-wrap" style="display:none">
+            <div class="comment-form">
+              <div class="comment-avatar" id="comment-avatar">U</div>
+              <div class="comment-input-wrap">
+                <div class="username-display-row">
+                  <span class="username-display-name" id="username-display"></span>
+                  <span class="username-display-badge">✓ Verified</span>
+                </div>
+                <textarea class="comment-text-input" id="comment-text" placeholder="Write a comment..." maxlength="500"></textarea>
+                <button class="comment-submit" onclick="submitComment()">Post Comment</button>
+              </div>
             </div>
           </div>
           <div id="comments-list"></div>
@@ -1585,28 +1611,35 @@ function getSavedName(){ return localStorage.getItem(NAME_KEY)||''; }
 function setSavedName(n){ localStorage.setItem(NAME_KEY,n); }
 function initNameField(){
   const saved=getSavedName();
-  const inp=$('comment-name');
-  const badge=$('name-locked-badge');
+  const setup=$('username-setup');
+  const form=$('comment-form-wrap');
   const avatar=$('comment-avatar');
-  if(!inp)return;
+  const display=$('username-display');
   if(saved){
-    inp.value=saved; inp.disabled=true;
-    if(badge)badge.style.display='';
-    if(avatar){avatar.textContent=saved[0].toUpperCase();avatar.style.background=strColor(saved);}
+    if(setup)setup.style.display='none';
+    if(form)form.style.display='';
+    if(display)display.textContent=saved;
+    if(avatar){
+      avatar.textContent=saved[0].toUpperCase();
+      avatar.style.background=strColor(saved);
+    }
   } else {
-    inp.value=''; inp.disabled=false;
-    if(badge)badge.style.display='none';
-    if(avatar){avatar.textContent='U';avatar.style.background='';}
+    if(setup)setup.style.display='';
+    if(form)form.style.display='none';
   }
 }
 
-document.addEventListener('input',e=>{
-  if(e.target.id==='comment-name'){
-    const v=e.target.value.trim();
-    const avatar=$('comment-avatar');
-    if(avatar){avatar.textContent=(v[0]||'U').toUpperCase();avatar.style.background=v?strColor(v):'';}
-  }
-});
+window.confirmUsername=()=>{
+  const inp=$('username-input');
+  const name=(inp?.value||'').trim();
+  if(!name){ showToast('Enter a username first','err'); inp?.focus(); return; }
+  if(name.length<2){ showToast('Username too short (min 2 chars)','err'); inp?.focus(); return; }
+  // Confirm — permanent warning
+  if(!confirm(`Set "${name}" as your permanent username?\n\nThis cannot be changed later.`)) return;
+  setSavedName(name);
+  initNameField();
+  showToast('Username set! You can now comment.','ok');
+};
 
 // ── Load & render ──
 async function loadComments(vid){
