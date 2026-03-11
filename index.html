@@ -258,14 +258,12 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 /* Mobile: single column, YouTube style */
 @media (max-width: 960px) {
   .watch-layout { grid-template-columns: 1fr; padding: 0 0 80px; gap: 0; }
-  /* On mobile, right column (suggested) goes BELOW left column (info+comments) */
-  .watch-col-left  { order: 1; display:flex; flex-direction:column; }
-  .watch-col-right { order: 2; padding: 0 14px; }
-  /* Mobile order: video+info → playlist → comments → suggested */
-  .watch-info-wrap  { order: 1; }
-  #playlist-panel   { order: 2; margin: 12px 14px; }
-  .comments-section { order: 3; padding: 24px 14px 0; margin-top:0; }
-  .watch-col-right  { order: 4; }
+  /* Order: video+info → playlist → comments → suggested */
+  .watch-col-left  { order: 1; display: flex; flex-direction: column; }
+  .watch-col-right { order: 4; padding: 0 14px; }
+  .watch-info-wrap { order: 1; padding: 0 14px; }
+  #playlist-panel  { order: 2; margin: 8px 14px 0; }
+  .comments-section { order: 3; margin: 0 14px; padding-top: 20px; border-top: 1px solid var(--border); }
 }
 
 /* ── Player ── */
@@ -809,7 +807,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           <div id="comments-list"></div>
         </div>
 
-        <!-- Playlist (below comments on mobile, in left col) -->
+        </div><!-- end watch-info-wrap -->
+
+        <!-- Playlist — after title/info, before comments -->
         <div class="playlist-panel" id="playlist-panel" style="display:none">
           <div class="playlist-header">
             <span class="playlist-label">Playlist</span>
@@ -818,7 +818,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           <div class="playlist-items hide-scroll" id="playlist-items"></div>
         </div>
 
-        </div><!-- end watch-info-wrap -->
+        <!-- Comments — after playlist -->
+        <div class="comments-section-wrap">
+        </div><!-- end comments-section-wrap -->
       </div><!-- end watch-col-left -->
 
       <!-- Right col: Suggested (desktop sidebar / mobile below) -->
