@@ -268,20 +268,42 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .comments-title { font-size:.95rem; font-weight:800; color:#fff; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
 .comment-form { display:flex; gap:10px; margin-bottom:20px; }
 .comment-avatar { width:34px; height:34px; border-radius:50%; background:var(--brand); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; color:#000; flex-shrink:0; }
+.comment-avatar.sm { width:26px; height:26px; font-size:.68rem; }
 .comment-input-wrap { flex:1; }
-.comment-name-input { width:100%; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:7px 12px; color:var(--text); font-size:.78rem; outline:none; margin-bottom:6px; font-family:inherit; transition:border-color .2s; }
+.comment-name-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.comment-name-input { flex:1; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:7px 12px; color:var(--text); font-size:.78rem; outline:none; font-family:inherit; transition:border-color .2s; }
 .comment-name-input:focus { border-color:var(--brand); }
+.comment-name-input:disabled { opacity:.5; cursor:not-allowed; }
+.name-locked-badge { font-size:.65rem; color:#22c55e; font-weight:700; white-space:nowrap; }
+.name-clear-btn { font-size:.62rem; color:#555; background:none; border:none; cursor:pointer; padding:2px 5px; border-radius:4px; transition:color .2s; }
+.name-clear-btn:hover { color:#ef4444; }
 .comment-text-input { width:100%; background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:9px 12px; color:var(--text); font-size:.82rem; outline:none; resize:none; min-height:72px; font-family:inherit; transition:border-color .2s; }
 .comment-text-input:focus { border-color:var(--brand); }
 .comment-submit { margin-top:6px; padding:7px 18px; background:var(--brand); color:#000; font-size:.76rem; font-weight:800; border:none; border-radius:9999px; cursor:pointer; transition:all .2s; }
 .comment-submit:hover { background:#fff; }
-.comment-item { display:flex; gap:10px; margin-bottom:16px; }
+.comment-item { display:flex; gap:10px; margin-bottom:14px; }
 .comment-body { flex:1; min-width:0; }
-.comment-author { font-size:.78rem; font-weight:800; color:#ddd; margin-bottom:3px; display:flex; align-items:center; gap:8px; }
+.comment-author { font-size:.78rem; font-weight:800; color:#ddd; margin-bottom:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .comment-time { font-size:.65rem; color:#555; font-weight:500; }
-.comment-text { font-size:.82rem; color:#888; line-height:1.6; }
-.comment-delete { margin-left:auto; background:none; border:none; color:#444; font-size:.7rem; cursor:pointer; padding:2px 6px; border-radius:4px; transition:all .2s; }
+.comment-text { font-size:.82rem; color:#888; line-height:1.6; margin-bottom:6px; }
+.comment-actions { display:flex; align-items:center; gap:12px; }
+.comment-reply-btn { background:none; border:none; color:#555; font-size:.72rem; font-weight:700; cursor:pointer; padding:0; transition:color .2s; }
+.comment-reply-btn:hover { color:var(--brand); }
+.comment-delete { background:none; border:none; color:#444; font-size:.7rem; cursor:pointer; padding:2px 6px; border-radius:4px; transition:all .2s; }
 .comment-delete:hover { color:#ef4444; background:rgba(239,68,68,.1); }
+/* Nested replies */
+.replies-wrap { margin-top:10px; padding-left:14px; border-left:2px solid rgba(255,255,255,.06); display:flex; flex-direction:column; gap:10px; }
+.reply-form-wrap { margin-top:8px; }
+.reply-form { display:flex; gap:8px; }
+.reply-text-input { flex:1; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:7px 11px; color:var(--text); font-size:.78rem; outline:none; resize:none; min-height:54px; font-family:inherit; transition:border-color .2s; }
+.reply-text-input:focus { border-color:var(--brand); }
+.reply-submit { align-self:flex-end; padding:6px 14px; background:var(--brand); color:#000; font-size:.72rem; font-weight:800; border:none; border-radius:9999px; cursor:pointer; transition:all .2s; }
+.reply-submit:hover { background:#fff; }
+.reply-cancel { align-self:flex-end; padding:6px 10px; background:none; border:1px solid var(--border2); color:#666; font-size:.72rem; font-weight:700; border-radius:9999px; cursor:pointer; margin-left:4px; transition:all .2s; }
+.reply-cancel:hover { color:#fff; border-color:#555; }
+.view-more-replies { background:none; border:none; color:var(--brand); font-size:.72rem; font-weight:700; cursor:pointer; padding:4px 0; transition:opacity .2s; }
+.view-more-replies:hover { opacity:.75; }
+.replying-to { font-size:.7rem; color:#555; margin-bottom:4px; }
 .comments-empty { font-size:.82rem; color:#444; padding:16px 0; }
 .comments-loading { display:flex; gap:6px; align-items:center; color:#444; font-size:.78rem; padding:10px 0; }
 
@@ -646,7 +668,11 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           <div class="comment-form">
             <div class="comment-avatar" id="comment-avatar">U</div>
             <div class="comment-input-wrap">
-              <input class="comment-name-input" id="comment-name" placeholder="Your name" maxlength="40">
+              <div class="comment-name-row">
+                <input class="comment-name-input" id="comment-name" placeholder="Your name (locked after first comment)" maxlength="40">
+                <span class="name-locked-badge" id="name-locked-badge" style="display:none">✓ Locked</span>
+                <button class="name-clear-btn" id="name-clear-btn" style="display:none" onclick="clearSavedName()" title="Reset name">✕ Reset</button>
+              </div>
               <textarea class="comment-text-input" id="comment-text" placeholder="Write a comment..." maxlength="500"></textarea>
               <button class="comment-submit" onclick="submitComment()">Post Comment</button>
             </div>
@@ -1552,84 +1578,196 @@ window.reactVideo=async(type)=>{
 };
 
 // ── COMMENTS ──
+// ── COMMENT SYSTEM ──────────────────────────────────
+const NAME_KEY='rkmn_username';
 let _commentVideoId=null;
-// Update avatar initial from name
+let _allComments=[];
+
+// ── Locked name logic ──
+function getSavedName(){ return localStorage.getItem(NAME_KEY)||''; }
+function setSavedName(n){ localStorage.setItem(NAME_KEY,n); }
+window.clearSavedName=()=>{
+  if(!confirm('Reset your name? You can set a new name on your next comment.'))return;
+  localStorage.removeItem(NAME_KEY);
+  initNameField();
+};
+
+function initNameField(){
+  const saved=getSavedName();
+  const inp=$('comment-name');
+  const badge=$('name-locked-badge');
+  const clrBtn=$('name-clear-btn');
+  const avatar=$('comment-avatar');
+  if(!inp)return;
+  if(saved){
+    inp.value=saved; inp.disabled=true;
+    if(badge)badge.style.display='';
+    if(clrBtn)clrBtn.style.display='';
+    if(avatar){avatar.textContent=saved[0].toUpperCase();avatar.style.background=strColor(saved);}
+  } else {
+    inp.value=''; inp.disabled=false;
+    if(badge)badge.style.display='none';
+    if(clrBtn)clrBtn.style.display='none';
+    if(avatar){avatar.textContent='U';avatar.style.background='';}
+  }
+}
+
 document.addEventListener('input',e=>{
   if(e.target.id==='comment-name'){
-    const init=(e.target.value.trim()[0]||'U').toUpperCase();
-    $('comment-avatar').textContent=init;
+    const v=e.target.value.trim();
+    const avatar=$('comment-avatar');
+    if(avatar){avatar.textContent=(v[0]||'U').toUpperCase();avatar.style.background=v?strColor(v):'';}
   }
 });
 
+// ── Load & render ──
 async function loadComments(vid){
   _commentVideoId=vid;
+  initNameField();
   const list=$('comments-list');
   if(!list)return;
   list.innerHTML=`<div class="comments-loading"><div class="loader-ring" style="width:16px;height:16px;border-width:2px"></div> Loading...</div>`;
   try{
-    const snap=await getDocs(query(collection(db,'comments'),orderBy('createdAt','desc')));
-    const all=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.videoId===vid);
-    $('comment-count').textContent=all.length?`(${all.length})`:'';
-    if(!all.length){ list.innerHTML=`<div class="comments-empty">No comments yet. Be the first!</div>`; return; }
-    list.innerHTML=all.map(c=>buildComment(c)).join('');
-  }catch(e){ list.innerHTML=`<div class="comments-empty">Could not load comments.</div>`; }
+    const snap=await getDocs(query(collection(db,'comments'),orderBy('createdAt','asc')));
+    _allComments=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.videoId===vid);
+    renderComments();
+  }catch(e){list.innerHTML=`<div class="comments-empty">Could not load comments.</div>`;}
 }
 
-function buildComment(c){
+function renderComments(){
+  const list=$('comments-list');
+  if(!list)return;
+  const tops=_allComments.filter(c=>!c.parentId);
+  const total=_allComments.length;
+  $('comment-count').textContent=total?`(${total})`:'';
+  if(!tops.length){list.innerHTML=`<div class="comments-empty">No comments yet. Be the first!</div>`;return;}
+  list.innerHTML=tops.map(c=>buildComment(c,0)).join('');
+}
+
+function buildComment(c,depth){
   const init=(c.name||'U')[0].toUpperCase();
-  const time=c.createdAt?.toDate?(()=>{
-    const d=c.createdAt.toDate(); const now=new Date();
-    const diff=Math.floor((now-d)/1000);
-    if(diff<60)return 'Just now';
-    if(diff<3600)return `${Math.floor(diff/60)}m ago`;
-    if(diff<86400)return `${Math.floor(diff/3600)}h ago`;
-    return d.toLocaleDateString();
-  })():'Just now';
-  return`<div class="comment-item" id="cmt-${c.id}">
-    <div class="comment-avatar" style="background:${strColor(c.name||'')}">${init}</div>
+  const time=fmtTime(c.createdAt);
+  const children=_allComments.filter(x=>x.parentId===c.id);
+  const visible=children.slice(0,2);
+  const hidden=children.slice(2);
+  const saved=getSavedName();
+  const avatarInit=(saved[0]||'U').toUpperCase();
+  const avatarBg=saved?strColor(saved):'#555';
+  const canReply=depth<2;
+
+  const repliesHtml=`<div class="replies-wrap" id="replies-${c.id}" ${children.length?'':'style="display:none"'}>
+    ${visible.map(r=>buildComment(r,depth+1)).join('')}
+    ${hidden.length?`<button class="view-more-replies" onclick="showMoreReplies('${c.id}')">▸ View ${hidden.length} more repl${hidden.length===1?'y':'ies'}</button>`:''}
+  </div>`;
+
+  return`<div class="comment-item" id="cmt-${c.id}" data-depth="${depth}">
+    <div class="comment-avatar ${depth>0?'sm':''}" style="background:${strColor(c.name||'')}">${init}</div>
     <div class="comment-body">
       <div class="comment-author">
-        ${c.name||'Anonymous'}
+        ${escHtml(c.name||'Anonymous')}
         <span class="comment-time">${time}</span>
-        <button class="comment-delete" onclick="deleteComment('${c.id}')" title="Delete">🗑</button>
       </div>
+      ${c.replyTo?`<div class="replying-to">↩ replying to <strong>${escHtml(c.replyTo)}</strong></div>`:''}
       <div class="comment-text">${escHtml(c.text||'')}</div>
+      <div class="comment-actions">
+        ${canReply?`<button class="comment-reply-btn" onclick="toggleReplyForm('${c.id}','${escHtml(c.name||'Anonymous')}')">↩ Reply</button>`:''}
+        <button class="comment-delete" onclick="deleteComment('${c.id}')">🗑</button>
+      </div>
+      <div id="reply-form-${c.id}" style="display:none" class="reply-form-wrap">
+        <div class="reply-form">
+          <div class="comment-avatar sm" style="background:${avatarBg}">${avatarInit}</div>
+          <div style="flex:1">
+            <textarea class="reply-text-input" id="reply-text-${c.id}" placeholder="Reply to ${escHtml(c.name||'Anonymous')}..." maxlength="500"></textarea>
+            <div style="display:flex;gap:6px;margin-top:5px">
+              <button class="reply-submit" onclick="submitReply('${c.id}','${escHtml(c.name||'Anonymous')}')">Reply</button>
+              <button class="reply-cancel" onclick="toggleReplyForm('${c.id}','')">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      ${repliesHtml}
     </div>
   </div>`;
 }
 
-function strColor(s){ const h=[...s].reduce((a,c)=>a+c.charCodeAt(0),0)%360; return `hsl(${h},55%,38%)`; }
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtTime(ts){
+  if(!ts?.toDate)return 'Just now';
+  const d=ts.toDate(),now=new Date(),diff=Math.floor((now-d)/1000);
+  if(diff<60)return 'Just now';
+  if(diff<3600)return `${Math.floor(diff/60)}m ago`;
+  if(diff<86400)return `${Math.floor(diff/3600)}h ago`;
+  if(diff<604800)return `${Math.floor(diff/86400)}d ago`;
+  return d.toLocaleDateString();
+}
+function strColor(s){const h=[...s].reduce((a,c)=>a+c.charCodeAt(0),0)%360;return `hsl(${h},55%,38%)`;}
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+window.showMoreReplies=(parentId)=>{
+  const children=_allComments.filter(x=>x.parentId===parentId);
+  const wrap=document.getElementById('replies-'+parentId);
+  if(!wrap)return;
+  const depth=parseInt(document.getElementById('cmt-'+parentId)?.dataset.depth||0);
+  wrap.innerHTML=children.map(r=>buildComment(r,depth+1)).join('');
+};
+
+window.toggleReplyForm=(parentId)=>{
+  const form=document.getElementById('reply-form-'+parentId);
+  if(!form)return;
+  const isOpen=form.style.display!=='none';
+  document.querySelectorAll('[id^="reply-form-"]').forEach(f=>f.style.display='none');
+  if(!isOpen){form.style.display='';document.getElementById('reply-text-'+parentId)?.focus();}
+};
 
 window.submitComment=async()=>{
-  const name=($('comment-name')?.value||'').trim()||'Anonymous';
+  const inp=$('comment-name');
+  const name=(inp?.value||'').trim()||'Anonymous';
   const text=($('comment-text')?.value||'').trim();
-  if(!text){ showToast('Write something first','err'); return; }
+  if(!text){showToast('Write something first','err');return;}
   if(!_commentVideoId)return;
-  const btn=$('.comment-submit');
+  const btn=document.querySelector('.comment-submit');
   if(btn)btn.disabled=true;
   try{
-    const ref=await addDoc(collection(db,'comments'),{
-      videoId:_commentVideoId, name, text,
-      createdAt:serverTimestamp()
-    });
+    await addDoc(collection(db,'comments'),{videoId:_commentVideoId,name,text,parentId:null,replyTo:null,createdAt:serverTimestamp()});
+    if(!getSavedName()){setSavedName(name);initNameField();}
     $('comment-text').value='';
     showToast('Comment posted!','ok');
-    loadComments(_commentVideoId);
-  }catch(e){ showToast('Failed to post','err'); }
+    await loadComments(_commentVideoId);
+  }catch(e){showToast('Failed to post','err');}
+  if(btn)btn.disabled=false;
+};
+
+window.submitReply=async(parentId,replyToName)=>{
+  const saved=getSavedName();
+  const name=saved||((prompt('Enter your name first:')||'').trim()||'Anonymous');
+  const textEl=document.getElementById('reply-text-'+parentId);
+  const text=(textEl?.value||'').trim();
+  if(!text){showToast('Write something first','err');return;}
+  if(!_commentVideoId)return;
+  const btn=document.querySelector(`#reply-form-${parentId} .reply-submit`);
+  if(btn)btn.disabled=true;
+  try{
+    await addDoc(collection(db,'comments'),{videoId:_commentVideoId,name,text,parentId,replyTo:replyToName,createdAt:serverTimestamp()});
+    if(!getSavedName()){setSavedName(name);initNameField();}
+    if(textEl)textEl.value='';
+    document.getElementById('reply-form-'+parentId).style.display='none';
+    showToast('Reply posted!','ok');
+    await loadComments(_commentVideoId);
+  }catch(e){showToast('Failed to post','err');}
   if(btn)btn.disabled=false;
 };
 
 window.deleteComment=async(id)=>{
-  if(!confirm('Delete this comment?'))return;
+  if(!confirm('Delete this comment and all its replies?'))return;
   try{
-    await deleteDoc(doc(db,'comments',id));
-    document.getElementById('cmt-'+id)?.remove();
-    showToast('Comment deleted','ok');
-    // Update count
-    const cur=parseInt($('comment-count')?.textContent?.replace(/\D/g,'')||0);
-    if(cur>0) $('comment-count').textContent=cur-1>0?`(${cur-1})`:'';
-  }catch(e){ showToast('Failed to delete','err'); }
+    const gather=(pid)=>{
+      const kids=_allComments.filter(c=>c.parentId===pid).map(c=>c.id);
+      return[pid,...kids.flatMap(kid=>gather(kid))];
+    };
+    const ids=gather(id);
+    await Promise.all([...new Set(ids)].map(cid=>deleteDoc(doc(db,'comments',cid))));
+    showToast('Deleted','ok');
+    await loadComments(_commentVideoId);
+  }catch(e){showToast('Failed to delete','err');}
 };
 
 // ── KEYBOARD SHORTCUTS ──
