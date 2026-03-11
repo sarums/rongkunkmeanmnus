@@ -225,12 +225,24 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .skel-sub   { height: 9px;  margin-top: 4px; width: 55%; }
 
 /* ══ WATCH PAGE ══ */
-.watch-page { padding-top: 72px; }
+.watch-page { padding-top: 60px; }
 .watch-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
-@media (max-width: 960px) { .watch-layout { grid-template-columns: 1fr; padding: 0 14px 40px; } }
+@media (max-width: 960px) { .watch-layout { grid-template-columns: 1fr; padding: 0 0 40px; } }
 
-.player-wrap { width: 100%; aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; background: #000; border: 1px solid var(--border); }
-.player-wrap iframe { width: 100%; height: 100%; border: none; }
+/* ── Sticky player ── */
+.player-outer { position: sticky; top: 60px; z-index: 100; background: #000; }
+@media (max-width: 960px) { .player-outer { margin: 0; border-radius: 0; } }
+@media (min-width: 961px) { .player-outer { border-radius: 14px; overflow: hidden; } }
+
+.player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
+.player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
+
+/* Mobile: full bleed player */
+@media (max-width: 960px) {
+  .watch-layout { gap: 0; }
+  .watch-col-left { padding: 0 14px; }
+  .player-outer { border-radius: 0; }
+}
 
 .watch-source-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 8px; }
 .watch-source-badge { padding: 2px 9px; background: #4338ca; border-radius: 4px; font-size: .67rem; font-weight: 800; color: #fff; text-transform: uppercase; }
@@ -588,15 +600,17 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
 
       <!-- Left: Player + Info -->
       <div>
-        <button class="back-btn" onclick="goBack()">
+        <button class="back-btn" onclick="goBack()" style="margin:12px 0 8px 0">
           <svg width="14" height="14" fill="none" stroke-width="2.5" viewBox="0 0 24 24">
             <path d="M19 12H5M12 5l-7 7 7 7"/>
           </svg>
           Back
         </button>
 
-        <div class="player-wrap">
-          <iframe id="player-iframe" allowfullscreen allow="autoplay"></iframe>
+        <div class="player-outer">
+          <div class="player-wrap">
+            <iframe id="player-iframe" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+          </div>
         </div>
 
         <div class="watch-source-row">
