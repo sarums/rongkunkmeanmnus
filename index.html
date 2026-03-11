@@ -251,22 +251,35 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* ══ WATCH PAGE ══ */
 .watch-page { padding-top: 60px; }
+
+/* Desktop: two-column grid */
 .watch-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
-@media (max-width: 960px) { .watch-layout { grid-template-columns: 1fr; padding: 0 0 40px; } }
+
+/* Mobile: single column, YouTube style */
+@media (max-width: 960px) {
+  .watch-layout { grid-template-columns: 1fr; padding: 0 0 80px; gap: 0; }
+  /* On mobile, right column (suggested) goes BELOW left column (info+comments) */
+  .watch-col-right { order: 2; padding: 0 14px; }
+  .watch-col-left  { order: 1; }
+}
 
 /* ── Player ── */
 .player-outer { background: #000; border-radius: 14px; overflow: hidden; }
 @media (max-width: 960px) { .player-outer { border-radius: 0; } }
-
 .player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
 .player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
 
-/* Mobile: full bleed player */
+/* Mobile info padding */
 @media (max-width: 960px) {
-  .watch-layout { gap: 0; }
-  .watch-col-left { padding: 0 14px; }
-  .player-outer { border-radius: 0; }
+  .watch-info-wrap { padding: 0 14px; }
 }
+
+/* ── Filter chips (YouTube style) ── */
+.watch-filter-row { display:flex; gap:8px; overflow-x:auto; padding:12px 0 4px; scrollbar-width:none; }
+.watch-filter-row::-webkit-scrollbar { display:none; }
+.watch-filter-chip { flex-shrink:0; padding:6px 14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.1); border-radius:9999px; font-size:.76rem; font-weight:700; color:#aaa; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.watch-filter-chip.active { background:#fff; color:#000; border-color:#fff; }
+.watch-filter-chip:hover:not(.active) { background:rgba(255,255,255,.14); color:#fff; }
 
 .watch-source-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 8px; }
 .watch-source-badge { padding: 2px 9px; background: #4338ca; border-radius: 4px; font-size: .67rem; font-weight: 800; color: #fff; text-transform: uppercase; }
@@ -627,9 +640,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
   <div id="page-watch" class="page watch-page">
     <div class="watch-layout">
 
-      <!-- Left: Player + Info -->
-      <div>
-
+      <!-- Left col: Player + Info + Comments -->
+      <div class="watch-col-left">
 
         <div class="player-outer">
           <div class="player-wrap">
@@ -637,15 +649,23 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           </div>
         </div>
 
-        <div class="watch-source-row">
-          <span id="watch-source" class="watch-source-badge"></span>
-          <span id="watch-cat"    class="watch-cat-label"></span>
-          <button id="watch-next-btn" class="watch-next-btn" onclick="playNext()" style="display:none">
-            Next Episode ›
-          </button>
-        </div>
+        <div class="watch-info-wrap">
+          <!-- Filter chips -->
+          <div class="watch-filter-row" id="watch-filter-row">
+            <button class="watch-filter-chip active" onclick="setWatchFilter('all',this)">All</button>
+            <button class="watch-filter-chip" onclick="setWatchFilter('related',this)">Related</button>
+            <button class="watch-filter-chip" id="chip-playlist" style="display:none" onclick="setWatchFilter('playlist',this)">Playlist</button>
+          </div>
 
-        <h1 id="watch-title" class="watch-title"></h1>
+          <div class="watch-source-row">
+            <span id="watch-source" class="watch-source-badge"></span>
+            <span id="watch-cat"    class="watch-cat-label"></span>
+            <button id="watch-next-btn" class="watch-next-btn" onclick="playNext()" style="display:none">
+              Next Episode ›
+            </button>
+          </div>
+
+          <h1 id="watch-title" class="watch-title"></h1>
 
         <div class="watch-meta">
           <div class="watch-stat">
@@ -734,10 +754,11 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           </div>
           <div id="comments-list"></div>
         </div>
-      </div>
+        </div><!-- end watch-info-wrap -->
+      </div><!-- end watch-col-left -->
 
-      <!-- Right: Playlist + Suggested -->
-      <div>
+      <!-- Right col: Playlist + Suggested (desktop sidebar / mobile below) -->
+      <div class="watch-col-right">
         <div class="playlist-panel" id="playlist-panel" style="display:none">
           <div class="playlist-header">
             <span class="playlist-label">Playlist</span>
@@ -1421,8 +1442,14 @@ window.openVideo=async (id,push=true)=>{
   playlistQueue=[];plQueueIdx=0;
   $("player-iframe").src="";
   $("playlist-panel").style.display="none";
+  $("suggested-list").style.display="";
   $("watch-next-btn").style.display="none";
   clearCountdown();
+  // Reset filter chips
+  document.querySelectorAll('.watch-filter-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector('.watch-filter-chip')?.classList.add('active');
+  const chipPl=$("chip-playlist");
+  if(chipPl)chipPl.style.display='none';
   $("suggested-list").innerHTML=skelRow(3);
 
   const v=videos.find(x=>x.id===id);if(!v)return;
@@ -1486,6 +1513,9 @@ window.openVideo=async (id,push=true)=>{
       </a>`;
     }).join("");
     $("playlist-panel").style.display="";
+    // Show playlist chip on mobile
+    const chipPl=$("chip-playlist");
+    if(chipPl){ chipPl.style.display=''; chipPl.textContent=`📋 ${pl.name}`; }
     if(playlistQueue[plQueueIdx+1]){
       $("watch-next-btn").style.display="";
     }
@@ -1564,6 +1594,19 @@ window.playNext=()=>{
   clearCountdown();
   const n=playlistQueue[plQueueIdx+1];
   if(n) openVideo(n.id);
+};
+
+// ── Watch filter chips ──
+window.setWatchFilter=(type,btn)=>{
+  document.querySelectorAll('.watch-filter-chip').forEach(c=>c.classList.remove('active'));
+  btn?.classList.add('active');
+  if(type==='playlist'){
+    $('playlist-panel').style.display='';
+    $('suggested-list').style.display='none';
+  } else {
+    $('playlist-panel').style.display='none';
+    $('suggested-list').style.display='';
+  }
 };
 window.openPlaylistById=id=>{
   const pl=playlists.find(p=>p.id===id);
