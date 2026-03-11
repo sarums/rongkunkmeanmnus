@@ -442,6 +442,9 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
       <button class="nav-item" onclick="showPanel('categories',this)"><span class="ico">🏷️</span>Categories</button>
       <button class="nav-item" onclick="showPanel('sections',this)"><span class="ico">🗂️</span>Home Sections</button>
 
+      <div class="sidebar-section">Community</div>
+      <button class="nav-item" onclick="showPanel('comments',this)"><span class="ico">💬</span>Comments</button>
+
       <div class="sidebar-section">System</div>
       <button class="nav-item" onclick="showPanel('settings',this)"><span class="ico">⚙️</span>Settings</button>
     </div>
@@ -679,6 +682,23 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
           <div id="catGrid" style="display:flex;flex-direction:column;gap:8px;min-height:40px"></div>
           <div class="empty-state" id="catEmpty" style="display:none">
             <div class="ico">🏷️</div><h3>No menu items</h3><p>Add your first item above</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMMENTS -->
+      <div class="panel" id="panel-comments">
+        <div class="panel-title">💬 Comments</div>
+        <div class="form-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+            <div class="form-card-title" style="margin:0">All Comments</div>
+            <div style="display:flex;gap:.5rem;align-items:center">
+              <input type="text" class="finput" id="commentSearch" placeholder="Search comments..." oninput="filterComments()" style="width:200px;padding:.4rem .75rem;font-size:.78rem">
+            </div>
+          </div>
+          <div id="commentsAdminList" style="display:flex;flex-direction:column;gap:10px;min-height:60px"></div>
+          <div class="empty-state" id="commentsEmpty" style="display:none">
+            <div class="ico">💬</div><h3>No comments yet</h3><p>Comments will appear here when users post them</p>
           </div>
         </div>
       </div>
@@ -2089,6 +2109,62 @@ window.addCheckedToPlaylist=async plId=>{
 // (settings loaded via initLogin below)
 
 // ── AUTO START ──
+// ── COMMENTS PANEL ──────────────────────────────────
+let allComments=[];
+
+async function loadComments(){
+  const snap=await getDocs(query(collection(db,'comments'),orderBy('createdAt','desc')));
+  allComments=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderAdminComments(allComments);
+}
+
+window.filterComments=()=>{
+  const q=(qs('commentSearch')?.value||'').toLowerCase();
+  const filtered=q?allComments.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.text||'').toLowerCase().includes(q)):allComments;
+  renderAdminComments(filtered);
+};
+
+function renderAdminComments(list){
+  const el=qs('commentsAdminList');
+  qs('commentsEmpty').style.display=list.length?'none':'flex';
+  if(!list.length){ el.innerHTML=''; return; }
+  el.innerHTML=list.map(c=>{
+    const vid=allVideos.find(v=>v.id===c.videoId);
+    const time=c.createdAt?.toDate?c.createdAt.toDate().toLocaleString():'—';
+    return`<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:.9rem 1rem;display:flex;gap:1rem;align-items:flex-start" id="acmt-${c.id}">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem;flex-wrap:wrap">
+          <span style="font-size:.82rem;font-weight:800;color:#ddd">${escHtml(c.name||'Anonymous')}</span>
+          <span style="font-size:.68rem;color:var(--text2)">${time}</span>
+          ${vid?`<a href="/watch/${vid.id}" target="_blank" style="font-size:.65rem;color:var(--accent);font-weight:700;background:rgba(232,160,32,.1);padding:1px 7px;border-radius:9999px">📺 ${(vid.title||'').slice(0,30)}</a>`:''}
+        </div>
+        <div style="font-size:.83rem;color:#999;line-height:1.55">${escHtml(c.text||'')}</div>
+      </div>
+      <button onclick="adminDeleteComment('${c.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#ef4444;border-radius:8px;padding:.4rem .75rem;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:all .2s" onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">🗑 Delete</button>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+window.adminDeleteComment=async(id)=>{
+  if(!confirm('Delete this comment?'))return;
+  try{
+    await deleteDoc(doc(db,'comments',id));
+    allComments=allComments.filter(c=>c.id!==id);
+    document.getElementById('acmt-'+id)?.remove();
+    showToast('Deleted','Comment removed','ok');
+    if(!allComments.length) qs('commentsEmpty').style.display='flex';
+  }catch(e){ showToast('Error',e.message,'err'); }
+};
+
+// Load comments when panel opens
+const _origShowPanel=window.showPanel;
+window.showPanel=(id,btn)=>{
+  _origShowPanel(id,btn);
+  if(id==='comments') loadComments();
+};
+
 loadAll();
 </script>
 </body>
