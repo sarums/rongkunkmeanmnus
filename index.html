@@ -1740,8 +1740,8 @@ window.toggleReplyForm=(parentId)=>{
 };
 
 window.submitComment=async()=>{
-  const inp=$('comment-name');
-  const name=(inp?.value||'').trim()||'Anonymous';
+  const name=getSavedName();
+  if(!name){showToast('Please set a username first','err');return;}
   const text=($('comment-text')?.value||'').trim();
   if(!text){showToast('Write something first','err');return;}
   if(!_commentVideoId)return;
@@ -1749,7 +1749,6 @@ window.submitComment=async()=>{
   if(btn)btn.disabled=true;
   try{
     await addDoc(collection(db,'comments'),{videoId:_commentVideoId,name,text,parentId:null,replyTo:null,createdAt:serverTimestamp()});
-    if(!getSavedName()){setSavedName(name);initNameField();}
     $('comment-text').value='';
     showToast('Comment posted!','ok');
     await loadComments(_commentVideoId);
@@ -1758,8 +1757,8 @@ window.submitComment=async()=>{
 };
 
 window.submitReply=async(parentId,replyToName)=>{
-  const saved=getSavedName();
-  const name=saved||((prompt('Enter your name first:')||'').trim()||'Anonymous');
+  const name=getSavedName();
+  if(!name){showToast('Please set a username first','err');return;}
   const textEl=document.getElementById('reply-text-'+parentId);
   const text=(textEl?.value||'').trim();
   if(!text){showToast('Write something first','err');return;}
@@ -1768,7 +1767,6 @@ window.submitReply=async(parentId,replyToName)=>{
   if(btn)btn.disabled=true;
   try{
     await addDoc(collection(db,'comments'),{videoId:_commentVideoId,name,text,parentId,replyTo:replyToName,createdAt:serverTimestamp()});
-    if(!getSavedName()){setSavedName(name);initNameField();}
     if(textEl)textEl.value='';
     document.getElementById('reply-form-'+parentId).style.display='none';
     showToast('Reply posted!','ok');
