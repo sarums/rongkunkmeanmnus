@@ -897,7 +897,7 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, deleteDoc,
-  doc, query, orderBy, updateDoc, serverTimestamp, getDoc, setDoc, increment
+  doc, query, orderBy, where, updateDoc, serverTimestamp, getDoc, setDoc, increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1194,18 +1194,29 @@ window.saveEdit = async ()=>{
 
 // ── DELETE VIDEO ──────────────────────────────────────
 window.deleteVideo = (id, name)=>{
-  showConfirm('Delete Video?',`"${name}..." will be permanently deleted.`,async()=>{
+  showConfirm('Delete Video?',`"${name}..." and ALL its comments will be permanently deleted.`,async()=>{
     try {
+      // Delete the video
       await deleteDoc(doc(db,'videos',id));
       allVideos=allVideos.filter(v=>v.id!==id);
-      // remove from playlists
+
+      // Remove from playlists
       for(const pl of allPlaylists){
         if(pl.videos&&pl.videos.includes(id)){
           pl.videos=pl.videos.filter(x=>x!==id);
           await updateDoc(doc(db,'playlists',pl.id),{videos:pl.videos});
         }
       }
-      showToast('Deleted',`Video removed successfully`,'warn');
+
+      // Delete all comments for this video (cascade)
+      const commSnap=await getDocs(query(collection(db,'comments'),where('videoId','==',id)));
+      if(!commSnap.empty){
+        await Promise.all(commSnap.docs.map(d=>deleteDoc(doc(db,'comments',d.id))));
+        // Refresh local comments cache if loaded
+        allComments=allComments.filter(c=>c.videoId!==id);
+      }
+
+      showToast('Deleted',`Video and ${commSnap.size} comment(s) removed`,'warn');
       renderOverview(); renderAllVideos();
     } catch(e){ showToast('Error',e.message,'err'); }
   });
