@@ -41,14 +41,14 @@
 }
 #nprogress-bar.running { opacity: 1; }
 #nprogress-spinner {
-  display: block; position: fixed;
-  z-index: 9999; top: 14px; right: 14px;
-  width: 16px; height: 16px;
-  border: 2px solid transparent;
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.15);
   border-top-color: var(--brand);
   border-radius: 50%;
   animation: np-spin .5s linear infinite;
   opacity: 0; transition: opacity .3s;
+  flex-shrink: 0;
 }
 #nprogress-spinner.running { opacity: 1; }
 @keyframes np-spin { to { transform: rotate(360deg); } }
@@ -462,7 +462,6 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
 <!-- YouTube-style top progress bar -->
 <div id="nprogress">
   <div id="nprogress-bar"></div>
-  <div id="nprogress-spinner"></div>
 </div>
 
   <!-- ═══ PAGE LOADER ═══ -->
@@ -492,6 +491,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           </div>
           <span class="nav-logo-text" id="site-name">RongKun</span>
         </a>
+        <div id="nprogress-spinner"></div>
         <nav class="nav-links" id="nav-cats"></nav>
       </div>
 
