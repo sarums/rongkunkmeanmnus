@@ -1692,7 +1692,6 @@ function buildComment(c,depth){
       <div class="comment-text">${escHtml(c.text||'')}</div>
       <div class="comment-actions">
         ${canReply?`<button class="comment-reply-btn" onclick="toggleReplyForm('${c.id}','${escHtml(c.name||'Anonymous')}')">↩ Reply</button>`:''}
-        <button class="comment-delete" onclick="deleteComment('${c.id}')">🗑</button>
       </div>
       <div id="reply-form-${c.id}" style="display:none" class="reply-form-wrap">
         <div class="reply-form">
