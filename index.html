@@ -28,6 +28,31 @@
 /* ── RESET & BASE ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── TOP PROGRESS BAR ── */
+#nprogress { pointer-events:none; }
+#nprogress-bar {
+  background: var(--brand);
+  position: fixed; z-index: 9999;
+  top: 0; left: 0;
+  width: 0%; height: 3px;
+  transition: width .2s ease, opacity .4s ease;
+  box-shadow: 0 0 10px var(--brand), 0 0 5px var(--brand);
+  opacity: 0;
+}
+#nprogress-bar.running { opacity: 1; }
+#nprogress-spinner {
+  display: block; position: fixed;
+  z-index: 9999; top: 14px; right: 14px;
+  width: 16px; height: 16px;
+  border: 2px solid transparent;
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: np-spin .5s linear infinite;
+  opacity: 0; transition: opacity .3s;
+}
+#nprogress-spinner.running { opacity: 1; }
+@keyframes np-spin { to { transform: rotate(360deg); } }
+
 :root {
   --brand: #f27d26;
   --bg: #0a0a0a;
@@ -434,6 +459,11 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
   </style>
 </head>
 <body>
+<!-- YouTube-style top progress bar -->
+<div id="nprogress">
+  <div id="nprogress-bar"></div>
+  <div id="nprogress-spinner"></div>
+</div>
 
   <!-- ═══ PAGE LOADER ═══ -->
   <div id="page-loader">
@@ -812,13 +842,15 @@ function getHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY)|
 function addToHistory(id){ const h=getHistory().filter(x=>x!==id); h.unshift(id); localStorage.setItem(HISTORY_KEY,JSON.stringify(h.slice(0,50))); }
 window.clearHistory=()=>{ localStorage.removeItem(HISTORY_KEY); showHistoryPage(); showToast('History cleared'); };
 window.showHistoryPage=()=>{
+  NP.start();
   showPage('history');
   const ids=getHistory();
   const list=ids.map(id=>videos.find(v=>v.id===id)).filter(Boolean);
   const grid=$('history-grid');
-  if(!list.length){ grid.innerHTML=''; $('history-empty').style.display=''; return; }
+  if(!list.length){ grid.innerHTML=''; $('history-empty').style.display=''; NP.done(); return; }
   $('history-empty').style.display='none';
   grid.innerHTML=list.map(v=>buildCard(v)).join('');
+  NP.done();
 };
 
 // ── Helpers ──
@@ -890,15 +922,17 @@ window.toggleMobileMenu=()=>{
 window.doSearch=(q2)=>{
   const q=(q2||$("search-input").value||$("mobile-search-input")?.value||"").trim();
   if(!q)return;
-  // Close mobile menu if open
+  NP.start();
   if(mobileMenuOpen){ mobileMenuOpen=false; $("mobile-menu").classList.remove("open"); }
   if(searchOpen){ searchOpen=false; $("search-wrap").classList.remove("open"); }
   history.pushState({page:'search',q},"",`/search?q=${encodeURIComponent(q)}`);
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-search"));
   window.scrollTo(0,0);
   updateMeta({title:`Search: ${q}`, desc:`Search results for "${q}"`});
-  $("search-info").textContent=`${videos.filter(v=>matchSearch(v,q)).length} results for "${q}"`;
-  renderGrid($("search-grid"),videos.filter(v=>matchSearch(v,q)));
+  const results=videos.filter(v=>matchSearch(v,q));
+  $("search-info").textContent=`${results.length} results for "${q}"`;
+  renderGrid($("search-grid"),results);
+  NP.done();
 };
 function matchSearch(v,q){
   const lq=q.toLowerCase();
@@ -906,6 +940,49 @@ function matchSearch(v,q){
 }
 
 // ── Pages ──
+// ── PROGRESS BAR ENGINE ──────────────────────────────
+const NP = {
+  _timer: null, _val: 0, _fake: null,
+  bar: null, spin: null,
+  init(){
+    this.bar  = document.getElementById('nprogress-bar');
+    this.spin = document.getElementById('nprogress-spinner');
+  },
+  set(n){
+    if(!this.bar) this.init();
+    this._val = Math.min(n, 0.994);
+    this.bar.style.width = (this._val * 100) + '%';
+    this.bar.classList.add('running');
+    this.spin.classList.add('running');
+  },
+  start(){
+    if(!this.bar) this.init();
+    clearInterval(this._fake);
+    this.set(0.08);
+    // Fake trickle
+    this._fake = setInterval(()=>{
+      const gap = 1 - this._val;
+      const inc = gap > .5 ? .1 : gap > .2 ? .04 : gap > .05 ? .01 : 0.005;
+      this.set(this._val + inc);
+    }, 300);
+  },
+  done(){
+    if(!this.bar) this.init();
+    clearInterval(this._fake);
+    this.set(1);
+    setTimeout(()=>{
+      this.bar.style.opacity = '0';
+      this.spin.classList.remove('running');
+      setTimeout(()=>{
+        this.bar.style.width = '0%';
+        this.bar.classList.remove('running');
+        this.bar.style.opacity = '';
+        this._val = 0;
+      }, 400);
+    }, 200);
+  }
+};
+
 function showPage(id,push=true){
   if(id!=="watch")previousPage=id;
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
@@ -1059,19 +1136,18 @@ function buildNav(){
 // Single entry point for all nav category clicks
 window.navGo=(id)=>{
   const c=categories.find(x=>x.id===id); if(!c)return;
+  NP.start();
   const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
-  // Always update URL to /slug first
   const slug='/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   history.pushState({page:'cat',catId:id},"",slug);
-  // Then show content
   if(c.target_type==='playlist'&&ids.length){
-    // show playlist videos on category page
     openCategoryById(id);
   } else if(c.target_type==='video'&&ids.length){
     openCategoryById(id);
   } else {
-    openCategory(id, c.name, false); // false = don't pushState again
+    openCategory(id, c.name, false);
   }
+  NP.done();
 };
 
 // ── Card ──
@@ -1304,6 +1380,7 @@ function fillSection(sec,rowId){
 
 window.scrollRow=(id,dir)=>{const el=$(id);if(el)el.scrollBy({left:dir*700,behavior:"smooth"});};
 window.seeAll=sid=>{
+  NP.start();
   const sec=sections.find(s=>s.id===sid);
   if(!sec){ showPage("cat"); return; }
 
@@ -1336,6 +1413,7 @@ window.seeAll=sid=>{
 
 // ── Watch ──
 window.openVideo=async (id,push=true)=>{
+  NP.start();
   // Save current URL as previous page before navigating (for back button)
   if(push) previousPage=location.pathname;
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
@@ -1439,6 +1517,7 @@ window.openVideo=async (id,push=true)=>{
   // Load likes/dislikes + comments for this video
   loadReactions(id);
   loadComments(id);
+  NP.done();
 };
 
 window.openPlaylist=(plId,startId)=>{
@@ -1495,6 +1574,7 @@ window.openPlaylistById=id=>{
 // ── Category ──
 // Show category page content by category object
 function showCatPage(cat){
+  NP.start();
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
   window.scrollTo(0,0);
   $("cat-title").textContent=cat.name;
@@ -1513,6 +1593,8 @@ function showCatPage(cat){
   } else {
     const list=videos.filter(v=>v.category===cat.name);
     renderGrid($("cat-grid"),list);
+  NP.done();
+    NP.done();
   }
 }
 
