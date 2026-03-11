@@ -247,6 +247,48 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .share-btn:hover { background: #222; color: #fff; }
 .watch-desc { font-size: .83rem; color: #666; line-height: 1.65; font-weight: 500; }
 
+/* ══ LIKE/DISLIKE ══ */
+.react-row { display:flex; align-items:center; gap:8px; margin:14px 0; }
+.react-btn { display:flex; align-items:center; gap:6px; padding:7px 16px; background:var(--bg2); border:1px solid var(--border2); border-radius:9999px; font-size:.78rem; font-weight:700; color:#aaa; cursor:pointer; transition:all .2s; }
+.react-btn:hover { border-color:#555; color:#fff; }
+.react-btn.liked  { background:rgba(34,197,94,.12);  border-color:rgba(34,197,94,.4);  color:#22c55e; }
+.react-btn.disliked { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.4); color:#ef4444; }
+.react-btn svg { width:15px; height:15px; fill:currentColor; }
+
+/* ══ SHARE PANEL ══ */
+.share-panel { display:none; position:absolute; right:0; top:calc(100% + 8px); background:var(--bg2); border:1px solid var(--border2); border-radius:14px; padding:10px; z-index:50; min-width:200px; box-shadow:0 8px 32px rgba(0,0,0,.5); }
+.share-panel.open { display:block; animation:fadeUp .18s ease both; }
+.share-option { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:9px; cursor:pointer; font-size:.8rem; font-weight:700; color:#bbb; transition:all .15s; border:none; background:none; width:100%; text-align:left; }
+.share-option:hover { background:rgba(255,255,255,.06); color:#fff; }
+.share-option svg { width:16px; height:16px; flex-shrink:0; }
+.share-wrap { position:relative; }
+
+/* ══ COMMENTS ══ */
+.comments-section { margin-top:28px; padding-top:24px; border-top:1px solid var(--border); }
+.comments-title { font-size:.95rem; font-weight:800; color:#fff; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.comment-form { display:flex; gap:10px; margin-bottom:20px; }
+.comment-avatar { width:34px; height:34px; border-radius:50%; background:var(--brand); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; color:#000; flex-shrink:0; }
+.comment-input-wrap { flex:1; }
+.comment-name-input { width:100%; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:7px 12px; color:var(--text); font-size:.78rem; outline:none; margin-bottom:6px; font-family:inherit; transition:border-color .2s; }
+.comment-name-input:focus { border-color:var(--brand); }
+.comment-text-input { width:100%; background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:9px 12px; color:var(--text); font-size:.82rem; outline:none; resize:none; min-height:72px; font-family:inherit; transition:border-color .2s; }
+.comment-text-input:focus { border-color:var(--brand); }
+.comment-submit { margin-top:6px; padding:7px 18px; background:var(--brand); color:#000; font-size:.76rem; font-weight:800; border:none; border-radius:9999px; cursor:pointer; transition:all .2s; }
+.comment-submit:hover { background:#fff; }
+.comment-item { display:flex; gap:10px; margin-bottom:16px; }
+.comment-body { flex:1; min-width:0; }
+.comment-author { font-size:.78rem; font-weight:800; color:#ddd; margin-bottom:3px; display:flex; align-items:center; gap:8px; }
+.comment-time { font-size:.65rem; color:#555; font-weight:500; }
+.comment-text { font-size:.82rem; color:#888; line-height:1.6; }
+.comment-delete { margin-left:auto; background:none; border:none; color:#444; font-size:.7rem; cursor:pointer; padding:2px 6px; border-radius:4px; transition:all .2s; }
+.comment-delete:hover { color:#ef4444; background:rgba(239,68,68,.1); }
+.comments-empty { font-size:.82rem; color:#444; padding:16px 0; }
+.comments-loading { display:flex; gap:6px; align-items:center; color:#444; font-size:.78rem; padding:10px 0; }
+
+/* ══ PLAYLIST PROGRESS ══ */
+.pl-item.watched .pl-thumb::after { content:'✓'; position:absolute; inset:0; background:rgba(34,197,94,.35); display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#fff; font-weight:900; }
+.pl-watched-dot { width:7px; height:7px; border-radius:50%; background:#22c55e; flex-shrink:0; margin-left:auto; }
+
 .playlist-panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 18px; }
 .playlist-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
 .playlist-label { font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; color: #555; }
@@ -554,17 +596,63 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
             <label>Published</label>
             <span id="watch-date"></span>
           </div>
-          <button class="share-btn" onclick="copyLink()">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-            </svg>
-            Share
+          <!-- Share -->
+          <div class="share-wrap" style="margin-left:auto">
+            <button class="share-btn" onclick="toggleSharePanel(event)">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+              </svg>
+              Share
+            </button>
+            <div class="share-panel" id="share-panel">
+              <button class="share-option" onclick="shareAction('copy')">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Copy Link
+              </button>
+              <button class="share-option" onclick="shareAction('telegram')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.008 9.46c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.697l-2.95-.924c-.64-.203-.653-.64.136-.948l11.527-4.448c.534-.194 1.001.13.369.871z"/></svg>
+                Share to Telegram
+              </button>
+              <button class="share-option" onclick="shareAction('facebook')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                Share to Facebook
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Like / Dislike -->
+        <div class="react-row">
+          <button class="react-btn" id="like-btn" onclick="reactVideo('like')">
+            <svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+            <span id="like-count">0</span> Like
+          </button>
+          <button class="react-btn" id="dislike-btn" onclick="reactVideo('dislike')">
+            <svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10zM17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17"/></svg>
+            <span id="dislike-count">0</span> Dislike
           </button>
         </div>
 
         <p id="watch-desc" class="watch-desc"></p>
         <div id="watch-tags"></div>
+
+        <!-- Comments -->
+        <div class="comments-section">
+          <div class="comments-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Comments <span id="comment-count" style="font-size:.75rem;color:#555;font-weight:600"></span>
+          </div>
+          <div class="comment-form">
+            <div class="comment-avatar" id="comment-avatar">U</div>
+            <div class="comment-input-wrap">
+              <input class="comment-name-input" id="comment-name" placeholder="Your name" maxlength="40">
+              <textarea class="comment-text-input" id="comment-text" placeholder="Write a comment..." maxlength="500"></textarea>
+              <button class="comment-submit" onclick="submitComment()">Post Comment</button>
+            </div>
+          </div>
+          <div id="comments-list"></div>
+        </div>
       </div>
 
       <!-- Right: Playlist + Suggested -->
@@ -651,7 +739,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
   <!-- ═══ SCRIPTS ═══ -->
   <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import{getFirestore,collection,getDocs,doc,updateDoc,increment,query,orderBy,getDoc}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import{getFirestore,collection,getDocs,addDoc,deleteDoc,doc,updateDoc,increment,query,orderBy,getDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ── Firebase Config ──
 const firebaseConfig={apiKey:"AIzaSyAnXxuc92620WOz_bVkovnUEQ_LL4YFPp8",authDomain:"streamhub-ce717.firebaseapp.com",projectId:"streamhub-ce717",storageBucket:"streamhub-ce717.firebasestorage.app",messagingSenderId:"223272731262",appId:"1:223272731262:web:d17866d4a12f610c864e2f"};
@@ -1250,18 +1338,24 @@ window.openVideo=async (id,push=true)=>{
     playlistQueue=(pl.videos||[]).map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
     plQueueIdx=playlistQueue.findIndex(v=>v.id===id);
     $("playlist-progress").textContent=`${plQueueIdx+1} / ${playlistQueue.length}`;
-    $("playlist-items").innerHTML=playlistQueue.map((pv,pi)=>`
-      <a class="pl-item${pv.id===id?" current":""}" href="/watch/${toSlug(pl.name)}/ep-${pi+1}"
+    const watchedIds=getHistory();
+    $("playlist-items").innerHTML=playlistQueue.map((pv,pi)=>{
+      const isWatched=watchedIds.includes(pv.id);
+      const isCurrent=pv.id===id;
+      return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
+        href="/watch/${toSlug(pl.name)}/ep-${pi+1}"
         onclick="event.preventDefault();openVideo('${pv.id}')">
         <div class="pl-thumb">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
-          ${pv.id===id?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:""}
+          ${isCurrent?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:''}
         </div>
-        <div style="display:flex;flex-direction:column;justify-content:center;min-width:0">
+        <div style="display:flex;flex-direction:column;justify-content:center;min-width:0;flex:1">
           <div class="pl-title">${pv.title||""}</div>
-          ${pv.duration?`<div class="pl-dur">${pv.duration}</div>`:""}
+          ${pv.duration?`<div class="pl-dur">${pv.duration}</div>`:''}
         </div>
-      </a>`).join("");
+        ${isWatched&&!isCurrent?`<div class="pl-watched-dot" title="Watched"></div>`:''}
+      </a>`;
+    }).join("");
     $("playlist-panel").style.display="";
     if(playlistQueue[plQueueIdx+1]){
       $("watch-next-btn").style.display="";
@@ -1269,18 +1363,32 @@ window.openVideo=async (id,push=true)=>{
     }
   }
 
-  // Suggested
-  $("suggested-list").innerHTML=videos.filter(x=>x.id!==id).slice(0,8).map(x=>`
-    <div class="sugg-item" onclick="openVideo('${x.id}')">
+  // Smarter related videos — same category first, then others
+  const sameCat=videos.filter(x=>x.id!==id&&x.category===v.category);
+  const others=videos.filter(x=>x.id!==id&&x.category!==v.category);
+  const related=[...sameCat,...others].slice(0,10);
+  const watched=getHistory();
+  $("suggested-list").innerHTML=related.map(x=>{
+    const xpl=playlists.find(p=>(p.videos||[]).includes(x.id));
+    const xUrl=xpl?`/watch/${toSlug(xpl.name)}/ep-${(xpl.videos||[]).indexOf(x.id)+1}`:`/watch/${toSlug(x.title)}`;
+    const xClick=xpl?`openPlaylist('${xpl.id}','${x.id}')`:`openVideo('${x.id}')`;
+    const isWatched=watched.includes(x.id);
+    return`<a class="sugg-item" href="${xUrl}" onclick="event.preventDefault();${xClick}">
       <div class="sugg-thumb">
         <img src="${getThumb(x)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${x.id}/320/180'">
         ${x.duration?`<div class="sugg-dur">${x.duration}</div>`:""}
+        ${isWatched?`<div style="position:absolute;top:4px;right:4px;background:rgba(34,197,94,.85);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff">✓</div>`:""}
       </div>
       <div class="sugg-info">
         <div class="sugg-title-text">${x.title||""}</div>
-        <div class="sugg-meta"><em>${x.platform||x.source||""}</em> · ${fmtViews(x.views)} views</div>
+        <div class="sugg-meta"><em>${x.category||x.platform||""}</em> · ${fmtViews(x.views)} views${xpl?' · Series':''}</div>
       </div>
-    </div>`).join("");
+    </a>`;
+  }).join("");
+
+  // Load likes/dislikes + comments for this video
+  loadReactions(id);
+  loadComments(id);
 };
 
 window.openPlaylist=(plId,startId)=>{
@@ -1375,7 +1483,171 @@ window.openCategory=(id,name,push=true)=>{
   showCatPage(cat);
 };
 
-window.copyLink=()=>navigator.clipboard.writeText(location.href).then(()=>showToast("Link copied!","ok"));
+// ── SHARE ──
+window.toggleSharePanel=(e)=>{
+  e.stopPropagation();
+  $("share-panel")?.classList.toggle("open");
+};
+document.addEventListener("click",()=>$("share-panel")?.classList.remove("open"));
+
+window.shareAction=(type)=>{
+  const url=location.href;
+  const title=document.title;
+  $("share-panel")?.classList.remove("open");
+  if(type==="copy"){
+    navigator.clipboard.writeText(url).then(()=>showToast("Link copied!","ok"));
+  } else if(type==="telegram"){
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,'_blank');
+  } else if(type==="facebook"){
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,'_blank');
+  }
+};
+window.copyLink=()=>shareAction('copy');
+
+// ── LIKE / DISLIKE ──
+let _currentVideoId=null;
+const REACT_KEY='rkmn_reactions';
+function getUserReactions(){ try{ return JSON.parse(localStorage.getItem(REACT_KEY)||'{}'); }catch{ return {}; } }
+function setUserReaction(vid,type){ const r=getUserReactions(); r[vid]=type; localStorage.setItem(REACT_KEY,JSON.stringify(r)); }
+
+async function loadReactions(vid){
+  _currentVideoId=vid;
+  const userReact=getUserReactions()[vid]||null;
+  $('like-btn')?.classList.toggle('liked', userReact==='like');
+  $('dislike-btn')?.classList.toggle('disliked', userReact==='dislike');
+  try{
+    const snap=await getDoc(doc(db,'videos',vid));
+    const data=snap.data()||{};
+    $('like-count').textContent=data.likes||0;
+    $('dislike-count').textContent=data.dislikes||0;
+  }catch(e){}
+}
+
+window.reactVideo=async(type)=>{
+  const vid=_currentVideoId; if(!vid)return;
+  const prev=getUserReactions()[vid]||null;
+  const isToggle=prev===type;
+  const newReact=isToggle?null:type;
+  setUserReaction(vid,newReact);
+
+  $('like-btn')?.classList.toggle('liked', newReact==='like');
+  $('dislike-btn')?.classList.toggle('disliked', newReact==='dislike');
+
+  // Update Firestore counts
+  const updates={};
+  if(prev==='like')    updates.likes=increment(-1);
+  if(prev==='dislike') updates.dislikes=increment(-1);
+  if(newReact==='like')    updates.likes=increment(1);
+  if(newReact==='dislike') updates.dislikes=increment(1);
+  if(Object.keys(updates).length){
+    try{
+      await updateDoc(doc(db,'videos',vid),updates);
+      // Refresh counts
+      const snap=await getDoc(doc(db,'videos',vid));
+      const data=snap.data()||{};
+      $('like-count').textContent=Math.max(0,data.likes||0);
+      $('dislike-count').textContent=Math.max(0,data.dislikes||0);
+    }catch(e){}
+  }
+};
+
+// ── COMMENTS ──
+let _commentVideoId=null;
+// Update avatar initial from name
+document.addEventListener('input',e=>{
+  if(e.target.id==='comment-name'){
+    const init=(e.target.value.trim()[0]||'U').toUpperCase();
+    $('comment-avatar').textContent=init;
+  }
+});
+
+async function loadComments(vid){
+  _commentVideoId=vid;
+  const list=$('comments-list');
+  if(!list)return;
+  list.innerHTML=`<div class="comments-loading"><div class="loader-ring" style="width:16px;height:16px;border-width:2px"></div> Loading...</div>`;
+  try{
+    const snap=await getDocs(query(collection(db,'comments'),orderBy('createdAt','desc')));
+    const all=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.videoId===vid);
+    $('comment-count').textContent=all.length?`(${all.length})`:'';
+    if(!all.length){ list.innerHTML=`<div class="comments-empty">No comments yet. Be the first!</div>`; return; }
+    list.innerHTML=all.map(c=>buildComment(c)).join('');
+  }catch(e){ list.innerHTML=`<div class="comments-empty">Could not load comments.</div>`; }
+}
+
+function buildComment(c){
+  const init=(c.name||'U')[0].toUpperCase();
+  const time=c.createdAt?.toDate?(()=>{
+    const d=c.createdAt.toDate(); const now=new Date();
+    const diff=Math.floor((now-d)/1000);
+    if(diff<60)return 'Just now';
+    if(diff<3600)return `${Math.floor(diff/60)}m ago`;
+    if(diff<86400)return `${Math.floor(diff/3600)}h ago`;
+    return d.toLocaleDateString();
+  })():'Just now';
+  return`<div class="comment-item" id="cmt-${c.id}">
+    <div class="comment-avatar" style="background:${strColor(c.name||'')}">${init}</div>
+    <div class="comment-body">
+      <div class="comment-author">
+        ${c.name||'Anonymous'}
+        <span class="comment-time">${time}</span>
+        <button class="comment-delete" onclick="deleteComment('${c.id}')" title="Delete">🗑</button>
+      </div>
+      <div class="comment-text">${escHtml(c.text||'')}</div>
+    </div>
+  </div>`;
+}
+
+function strColor(s){ const h=[...s].reduce((a,c)=>a+c.charCodeAt(0),0)%360; return `hsl(${h},55%,38%)`; }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+window.submitComment=async()=>{
+  const name=($('comment-name')?.value||'').trim()||'Anonymous';
+  const text=($('comment-text')?.value||'').trim();
+  if(!text){ showToast('Write something first','err'); return; }
+  if(!_commentVideoId)return;
+  const btn=$('.comment-submit');
+  if(btn)btn.disabled=true;
+  try{
+    const ref=await addDoc(collection(db,'comments'),{
+      videoId:_commentVideoId, name, text,
+      createdAt:serverTimestamp()
+    });
+    $('comment-text').value='';
+    showToast('Comment posted!','ok');
+    loadComments(_commentVideoId);
+  }catch(e){ showToast('Failed to post','err'); }
+  if(btn)btn.disabled=false;
+};
+
+window.deleteComment=async(id)=>{
+  if(!confirm('Delete this comment?'))return;
+  try{
+    await deleteDoc(doc(db,'comments',id));
+    document.getElementById('cmt-'+id)?.remove();
+    showToast('Comment deleted','ok');
+    // Update count
+    const cur=parseInt($('comment-count')?.textContent?.replace(/\D/g,'')||0);
+    if(cur>0) $('comment-count').textContent=cur-1>0?`(${cur-1})`:'';
+  }catch(e){ showToast('Failed to delete','err'); }
+};
+
+// ── KEYBOARD SHORTCUTS ──
+document.addEventListener('keydown',e=>{
+  // Don't fire if typing in an input
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  const watchActive=document.getElementById('page-watch')?.classList.contains('active');
+  if(!watchActive) return;
+  if(e.key==='ArrowRight'||e.key==='n'){
+    const next=playlistQueue[plQueueIdx+1];
+    if(next){ clearCountdown(); openVideo(next.id); showToast('Next episode','info'); }
+  }
+  if(e.key==='ArrowLeft'||e.key==='p'){
+    const prev=playlistQueue[plQueueIdx-1];
+    if(prev){ clearCountdown(); openVideo(prev.id); showToast('Previous episode','info'); }
+  }
+  if(e.key==='Escape') goBack();
+});
 
 loadAll();
   </script>
