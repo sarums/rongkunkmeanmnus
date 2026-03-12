@@ -255,21 +255,34 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 /* Desktop: two-column grid */
 .watch-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
 
-/* Mobile: single column, YouTube style */
+/* ── Player ── */
+.player-outer { background: #000; border-radius: 14px; overflow: hidden; }
+.player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
+.player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
+
+/* Mobile: YouTube sticky player style */
 @media (max-width: 960px) {
-  .watch-layout { grid-template-columns: 1fr; padding: 0 0 80px; gap: 0; }
-  .watch-col-left  { order: 1; }
-  .watch-col-right { order: 2; padding: 0 14px; }
+  /* Watch page fills full viewport */
+  #page-watch { padding-top: 60px; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+
+  /* Player sticks at top, full width */
+  .watch-col-left { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .player-outer { border-radius: 0; flex-shrink: 0; }
+
+  /* Everything below player scrolls */
+  .watch-scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 80px;
+  }
+
+  .watch-col-right { padding: 0 14px; }
+  .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0; }
   .watch-info-wrap { padding: 0 14px; }
   #playlist-panel  { margin: 12px 14px 0; }
   .comments-section { margin: 0 14px; }
 }
-
-/* ── Player ── */
-.player-outer { background: #000; border-radius: 14px; overflow: hidden; }
-@media (max-width: 960px) { .player-outer { border-radius: 0; } }
-.player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
-.player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
 
 /* ── MINI PLAYER ── */
 .mini-player {
@@ -696,6 +709,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           </div>
         </div>
 
+        <div class="watch-scroll-body">
         <div class="watch-info-wrap">
           <!-- Filter chips -->
           <div class="watch-filter-row" id="watch-filter-row">
@@ -820,6 +834,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
         <div id="suggested-list"></div>
       </div>
 
+        </div><!-- end watch-scroll-body -->
     </div>
   </div>
 
