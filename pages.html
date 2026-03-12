@@ -379,52 +379,33 @@ a.inline:hover{text-decoration:underline}
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── Tab routing ──
 const tabMap = {
-  about:   { title:'About Us',       desc:'Learn about RongKunKmeanMnus — your curated video streaming destination.', path:'/about' },
-  privacy: { title:'Privacy Policy', desc:'How we collect, use and protect your personal information.',                path:'/privacy' },
-  terms:   { title:'Terms of Use',   desc:'Terms and conditions for using RongKunKmeanMnus.',                         path:'/terms' },
-  contact: { title:'Contact Us',     desc:'Get in touch with the RongKunKmeanMnus team.',                             path:'/contact' },
+  about:   { title:'About Us',       desc:'Learn about RongKunKmeanMnus.' },
+  privacy: { title:'Privacy Policy', desc:'How we collect and protect your information.' },
+  terms:   { title:'Terms of Use',   desc:'Terms and conditions for using RongKunKmeanMnus.' },
+  contact: { title:'Contact Us',     desc:'Get in touch with the RongKunKmeanMnus team.' },
 };
 const siteName = 'RongKunKmeanMnus';
 
 function switchTab(id) {
+  if(!tabMap[id]) return;
   document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id)?.classList.add('active');
   const order = ['about','privacy','terms','contact'];
   document.querySelectorAll('.page-tab')[order.indexOf(id)]?.classList.add('active');
-  const info = tabMap[id];
-  // Update URL without navigating away from pages.html
-  history.replaceState({tab:id}, '', '/pages.html?page='+id);
-  document.title = `${info.title} | ${siteName}`;
-  document.querySelector('meta[name="description"]')?.setAttribute('content', info.desc);
+  document.title = tabMap[id].title + ' | ' + siteName;
   window.scrollTo(0,0);
 }
 
-// Route on load
-function routeInit() {
-  // Read ?page= param (set by Vercel redirect)
+// Route on load — read ?page= param from Vercel redirect
+(function routeInit() {
   const qpage = new URLSearchParams(location.search).get('page');
-  const path = qpage || location.pathname.replace('/','').toLowerCase();
-  const id = tabMap[path] ? path : 'about';
-  // Always clean URL immediately to /about, /privacy etc
-  history.replaceState({tab:id}, '', '/' + id);
-  document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + id)?.classList.add('active');
-  const order = ['about','privacy','terms','contact'];
-  document.querySelectorAll('.page-tab')[order.indexOf(id)]?.classList.add('active');
-  document.title = `${tabMap[id].title} | ${siteName}`;
-}
-routeInit();
+  const id = (qpage && tabMap[qpage]) ? qpage : 'about';
+  switchTab(id);
+})();
 
 window.addEventListener('popstate', e => {
-  if (e.state?.tab) {
-    document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('page-' + e.state.tab)?.classList.add('active');
-    const order = ['about','privacy','terms','contact'];
-    document.querySelectorAll('.page-tab')[order.indexOf(e.state.tab)]?.classList.add('active');
-  }
+  if (e.state?.tab) switchTab(e.state.tab);
 });
 
 // Contact form (no backend — opens mailto)
