@@ -1,10 +1,16 @@
 {
+  "redirects": [
+    { "source": "/about",   "destination": "/pages.html?page=about",   "permanent": false },
+    { "source": "/privacy", "destination": "/pages.html?page=privacy", "permanent": false },
+    { "source": "/terms",   "destination": "/pages.html?page=terms",   "permanent": false },
+    { "source": "/contact", "destination": "/pages.html?page=contact", "permanent": false }
+  ],
   "rewrites": [
-    { "source": "/admin",                    "destination": "/admin.html" },
-    { "source": "/watch/:pl/:ep",            "destination": "/index.html" },
-    { "source": "/watch/:slug",              "destination": "/index.html" },
-    { "source": "/search",                   "destination": "/index.html" },
-    { "source": "/history",                  "destination": "/index.html" },
-    { "source": "/(.*)",                     "destination": "/index.html" }
+    { "source": "/admin",           "destination": "/admin.html" },
+    { "source": "/watch/:pl/:ep",   "destination": "/index.html" },
+    { "source": "/watch/:slug",     "destination": "/index.html" },
+    { "source": "/search",          "destination": "/index.html" },
+    { "source": "/history",         "destination": "/index.html" },
+    { "source": "/(.*)",            "destination": "/index.html" }
   ]
 }
