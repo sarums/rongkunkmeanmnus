@@ -405,12 +405,12 @@ function switchTab(id) {
 
 // Route on load
 function routeInit() {
-  // Support ?page=privacy etc (used when coming from SPA)
+  // Read ?page= param (set by Vercel redirect)
   const qpage = new URLSearchParams(location.search).get('page');
   const path = qpage || location.pathname.replace('/','').toLowerCase();
   const id = tabMap[path] ? path : 'about';
-  // Clean URL to look like /privacy not /pages.html?page=privacy
-  if(qpage && tabMap[qpage]) history.replaceState({tab:qpage},'','/'+qpage);
+  // Always clean URL immediately to /about, /privacy etc
+  history.replaceState({tab:id}, '', '/' + id);
   document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id)?.classList.add('active');
