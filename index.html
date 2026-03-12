@@ -686,6 +686,11 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
             <span id="watch-date"></span>
           </div>
 
+          <div class="watch-divider"></div>
+          <button class="react-btn" id="like-btn" onclick="reactVideo('like')">
+            <svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+            <span id="like-count">0</span> Like
+          </button>
           <!-- Share -->
           <div class="share-wrap" style="margin-left:auto">
             <button class="share-btn" onclick="toggleSharePanel(event)">
