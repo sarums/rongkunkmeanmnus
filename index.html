@@ -1190,15 +1190,8 @@ function routeFromUrl(push=false){
     showPage("home",false); return;
   }
 
-  // Static pages — hand off to pages.html
-  const staticPages=['about','privacy','terms','contact'];
-  const slug=path.replace(/^\//, '');
-  if(staticPages.includes(slug)){
-    window.location.replace('/pages.html?page='+slug);
-    return;
-  }
-
   // Category slug
+  const slug=path.replace(/^\//, '');
   const cat=categories.find(c=>toSlug(c.name)===slug);
   if(cat){ showCatPage(cat); return; }
 
