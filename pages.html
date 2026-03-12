@@ -387,17 +387,14 @@ const tabMap = {
 const siteName = 'RongKunKmeanMnus';
 
 function switchTab(id) {
-  // Hide all
   document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
-  // Show target
   document.getElementById('page-' + id)?.classList.add('active');
-  const tabs = document.querySelectorAll('.page-tab');
   const order = ['about','privacy','terms','contact'];
-  tabs[order.indexOf(id)]?.classList.add('active');
-  // Update URL + meta
+  document.querySelectorAll('.page-tab')[order.indexOf(id)]?.classList.add('active');
   const info = tabMap[id];
-  history.pushState({tab:id}, '', info.path);
+  // Update URL without navigating away from pages.html
+  history.replaceState({tab:id}, '', '/pages.html?page='+id);
   document.title = `${info.title} | ${siteName}`;
   document.querySelector('meta[name="description"]')?.setAttribute('content', info.desc);
   window.scrollTo(0,0);
