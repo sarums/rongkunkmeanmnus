@@ -676,10 +676,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
       <span class="slim-footer-copy" id="slim-copy-hist"></span>
       <div class="slim-footer-links">
         <a href="/" onclick="goHome(event)">Home</a>
-        <a href="/about" onclick="openStaticPage(event,'about')">About</a>
-        <a href="/privacy" onclick="openStaticPage(event,'privacy')">Privacy</a>
-        <a href="/terms" onclick="openStaticPage(event,'terms')">Terms</a>
-        <a href="/contact" onclick="openStaticPage(event,'contact')">Contact</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
       </div>
     </div>
   </div>
@@ -830,10 +830,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
       <span class="slim-footer-copy" id="slim-copy-watch"></span>
       <div class="slim-footer-links">
         <a href="/" onclick="goHome(event)">Home</a>
-        <a href="/about" onclick="openStaticPage(event,'about')">About</a>
-        <a href="/privacy" onclick="openStaticPage(event,'privacy')">Privacy</a>
-        <a href="/terms" onclick="openStaticPage(event,'terms')">Terms</a>
-        <a href="/contact" onclick="openStaticPage(event,'contact')">Contact</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
       </div>
     </div>
   </div>
@@ -863,10 +863,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
       <span class="slim-footer-copy" id="slim-copy-cat"></span>
       <div class="slim-footer-links">
         <a href="/" onclick="goHome(event)">Home</a>
-        <a href="/about" onclick="openStaticPage(event,'about')">About</a>
-        <a href="/privacy" onclick="openStaticPage(event,'privacy')">Privacy</a>
-        <a href="/terms" onclick="openStaticPage(event,'terms')">Terms</a>
-        <a href="/contact" onclick="openStaticPage(event,'contact')">Contact</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
       </div>
     </div>
   </div>
@@ -895,10 +895,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
       <span class="slim-footer-copy" id="slim-copy-search"></span>
       <div class="slim-footer-links">
         <a href="/" onclick="goHome(event)">Home</a>
-        <a href="/about" onclick="openStaticPage(event,'about')">About</a>
-        <a href="/privacy" onclick="openStaticPage(event,'privacy')">Privacy</a>
-        <a href="/terms" onclick="openStaticPage(event,'terms')">Terms</a>
-        <a href="/contact" onclick="openStaticPage(event,'contact')">Contact</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
       </div>
     </div>
   </div>
@@ -1203,19 +1203,9 @@ function routeFromUrl(push=false){
     return;
   }
 
-  // Static pages — navigate to pages.html
-  if(['about','privacy','terms','contact'].includes(slug)){
-    window.location.href='/'+slug;
-    return;
-  }
-
   showPage("home",false);
 }
 
-window.openStaticPage=(e,page)=>{
-  e?.preventDefault();
-  window.location.href='/'+page;
-};
 
 window.addEventListener("popstate",e=>{
   if(!e.state) return routeFromUrl(false);
@@ -1317,10 +1307,10 @@ function buildNav(activeId){
   $("mobile-cats").innerHTML=cats.map(c=>navLink(c,true)).join("");
   $("footer-links").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
-    +`<a href="/about" onclick="openStaticPage(event,'about')">About</a>`
-    +`<a href="/privacy" onclick="openStaticPage(event,'privacy')">Privacy</a>`
-    +`<a href="/terms" onclick="openStaticPage(event,'terms')">Terms</a>`
-    +`<a href="/contact" onclick="openStaticPage(event,'contact')">Contact</a>`;
+    +`<a href="/about">About</a>`
+    +`<a href="/privacy">Privacy</a>`
+    +`<a href="/terms">Terms</a>`
+    +`<a href="/contact">Contact</a>`;
 }
 
 // Set active nav link
