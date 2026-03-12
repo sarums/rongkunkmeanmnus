@@ -260,16 +260,14 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
 .player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
 
-/* Mobile: YouTube sticky player style */
+/* Mobile: normal scroll like YouTube */
 @media (max-width: 960px) {
   .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0 0 80px; }
   .watch-col-right { padding: 0 14px; }
   .watch-info-wrap { padding: 0 14px; }
   #playlist-panel  { margin: 12px 14px 0; }
   .comments-section { margin: 0 14px; }
-
-  /* Player sticks to top while page scrolls normally */
-  .player-outer { border-radius: 0; position: sticky; top: 60px; z-index: 150; }
+  .player-outer { border-radius: 0; }
 }
 
 /* ── MINI PLAYER ── */
