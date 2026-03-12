@@ -937,7 +937,17 @@ window.showHistoryPage=()=>{
 
 // ── Helpers ──
 const $=id=>document.getElementById(id);
-function toSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').slice(0,80); }
+function toSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,80); }
+// Returns best URL slug for a video — uses title if latin, else uses ID
+function videoSlug(v){
+  const s=toSlug(v.title||'');
+  return s.length>=3 ? s : v.id;
+}
+// Returns best URL slug for a playlist
+function playlistSlug(pl){
+  const s=toSlug(pl.name||'');
+  return s.length>=3 ? s : pl.id;
+}
 const fmtViews=n=>n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(1)+"K":String(n||0);
 
 const getThumb=v=>v.customThumb||v.thumbnail||
@@ -1096,16 +1106,16 @@ function routeFromUrl(push=false){
       // playlist video: /watch/playlist-slug/ep-N
       const plSlug=parts[0];
       const epNum=parseInt((parts[1]||'').replace('ep-',''))||1;
-      const pl=playlists.find(p=>toSlug(p.name)===plSlug);
+      const pl=playlists.find(p=>playlistSlug(p)===plSlug||toSlug(p.name)===plSlug);
       if(pl&&(pl.videos||[]).length){
         const vid=videos.find(v=>v.id===pl.videos[epNum-1])||videos.find(v=>v.id===pl.videos[0]);
         if(vid){ openVideo(vid.id,false); return; }
       }
     }
     if(parts.length===1){
-      // single video: /watch/video-slug
+      // single video: /watch/video-slug (or /watch/id as fallback)
       const vSlug=parts[0];
-      const vid=videos.find(v=>toSlug(v.title)===vSlug);
+      const vid=videos.find(v=>videoSlug(v)===vSlug||toSlug(v.title)===vSlug||v.id===vSlug);
       if(vid){ openVideo(vid.id,false); return; }
     }
     showPage("home",false); return;
@@ -1248,7 +1258,7 @@ window.navGo=(id)=>{
 function buildCard(v){
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
-  const watchUrl=pl?`/watch/${toSlug(pl.name)}/ep-${epNum}`:`/watch/${toSlug(v.title)}`;
+  const watchUrl=pl?`/watch/${playlistSlug(pl)}/ep-${epNum}`:`/watch/${videoSlug(v)}`;
   const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
   return`<a class="vcard" href="${watchUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
@@ -1312,7 +1322,7 @@ function updateHero(i){
 
   // Update hero button href
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
-  const heroUrl=pl?`/watch/${toSlug(pl.name)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${toSlug(v.title)}`;
+  const heroUrl=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
   $("hero-watch-btn")?.setAttribute("data-url",heroUrl);
 
   document.querySelectorAll(".hero-dot").forEach((d,j)=>d.classList.toggle("active",j===i));
@@ -1354,7 +1364,7 @@ function buildContinueWatching(container){
     <div class="cw-row hide-scroll">
       ${cwVids.map(v=>{
         const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
-        const url=pl?`/watch/${toSlug(pl.name)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${toSlug(v.title)}`;
+        const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
         const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
         return`<div class="cw-card" onclick="${click}">
           <div class="cw-thumb">
@@ -1408,7 +1418,7 @@ function buildSections(){
 function buildPlaylistCard(pl){
   const count=(pl.videos||[]).length;
   const thumbVids=(pl.videos||[]).slice(0,4).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
-  const watchUrl=`/watch/${toSlug(pl.name)}/ep-1`;
+  const watchUrl=`/watch/${playlistSlug(pl)}/ep-1`;
 
   // Netflix-style multi-thumb grid
   let thumbHtml='';
@@ -1578,10 +1588,10 @@ window.openVideo=async (id,push=true)=>{
     const pl2=playlists.find(p=>(p.videos||[]).includes(id));
     if(pl2){
       const epNum=(pl2.videos||[]).indexOf(id)+1;
-      const watchUrl=`/watch/${toSlug(pl2.name)}/ep-${epNum}`;
+      const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
       history.pushState({page:'watch',videoId:id},"",watchUrl);
     } else {
-      history.pushState({page:'watch',videoId:id},"",`/watch/${toSlug(v.title)}`);
+      history.pushState({page:'watch',videoId:id},"",`/watch/${videoSlug(v)}`);
     }
   }
 
@@ -1618,7 +1628,7 @@ window.openVideo=async (id,push=true)=>{
       const isWatched=watchedIds.includes(pv.id);
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
-        href="/watch/${toSlug(pl.name)}/ep-${pi+1}"
+        href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
         onclick="event.preventDefault();openVideo('${pv.id}')">
         <div class="pl-thumb">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
@@ -1647,7 +1657,7 @@ window.openVideo=async (id,push=true)=>{
   const watched=getHistory();
   $("suggested-list").innerHTML=related.map(x=>{
     const xpl=playlists.find(p=>(p.videos||[]).includes(x.id));
-    const xUrl=xpl?`/watch/${toSlug(xpl.name)}/ep-${(xpl.videos||[]).indexOf(x.id)+1}`:`/watch/${toSlug(x.title)}`;
+    const xUrl=xpl?`/watch/${playlistSlug(xpl)}/ep-${(xpl.videos||[]).indexOf(x.id)+1}`:`/watch/${videoSlug(x)}`;
     const xClick=xpl?`openPlaylist('${xpl.id}','${x.id}')`:`openVideo('${x.id}')`;
     const isWatched=watched.includes(x.id);
     return`<a class="sugg-item" href="${xUrl}" onclick="event.preventDefault();${xClick}">
