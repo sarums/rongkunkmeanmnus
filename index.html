@@ -170,6 +170,16 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 #home-sections { max-width: 1560px; margin: 0 auto; padding: 24px 28px 60px; }
 @media (max-width: 640px) { #home-sections { padding: 16px 12px 48px; } }
 
+/* ── Recommended grid ── */
+#recommended-section { max-width: 1560px; margin: 0 auto; padding: 0 28px 80px; }
+@media (max-width: 640px) { #recommended-section { padding: 0 12px 80px; } }
+#recommended-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+@media (max-width: 640px) { #recommended-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+.recommended-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.recommended-header .section-icon { width: 32px; height: 32px; background: var(--brand); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: .85rem; }
+.recommended-header .section-title { font-size: 1rem; font-weight: 800; color: #fff; }
+#recommended-loader { text-align: center; padding: 20px; color: #555; font-size: .82rem; }
+
 .section { margin-bottom: 28px; }
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .section-left { display: flex; align-items: center; gap: 10px; }
@@ -596,6 +606,14 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
 
     <!-- SECTIONS -->
     <div id="home-sections"></div>
+    <div id="recommended-section">
+      <div class="recommended-header">
+        <div class="section-icon">⚡</div>
+        <span class="section-title">Recommended</span>
+      </div>
+      <div id="recommended-grid"></div>
+      <div id="recommended-loader"></div>
+    </div>
 
     <!-- FOOTER -->
     <footer>
@@ -1119,6 +1137,8 @@ async function loadAll(){
     }
 
     buildNav();buildHero();buildSections();
+    initRecommended();
+    setupRecObserver();
     routeFromUrl(false);
     // Hide loader
     const loader=$('page-loader');
@@ -1410,6 +1430,50 @@ function fillSection(sec,rowId){
 }
 
 window.scrollRow=(id,dir)=>{const el=$(id);if(el)el.scrollBy({left:dir*700,behavior:"smooth"});};
+
+// ── RECOMMENDED INFINITE SCROLL ──────────────────────
+let _recPool=[], _recShown=0, _recLoading=false, _recDone=false;
+const REC_BATCH=12;
+
+function initRecommended(){
+  // Shuffle all videos randomly
+  _recPool=[...videos].sort(()=>Math.random()-.5);
+  _recShown=0; _recDone=false;
+  const grid=$('recommended-grid');
+  const loader=$('recommended-loader');
+  if(grid) grid.innerHTML='';
+  if(loader) loader.textContent='';
+  loadMoreRecommended();
+}
+
+function loadMoreRecommended(){
+  if(_recLoading||_recDone) return;
+  _recLoading=true;
+  const grid=$('recommended-grid');
+  const loader=$('recommended-loader');
+  if(loader) loader.textContent='Loading...';
+
+  const batch=_recPool.slice(_recShown, _recShown+REC_BATCH);
+  if(!batch.length){ _recDone=true; if(loader) loader.textContent=''; _recLoading=false; return; }
+
+  setTimeout(()=>{
+    if(grid) grid.innerHTML+=batch.map(v=>buildCard(v)).join('');
+    _recShown+=batch.length;
+    if(_recShown>=_recPool.length) _recDone=true;
+    if(loader) loader.textContent=_recDone?'':' ';
+    _recLoading=false;
+  }, 100);
+}
+
+// Observe recommended loader for infinite scroll
+function setupRecObserver(){
+  const loader=$('recommended-loader');
+  if(!loader) return;
+  const obs=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting && !_recDone) loadMoreRecommended();
+  },{rootMargin:'200px'});
+  obs.observe(loader);
+}
 window.seeAll=sid=>{
   NP.start();
   const sec=sections.find(s=>s.id===sid);
