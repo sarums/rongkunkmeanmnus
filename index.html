@@ -949,6 +949,18 @@ function playlistSlug(pl){
   return s.length>=3 ? s : pl.id;
 }
 const fmtViews=n=>n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(1)+"K":String(n||0);
+function timeAgo(ts){
+  if(!ts) return '';
+  const date=ts?.toDate?ts.toDate():new Date(ts?.seconds?ts.seconds*1000:ts);
+  if(isNaN(date)) return '';
+  const sec=Math.floor((Date.now()-date)/1000);
+  if(sec<60) return 'Just now';
+  if(sec<3600) return Math.floor(sec/60)+' min ago';
+  if(sec<86400) return Math.floor(sec/3600)+' hr ago';
+  if(sec<2592000) return Math.floor(sec/86400)+' days ago';
+  if(sec<31536000) return Math.floor(sec/2592000)+' months ago';
+  return Math.floor(sec/31536000)+' years ago';
+}
 
 const getThumb=v=>v.customThumb||v.thumbnail||
   ((v.platform||v.source||"")==="dailymotion"
@@ -1298,7 +1310,11 @@ function buildCard(v){
       ${pl?`<div class="vcard-series">Series</div>`:""}
     </div>
     <div class="vcard-title">${v.title||""}</div>
-    <div class="vcard-sub">${v.category||""}${v.duration?` · ${v.duration}`:""}</div>
+    <div class="vcard-sub">${[
+      v.category,
+      v.views||v.viewsDisplay ? fmtViews(v.views||0)+' views' : '',
+      timeAgo(v.createdAt)
+    ].filter(Boolean).join(' · ')}</div>
   </a>`;
 }
 
