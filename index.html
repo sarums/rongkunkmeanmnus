@@ -454,6 +454,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
 .footer-links a { font-size: .72rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .08em; transition: color .2s; }
 .footer-links a:hover { color: var(--brand); }
+.footer-links a.active { color: var(--brand); }
 .footer-copy { font-size: .7rem; color: #333; margin-top: 8px; }
 
 /* ── Slim footer (inner pages) ── */
@@ -1127,6 +1128,10 @@ window.goHome=e=>{
   e?.preventDefault();
   showPage("home");
   buildNav('home');
+  // Footer home active
+  document.querySelectorAll('#footer-links a').forEach(a=>{
+    a.classList.toggle('active', a.getAttribute('href')==='/');
+  });
   // Silent background refresh
   silentRefresh();
 };
@@ -1298,9 +1303,12 @@ function buildNav(activeId){
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
     +cats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("");
   $("mobile-cats").innerHTML=cats.map(c=>navLink(c,true)).join("");
-  $("footer-links").innerHTML=`<a href="/" onclick="goHome(event)">Home</a>`
-    +cats.slice(0,4).map(c=>`<a href="${slug(c)}" onclick="event.preventDefault();navGo('${c.id}')">${c.name}</a>`).join("")
-    +`<a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a><a href="/admin">Admin</a>`;
+  $("footer-links").innerHTML=
+    `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
+    +`<a href="/about">About</a>`
+    +`<a href="/privacy">Privacy</a>`
+    +`<a href="/terms">Terms</a>`
+    +`<a href="/contact">Contact</a>`;
 }
 
 // Set active nav link
