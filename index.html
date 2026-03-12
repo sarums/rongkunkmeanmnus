@@ -262,23 +262,41 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* Mobile: YouTube sticky player style */
 @media (max-width: 960px) {
-  /* Watch page fills full viewport */
-  #page-watch { padding-top: 60px; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  /* Watch page = full screen, no overflow */
+  #page-watch {
+    padding-top: 60px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    overflow: hidden;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+  }
 
-  /* Player sticks at top, full width */
-  .watch-col-left { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0; height: 100%; display: flex; flex-direction: column; }
+  .watch-col-right { order: 2; }
+
+  /* Left col = flex column filling height */
+  .watch-col-left {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Player: full width, fixed height at top */
   .player-outer { border-radius: 0; flex-shrink: 0; }
 
-  /* Everything below player scrolls */
+  /* Scroll body: everything below player scrolls smoothly */
   .watch-scroll-body {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding-bottom: 80px;
   }
 
   .watch-col-right { padding: 0 14px; }
-  .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0; }
   .watch-info-wrap { padding: 0 14px; }
   #playlist-panel  { margin: 12px 14px 0; }
   .comments-section { margin: 0 14px; }
@@ -1071,6 +1089,7 @@ const NP = {
 function showPage(id,push=true){
   if(id!=="watch"){
     previousPage=id;
+    document.body.style.overflow='';
     // Tear down mini player when leaving watch
     if(_miniObserver){ _miniObserver.disconnect(); _miniObserver=null; }
     deactivateMiniPlayer();
@@ -1505,6 +1524,8 @@ window.seeAll=sid=>{
 // ── Watch ──
 window.openVideo=async (id,push=true)=>{
   NP.start();
+  // Lock body scroll on mobile (watch page handles its own scroll)
+  if(window.innerWidth <= 960) document.body.style.overflow='hidden';
   // Save current URL as previous page before navigating (for back button)
   if(push) previousPage=location.pathname;
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
