@@ -412,6 +412,21 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .sugg-meta em { color: var(--brand); font-style: normal; }
 
 /* ══ CATEGORY / SEARCH ══ */
+/* ── Category Banner ── */
+.cat-banner { position:relative; width:100%; padding-top:60px; min-height:280px; display:flex; align-items:flex-end; overflow:hidden; }
+.cat-banner-bg { position:absolute; inset:0; background-size:cover; background-position:center; filter:blur(18px) brightness(.35) saturate(1.4); transform:scale(1.08); transition:background-image .4s; }
+.cat-banner-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(8,8,8,.2) 0%, rgba(8,8,8,.5) 60%, rgba(8,8,8,1) 100%); }
+.cat-banner-content { position:relative; z-index:2; max-width:1280px; width:100%; margin:0 auto; padding:32px 24px 36px; display:flex; align-items:center; gap:18px; }
+.cat-banner-icon { width:56px; height:56px; background:rgba(242,125,38,.15); border:1px solid rgba(242,125,38,.25); border-radius:16px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--brand); }
+.cat-banner-icon svg { width:24px; height:24px; }
+.cat-banner-title { font-size:2.2rem; font-weight:900; color:#fff; letter-spacing:-.03em; line-height:1; text-shadow:0 2px 12px rgba(0,0,0,.5); }
+.cat-banner-meta { font-size:.8rem; color:rgba(255,255,255,.45); margin-top:6px; font-weight:600; }
+@media (max-width:640px) {
+  .cat-banner { min-height:200px; }
+  .cat-banner-title { font-size:1.6rem; }
+  .cat-banner-content { padding:24px 14px 28px; gap:14px; }
+  .cat-banner-icon { width:44px; height:44px; border-radius:12px; }
+}
 .page-header { max-width: 1280px; margin: 0 auto; padding: 68px 24px 0; }
 @media (max-width: 640px) { .page-header { padding: 58px 14px 0; } }
 .page-header-row { display: flex; align-items: center; gap: 14px; padding: 24px 0 18px; }
@@ -826,14 +841,17 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
        CATEGORY PAGE
   ═══════════════════════════════════════ -->
   <div id="page-cat" class="page">
-    <div class="page-header">
-      <div class="page-header-row">
-        <div class="page-header-icon">
-          <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+    <!-- Category Banner -->
+    <div class="cat-banner" id="cat-banner">
+      <div class="cat-banner-bg" id="cat-banner-bg"></div>
+      <div class="cat-banner-overlay"></div>
+      <div class="cat-banner-content">
+        <div class="cat-banner-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
         </div>
         <div>
-          <h1 class="page-header-title" id="cat-title"></h1>
-          <p class="page-header-desc" id="cat-desc"></p>
+          <h1 class="cat-banner-title" id="cat-title"></h1>
+          <p class="cat-banner-meta" id="cat-desc"></p>
         </div>
       </div>
     </div>
@@ -1593,7 +1611,12 @@ window.seeAll=sid=>{
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
   window.scrollTo(0,0);
   $("cat-title").textContent=sec.title||"All Videos";
-  $("cat-desc").textContent=`Browse all ${sec.title||""} content.`;
+  const seeAllCount=(sec.video_ids||[]).length||0;
+  $("cat-desc").textContent=`${seeAllCount} video${seeAllCount!==1?'s':''} · Browse all ${sec.title||""} content`;
+  // Banner background from first video in section
+  const saBg=$("cat-banner-bg");
+  const saFirst=(sec.video_ids||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean)[0];
+  if(saBg) saBg.style.backgroundImage=saFirst?`url('${getThumb(saFirst)}')`:'none';
   updateMeta({title:sec.title, desc:`Browse all ${sec.title} content`, url:location.href});
 
   let list=[];
@@ -1818,24 +1841,39 @@ function showCatPage(cat){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
   window.scrollTo(0,0);
   $("cat-title").textContent=cat.name;
-  $("cat-desc").textContent=`Discover the best ${cat.name} content.`;
   updateMeta({ title:cat.name, desc:`Discover the best ${cat.name} content`, url:location.href });
+
   const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
 
+  // Get list of videos for this category
+  let catVideos=[];
   if(cat.target_type==="playlist"){
-    // Show one playlist card per playlist — not individual videos
+    const pls=ids.map(pid=>playlists.find(p=>p.id===pid)).filter(Boolean);
+    catVideos=pls.flatMap(pl=>(pl.videos||[]).map(vid=>videos.find(v=>v.id===vid)).filter(Boolean));
+  } else if(cat.target_type==="video"){
+    catVideos=ids.map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
+  } else {
+    catVideos=videos.filter(v=>v.category===cat.name);
+  }
+
+  // Banner: use thumbnail of first video as blurred background
+  const bannerBg=$("cat-banner-bg");
+  const firstThumb=catVideos.length?getThumb(catVideos[0]):'';
+  if(bannerBg) bannerBg.style.backgroundImage=firstThumb?`url('${firstThumb}')`:'none';
+
+  // Video count in meta
+  const count=catVideos.length;
+  $("cat-desc").textContent=`${count} video${count!==1?'s':''} · ${cat.description||'Browse and enjoy'}`;
+
+  // Render grid
+  if(cat.target_type==="playlist"){
     const cards=ids.map(pid=>playlists.find(p=>p.id===pid)).filter(Boolean)
       .map(pl=>buildPlaylistCard(pl)).join("");
     $("cat-grid").innerHTML=cards||`<div style="padding:2rem;color:#555;text-align:center">No playlists found.</div>`;
-  } else if(cat.target_type==="video"){
-    const list=ids.map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
-    renderGrid($("cat-grid"),list);
   } else {
-    const list=videos.filter(v=>v.category===cat.name);
-    renderGrid($("cat-grid"),list);
-  NP.done();
-    NP.done();
+    renderGrid($("cat-grid"),catVideos);
   }
+  NP.done();
 }
 
 // Called from navGo for playlist/video types (URL already pushed)
