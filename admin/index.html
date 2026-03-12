@@ -435,6 +435,11 @@
           <label class="flabel">Duration</label>
           <input type="text" class="finput" id="editDuration" placeholder="12:34">
         </div>
+        <div class="fg">
+          <label class="flabel">Episode Number <span style="color:#555;font-weight:500">(optional)</span></label>
+          <input type="number" class="finput" id="editEpNum" placeholder="e.g. 1, 2, 3..." min="1" max="999" oninput="previewEditThumb()">
+          <div class="fhint">Shows orange circle badge on thumbnail</div>
+        </div>
       </div>
       <div class="fg full" style="margin-bottom:1rem;">
         <label class="flabel">Title</label>
@@ -468,8 +473,11 @@
         <input type="text" class="finput" id="editThumb" placeholder="https://..." oninput="previewEditThumb()">
       </div>
       <div class="fg full" style="margin-bottom:1.25rem;">
-        <label class="flabel">Thumbnail Preview</label>
-        <div class="thumb-preview" id="editThumbPreview"><span>Loading...</span></div>
+        <label class="flabel" style="display:flex;align-items:center;justify-content:space-between;">
+          Thumbnail Preview
+          <a href="/thumbnail" target="_blank" style="font-size:.7rem;font-weight:700;color:var(--accent);background:rgba(242,125,38,.1);padding:3px 10px;border-radius:9999px;border:1px solid rgba(242,125,38,.2);">🎨 Open Preview Tool ↗</a>
+        </label>
+        <div class="thumb-preview" id="editThumbPreview" style="position:relative;"><span>Loading...</span></div>
       </div>
       <button class="submit-btn blue" onclick="saveEdit()">💾 Save Changes</button>
     </div>
