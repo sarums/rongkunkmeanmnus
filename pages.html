@@ -386,26 +386,29 @@ const tabMap = {
 };
 const siteName = 'RongKunKmeanMnus';
 
-function switchTab(id) {
+function switchTab(id, push=true) {
   if(!tabMap[id]) return;
+  // Update content
   document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id)?.classList.add('active');
   const order = ['about','privacy','terms','contact'];
   document.querySelectorAll('.page-tab')[order.indexOf(id)]?.classList.add('active');
   document.title = tabMap[id].title + ' | ' + siteName;
+  // Update URL cleanly — stays on pages.html but shows /privacy etc
+  if(push) history.pushState({tab:id}, '', '/' + id);
   window.scrollTo(0,0);
 }
 
-// Route on load — read ?page= param from Vercel redirect
+// On load — read pathname since Vercel rewrites /privacy → pages.html
 (function routeInit() {
-  const qpage = new URLSearchParams(location.search).get('page');
-  const id = (qpage && tabMap[qpage]) ? qpage : 'about';
-  switchTab(id);
+  const path = location.pathname.replace('/', '').toLowerCase();
+  const id = tabMap[path] ? path : 'about';
+  switchTab(id, false); // false = don't pushState on load
 })();
 
 window.addEventListener('popstate', e => {
-  if (e.state?.tab) switchTab(e.state.tab);
+  if (e.state?.tab) switchTab(e.state.tab, false);
 });
 
 // Contact form (no backend — opens mailto)
