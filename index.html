@@ -95,11 +95,10 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* ══ NAVBAR ══ */
 #navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 200; transition: transform .3s ease; }
-#navbar.hidden { transform: translateY(-100%); }
 
 
-#nav-inner { display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 32px; background: linear-gradient(to bottom, rgba(0,0,0,.92), transparent); transition: background .3s; }
-#nav-inner.solid { background: rgba(8,8,8,.97) !important; border-bottom: 1px solid var(--border); }
+
+#nav-inner { display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 32px; background: rgba(8,8,8,1); border-bottom: 1px solid var(--border); }
 
 .nav-logo { display: flex; align-items: center; gap: 9px; }
 .nav-logo-icon { width: 30px; height: 30px; background: var(--brand); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
@@ -974,9 +973,7 @@ function updateMeta({title, desc, image, url}){
 // ── Scroll ──
 window.addEventListener("scroll",()=>{
   const sy=window.scrollY;
-  // Hide navbar when scrolling down, show when scrolling up
-  $("navbar").classList.toggle("hidden",sy>lastScrollY&&sy>80);
-  if(sy<=lastScrollY||sy<=80) $("navbar").classList.remove("hidden");
+
   $("nav-inner").classList.toggle("solid",sy>70);
   $("scroll-top")?.classList.toggle("visible",sy>400);
   lastScrollY=sy;
