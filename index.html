@@ -1086,7 +1086,33 @@ function showPage(id,push=true){
   // Reset meta for non-video pages
   if(id==='home') updateMeta({title:null, desc:'Your ultimate destination for curated video content.'});
 }
-window.goHome=e=>{e?.preventDefault();showPage("home");};
+window.goHome=e=>{
+  e?.preventDefault();
+  showPage("home");
+  // Silent background refresh
+  silentRefresh();
+};
+
+async function silentRefresh(){
+  try{
+    const[vidSnap,secSnap]=await Promise.all([
+      getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
+      getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
+    ]);
+    const newVideos=vidSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const newSections=secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+    // Only rebuild if data changed
+    const changed=JSON.stringify(newVideos.map(v=>v.id))!==JSON.stringify(videos.map(v=>v.id))
+      ||newSections.length!==sections.length;
+    if(changed){
+      videos=newVideos;
+      sections=newSections;
+      buildHero();
+      buildSections();
+      initRecommended();
+    }
+  }catch(e){}
+}
 window.goBack=()=>{
   if(previousPage&&previousPage!==location.pathname){
     history.back();
