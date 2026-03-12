@@ -95,7 +95,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* ══ NAVBAR ══ */
 #navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 200; transition: transform .4s cubic-bezier(.4,0,.2,1); }
-#navbar.hidden { transform: translateY(-100%); }
+
 
 #nav-inner { display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 32px; background: linear-gradient(to bottom, rgba(0,0,0,.92), transparent); transition: background .3s; }
 #nav-inner.solid { background: rgba(8,8,8,.97) !important; border-bottom: 1px solid var(--border); }
@@ -263,7 +263,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 /* Mobile: video sticky top, page scrolls normally */
 @media (max-width: 960px) {
   .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0 0 80px; }
-  .player-outer { border-radius: 0; position: sticky; top: 0; z-index: 150; }
+  .player-outer { border-radius: 0; position: sticky; top: 60px; z-index: 150; }
   .watch-col-right { padding: 0 14px; }
   .watch-info-wrap { padding: 0 14px; }
   #playlist-panel  { margin: 12px 14px 0; }
@@ -972,9 +972,7 @@ function updateMeta({title, desc, image, url}){
 
 // ── Scroll ──
 window.addEventListener("scroll",()=>{
-  const sy=window.scrollY;
-  $("navbar").classList.toggle("hidden",sy>lastScrollY&&sy>120);
-  $("navbar").classList.toggle("",sy<=lastScrollY||sy<=120);
+
   $("nav-inner").classList.toggle("solid",sy>70);
   $("scroll-top")?.classList.toggle("visible",sy>400);
   lastScrollY=sy;
