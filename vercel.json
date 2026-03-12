@@ -1,10 +1,10 @@
 {
   "rewrites": [
     { "source": "/admin",           "destination": "/admin.html" },
-    { "source": "/about",           "destination": "/pages.html" },
-    { "source": "/privacy",         "destination": "/pages.html" },
-    { "source": "/terms",           "destination": "/pages.html" },
-    { "source": "/contact",         "destination": "/pages.html" },
+    { "source": "/about",           "destination": "/about.html" },
+    { "source": "/privacy",         "destination": "/privacy.html" },
+    { "source": "/terms",           "destination": "/terms.html" },
+    { "source": "/contact",         "destination": "/contact.html" },
     { "source": "/watch/:pl/:ep",   "destination": "/index.html" },
     { "source": "/watch/:slug",     "destination": "/index.html" },
     { "source": "/search",          "destination": "/index.html" },
