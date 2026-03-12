@@ -270,35 +270,9 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
   .comments-section { margin: 0 14px; }
 }
 
-/* ── MINI PLAYER ── */
-.mini-player {
-  display: none;
-  position: fixed;
-  bottom: 76px; right: 10px;
-  width: 240px;
-  background: #1a1a1a;
-  border-radius: 10px;
-  box-shadow: 0 6px 28px rgba(0,0,0,.8);
-  z-index: 300;
-  overflow: hidden;
-  transition: opacity .2s, transform .2s;
-  animation: miniSlideIn .2s ease both;
-}
-@keyframes miniSlideIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
-.mini-player.active { display: block; }
-@media (min-width: 961px) { .mini-player { bottom: 24px; right: 24px; width: 300px; } }
 
-.mini-player-video { width: 100%; aspect-ratio: 16/9; background: #000; cursor: pointer; }
-.mini-player-video iframe { width: 100%; height: 100%; border: none; display: block; }
-.mini-player-bar { display: flex; align-items: center; gap: 6px; padding: 7px 8px; background: #1a1a1a; cursor: pointer; }
-.mini-player-title { flex: 1; font-size: .68rem; font-weight: 600; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.mini-player-btn { background: none; border: none; color: #888; cursor: pointer; padding: 4px; border-radius: 5px; transition: color .15s; flex-shrink: 0; line-height:0; }
-.mini-player-btn:hover { color: #fff; }
-.mini-player-btn svg { width: 15px; height: 15px; display: block; }
 /* Placeholder keeps space for the real player when mini is active */
-.player-placeholder { display: none; aspect-ratio: 16/9; background: #0a0a0a; border-radius: 14px; }
-@media (max-width: 960px) { .player-placeholder { border-radius: 0; } }
-.player-placeholder.active { display: block; }
+
 
 /* Mobile info padding */
 @media (max-width: 960px) {
@@ -680,20 +654,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
           </div>
         </div>
         <!-- Placeholder keeps layout space when mini player is active -->
-        <div class="player-placeholder" id="player-placeholder"></div>
 
-        <!-- Mini floating player -->
-        <div class="mini-player" id="mini-player">
-          <div class="mini-player-video" onclick="expandMiniPlayer()">
-            <iframe id="mini-iframe" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
-          </div>
-          <div class="mini-player-bar" onclick="expandMiniPlayer()">
-            <span class="mini-player-title" id="mini-title"></span>
-            <button class="mini-player-btn" onclick="event.stopPropagation();closeMiniPlayer()" title="Close">
-              <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-          </div>
-        </div>
+
 
         <div class="watch-info-wrap">
           <!-- Filter chips -->
@@ -1057,9 +1019,6 @@ function showPage(id,push=true){
     previousPage=id;
 
     // Tear down mini player when leaving watch
-    if(_miniObserver){ _miniObserver.disconnect(); _miniObserver=null; }
-    deactivateMiniPlayer();
-    $('mini-iframe') && ($('mini-iframe').src='');
   }
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push)history.pushState({page:id},"",id==="home"?"/":"/"+id);
@@ -1606,7 +1565,6 @@ window.openVideo=async (id,push=true)=>{
   loadComments(id);
   NP.done();
   // Setup mini player observer
-  setTimeout(setupMiniPlayer, 300);
 };
 
 window.openPlaylist=(plId,startId)=>{
@@ -1971,61 +1929,6 @@ window.deleteComment=async(id)=>{
     showToast('Deleted','ok');
     await loadComments(_commentVideoId);
   }catch(e){showToast('Failed to delete','err');}
-};
-
-// ── MINI PLAYER ──────────────────────────────────────
-let _miniActive = false;
-let _miniObserver = null;
-
-function setupMiniPlayer() {
-  // Only on watch page
-  const outer = document.getElementById('player-outer');
-  if (!outer || _miniObserver) return;
-
-  _miniObserver = new IntersectionObserver((entries) => {
-    const entry = entries[0];
-    const watchActive = document.getElementById('page-watch')?.classList.contains('active');
-    if (!watchActive) return;
-
-    if (!entry.isIntersecting && !_miniActive) {
-      activateMiniPlayer();
-    } else if (entry.isIntersecting && _miniActive) {
-      deactivateMiniPlayer();
-    }
-  }, { threshold: 0.1 });
-
-  _miniObserver.observe(outer);
-}
-
-function activateMiniPlayer() {
-  const src = $('player-iframe')?.src;
-  if (!src || src === '' || src === 'about:blank') return;
-  _miniActive = true;
-  // Copy iframe src to mini
-  $('mini-iframe').src = src;
-  $('mini-title').textContent = $('watch-title')?.textContent || '';
-  $('mini-player').classList.add('active');
-  $('player-placeholder').classList.add('active');
-  $('player-outer').style.visibility = 'hidden';
-  $('player-outer').style.position = 'absolute';
-  $('player-outer').style.opacity = '0';
-}
-
-function deactivateMiniPlayer() {
-  if (!_miniActive) return;
-  _miniActive = false;
-  $('mini-player').classList.remove('active');
-  $('player-placeholder').classList.remove('active');
-  $('player-outer').style.visibility = '';
-  $('player-outer').style.position = '';
-  $('player-outer').style.opacity = '';
-  $('mini-iframe').src = '';
-}
-
-window.expandMiniPlayer = () => {
-  // Scroll back to top to show main player
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  setTimeout(() => deactivateMiniPlayer(), 300);
 };
 
 window.closeMiniPlayer = () => {
