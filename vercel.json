@@ -1,10 +1,11 @@
 {
   "rewrites": [
-    { "source": "/admin",           "destination": "/admin.html" },
-    { "source": "/about",           "destination": "/about.html" },
-    { "source": "/privacy",         "destination": "/privacy.html" },
-    { "source": "/terms",           "destination": "/terms.html" },
-    { "source": "/contact",         "destination": "/contact.html" },
+    { "source": "/admin",           "destination": "/admin/index.html" },
+    { "source": "/thumbnail",       "destination": "/pages/thumbnail.html" },
+    { "source": "/about",           "destination": "/pages/about.html" },
+    { "source": "/privacy",         "destination": "/pages/privacy.html" },
+    { "source": "/terms",           "destination": "/pages/terms.html" },
+    { "source": "/contact",         "destination": "/pages/contact.html" },
     { "source": "/watch/:pl/:ep",   "destination": "/index.html" },
     { "source": "/watch/:slug",     "destination": "/index.html" },
     { "source": "/search",          "destination": "/index.html" },
