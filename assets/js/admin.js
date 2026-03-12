@@ -167,8 +167,11 @@ window.previewEditThumb = ()=>{
   const plat=qs('editPlatform').value;
   const url = custom || (plat==='dailymotion'&&vid ? `https://www.dailymotion.com/thumbnail/video/${vid}` : '');
   const p=qs('editThumbPreview');
-  if(url) p.innerHTML=`<img src="${url}" onerror="this.parentElement.innerHTML='<span>Could not load thumbnail</span>'">`;
-  else p.innerHTML='<span>No thumbnail</span>';
+  const epN=parseInt(qs('editEpNum')?.value)||0;
+  if(url){
+    p.innerHTML=`<img src="${url}" onerror="this.parentElement.innerHTML='<span>Could not load thumbnail</span>'">`
+      +(epN?`<div style="position:absolute;top:8px;right:8px;width:44px;height:44px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.25);z-index:2">${epN}</div>`:'');
+  } else p.innerHTML='<span>No thumbnail</span>';
 };
 
 // ── ADD VIDEO ─────────────────────────────────────────
@@ -250,6 +253,7 @@ window.openEdit = (id)=>{
   qs('editDesc').value=v.description||'';
   qs('editDuration').value=v.duration||'';
   qs('editThumb').value=v.customThumb||'';
+  qs('editEpNum').value=v.episodeNum||'';
   qs('editSection').value=v.featured==='yes'?'featured':(v.section||'');
   populateSelects();
   setTimeout(()=>{
@@ -268,12 +272,13 @@ window.saveEdit = async ()=>{
   const title=qs('editTitle').value.trim(), description=qs('editDesc').value.trim();
   const category=qs('editCat').value, section=qs('editSection').value;
   const duration=qs('editDuration').value.trim(), customThumb=qs('editThumb').value.trim();
+  const epNum=parseInt(qs('editEpNum')?.value)||0;
   const newPlId=qs('editPlaylist').value;
   if(!videoId||!title){ showToast('Missing Fields','Video ID and Title required','err'); return; }
   try {
     const data={ platform,videoId,title,description,category,
       featured:section==='featured'?'yes':'no', section:section||'',
-      duration, customThumb };
+      duration, customThumb, episodeNum:epNum||0 };
     await updateDoc(doc(db,'videos',id),data);
     const v=allVideos.find(x=>x.id===id);
     if(v) Object.assign(v,data);
