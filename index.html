@@ -262,41 +262,14 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* Mobile: YouTube sticky player style */
 @media (max-width: 960px) {
-  /* Watch page active = full screen */
-  #page-watch.active {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 60px);
-    overflow: hidden;
-  }
-
-  .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0; height: 100%; display: flex; flex-direction: column; }
-  .watch-col-right { order: 2; }
-
-  /* Left col = flex column filling height */
-  .watch-col-left {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-  }
-
-  /* Player: full width, fixed at top */
-  .player-outer { border-radius: 0; flex-shrink: 0; }
-
-  /* Scroll body: everything below player scrolls smoothly */
-  .watch-scroll-body {
-    flex: 1;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding-bottom: 80px;
-  }
-
+  .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0 0 80px; }
   .watch-col-right { padding: 0 14px; }
   .watch-info-wrap { padding: 0 14px; }
   #playlist-panel  { margin: 12px 14px 0; }
   .comments-section { margin: 0 14px; }
+
+  /* Player sticks to top while page scrolls normally */
+  .player-outer { border-radius: 0; position: sticky; top: 60px; z-index: 150; }
 }
 
 /* ── MINI PLAYER ── */
@@ -1521,8 +1494,7 @@ window.seeAll=sid=>{
 // ── Watch ──
 window.openVideo=async (id,push=true)=>{
   NP.start();
-  // Lock body scroll on mobile (watch page handles its own scroll)
-  if(window.innerWidth <= 960) document.body.style.overflow='hidden';
+
   // Save current URL as previous page before navigating (for back button)
   if(push) previousPage=location.pathname;
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
