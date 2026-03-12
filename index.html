@@ -1126,6 +1126,7 @@ function showPage(id,push=true){
 window.goHome=e=>{
   e?.preventDefault();
   showPage("home");
+  buildNav('home');
   // Silent background refresh
   silentRefresh();
 };
@@ -1278,26 +1279,39 @@ function setupLazyLoad(){
 }
 
 // ── Nav ──
-function buildNav(){
+function buildNav(activeId){
   const sorted=[...categories].sort((a,b)=>(a.display_order||0)-(b.display_order||0));
   const cats=sorted.slice(0,8);
 
-  // slug: /drama, /music etc — always based on category name
   function slug(c){ return '/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
-
   function navLink(c, closeMobile=false){
     const close=closeMobile?'toggleMobileMenu();':'';
-    return `<a href="${slug(c)}" onclick="event.preventDefault();${close}navGo('${c.id}')">${c.name}</a>`;
+    return `<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();${close}navGo('${c.id}')">${c.name}</a>`;
   }
 
+  // Determine active: use passed activeId, else fall back to URL
   const curSlug=location.pathname;
-  $("nav-cats").innerHTML=`<a href="/" onclick="goHome(event)" class="${curSlug==='/'?'active':''}">Home</a>`+cats.map(c=>{
-    const s=slug(c); return navLink(c).replace('<a ','<a '+(curSlug===s?'class="active" ':''));
-  }).join("");
+  const resolvedActive=activeId||
+    (curSlug==='/'?'home':cats.find(c=>slug(c)===curSlug)?.id||'');
+
+  $("nav-cats").innerHTML=
+    `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
+    +cats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("");
   $("mobile-cats").innerHTML=cats.map(c=>navLink(c,true)).join("");
   $("footer-links").innerHTML=`<a href="/" onclick="goHome(event)">Home</a>`
     +cats.slice(0,4).map(c=>`<a href="${slug(c)}" onclick="event.preventDefault();navGo('${c.id}')">${c.name}</a>`).join("")
     +`<a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a><a href="/admin">Admin</a>`;
+}
+
+// Set active nav link
+function setNavActive(matchId){
+  document.querySelectorAll('#nav-cats a').forEach(a=>{
+    if(matchId==='home'){
+      a.classList.toggle('active', !a.dataset.catid);
+    } else {
+      a.classList.toggle('active', a.dataset.catid===matchId);
+    }
+  });
 }
 
 // Single entry point for all nav category clicks
@@ -1307,6 +1321,7 @@ window.navGo=(id)=>{
   const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
   const slug='/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   history.pushState({page:'cat',catId:id},"",slug);
+  buildNav(id);
   if(c.target_type==='playlist'&&ids.length){
     openCategoryById(id);
   } else if(c.target_type==='video'&&ids.length){
