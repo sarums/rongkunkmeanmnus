@@ -287,26 +287,30 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 }
 
 /* ── Filter chips (YouTube style) ── */
-.watch-filter-row { display:flex; gap:8px; overflow-x:auto; padding:12px 0 4px; scrollbar-width:none; }
+.watch-filter-row { display:flex; gap:8px; overflow-x:auto; padding:10px 0 2px; scrollbar-width:none; }
 .watch-filter-row::-webkit-scrollbar { display:none; }
-.watch-filter-chip { flex-shrink:0; padding:6px 14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.1); border-radius:9999px; font-size:.76rem; font-weight:700; color:#aaa; cursor:pointer; transition:all .2s; white-space:nowrap; }
-.watch-filter-chip.active { background:#fff; color:#000; border-color:#fff; }
-.watch-filter-chip:hover:not(.active) { background:rgba(255,255,255,.14); color:#fff; }
+.watch-filter-chip { flex-shrink:0; padding:5px 14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); border-radius:9999px; font-size:.73rem; font-weight:700; color:#666; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.watch-filter-chip.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+.watch-filter-chip:hover:not(.active) { background:rgba(255,255,255,.1); color:#ccc; }
 
-.watch-source-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 8px; }
-.watch-source-badge { padding: 2px 9px; background: #4338ca; border-radius: 4px; font-size: .67rem; font-weight: 800; color: #fff; text-transform: uppercase; }
-.watch-cat-label { font-size: .8rem; color: #777; font-weight: 600; }
-.watch-next-btn { margin-left: auto; padding: 7px 16px 7px 10px; background: var(--brand); color: #000; font-size: .77rem; font-weight: 800; border-radius: 9999px; border: none; cursor: pointer; transition: background .2s; display:flex; align-items:center; gap:7px; }
-.watch-next-btn:hover { background: #fff; }
+.watch-source-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 6px; }
+.watch-source-badge { padding: 3px 10px; background: #4338ca; border-radius: 6px; font-size: .65rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing:.04em; }
+.watch-cat-label { font-size: .75rem; color: #555; font-weight: 700; background: rgba(255,255,255,.05); padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); }
+.watch-next-btn { margin-left: auto; padding: 6px 14px; background: var(--brand); color: #000; font-size: .75rem; font-weight: 800; border-radius: 9999px; border: none; cursor: pointer; transition: all .2s; display:flex; align-items:center; gap:6px; }
+.watch-next-btn:hover { background: #fff; transform: translateX(2px); }
 .countdown-ring { flex-shrink:0; }
-.watch-title { font-size: 1.25rem; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 10px; }
-.watch-meta { display: flex; align-items: center; gap: 18px; padding: 13px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 10px; }
-.watch-stat label { font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; color: #555; display: block; }
-.watch-stat span  { font-size: 1rem; font-weight: 800; color: #fff; }
-.watch-divider { width: 1px; height: 34px; background: var(--border); }
-.share-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 9999px; font-size: .76rem; font-weight: 700; color: #ccc; cursor: pointer; transition: all .2s; margin-left: auto; }
-.share-btn:hover { background: #222; color: #fff; }
-.watch-desc { font-size: .83rem; color: #666; line-height: 1.65; font-weight: 500; }
+.watch-title { font-size: 1.3rem; font-weight: 900; color: #fff; line-height: 1.25; margin: 10px 0 14px; letter-spacing:-.01em; }
+.watch-meta { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 14px; flex-wrap: wrap; }
+.watch-stat label { font-size: .58rem; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; color: #444; display: block; margin-bottom:2px; }
+.watch-stat span  { font-size: .95rem; font-weight: 800; color: #ddd; }
+.watch-divider { width: 1px; height: 30px; background: var(--border); flex-shrink:0; }
+.share-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 9999px; font-size: .74rem; font-weight: 700; color: #aaa; cursor: pointer; transition: all .2s; }
+.share-btn:hover { background: rgba(255,255,255,.12); color: #fff; border-color:#555; }
+.watch-desc { font-size: .82rem; color: #555; line-height: 1.7; font-weight: 500; margin-top:12px; }
+.watch-desc-expand { font-size:.75rem; font-weight:700; color:var(--brand); cursor:pointer; margin-top:4px; display:inline-block; }
+.watch-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.watch-tag { font-size:.7rem; font-weight:700; color:#555; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:9999px; padding:3px 10px; transition:all .2s; cursor:pointer; }
+.watch-tag:hover { color:var(--brand); border-color:var(--brand); }
 
 /* ══ LIKE/DISLIKE ══ */
 .react-row { display:flex; align-items:center; gap:8px; margin:14px 0; }
@@ -325,7 +329,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .share-wrap { position:relative; }
 
 /* ══ COMMENTS ══ */
-.comments-section { margin-top:28px; padding-top:24px; border-top:1px solid var(--border); }
+.comments-section { margin-top:24px; padding-top:20px; border-top:1px solid var(--border); }
 /* Username setup */
 .username-setup-card { background:var(--bg3); border:1px solid var(--border2); border-radius:14px; padding:20px; margin-bottom:20px; text-align:center; }
 .username-setup-icon { font-size:1.8rem; margin-bottom:8px; }
@@ -379,11 +383,11 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .pl-item.watched .pl-thumb::after { content:'✓'; position:absolute; inset:0; background:rgba(34,197,94,.35); display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#fff; font-weight:900; }
 .pl-watched-dot { width:7px; height:7px; border-radius:50%; background:#22c55e; flex-shrink:0; margin-left:auto; }
 
-.playlist-panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 18px; }
-.playlist-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
-.playlist-label { font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; color: #555; }
-.playlist-progress { font-size: .7rem; font-weight: 800; background: rgba(242,125,38,.12); color: var(--brand); padding: 2px 8px; border-radius: 9999px; }
-.playlist-items { max-height: 360px; overflow-y: auto; }
+.playlist-panel { background: linear-gradient(135deg, rgba(242,125,38,.06), rgba(0,0,0,0)); border: 1px solid rgba(242,125,38,.15); border-radius: 14px; padding: 14px; margin-bottom: 18px; }
+.playlist-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom:10px; border-bottom:1px solid rgba(242,125,38,.1); }
+.playlist-label { font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; color: var(--brand); display:flex; align-items:center; gap:6px; }
+.playlist-progress { font-size: .7rem; font-weight: 800; background: rgba(242,125,38,.15); color: var(--brand); padding: 3px 10px; border-radius: 9999px; border:1px solid rgba(242,125,38,.2); }
+.playlist-items { max-height: 340px; overflow-y: auto; }
 
 .pl-item { display: flex; gap: 9px; padding: 6px; border-radius: 9px; cursor: pointer; border: 1px solid transparent; transition: all .18s; }
 .pl-item:hover { background: rgba(255,255,255,.04); }
@@ -395,7 +399,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .pl-item.current .pl-title { color: var(--brand); }
 .pl-dur { font-size: .65rem; color: #555; font-weight: 600; margin-top: 3px; }
 
-.suggested-title { font-size: .9rem; font-weight: 800; color: #fff; margin-bottom: 12px; }
+.suggested-title { font-size: .85rem; font-weight: 800; color: #888; text-transform:uppercase; letter-spacing:.1em; margin-bottom: 14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
 .sugg-item { display: flex; gap: 10px; margin-bottom: 13px; cursor: pointer; }
 .sugg-thumb { width: 118px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background: #1a1a1a; flex-shrink: 0; position: relative; }
 .sugg-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
@@ -408,6 +412,21 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .sugg-meta em { color: var(--brand); font-style: normal; }
 
 /* ══ CATEGORY / SEARCH ══ */
+/* ── Category Banner ── */
+.cat-banner { position:relative; width:100%; padding-top:60px; min-height:280px; display:flex; align-items:flex-end; overflow:hidden; }
+.cat-banner-bg { position:absolute; inset:0; background-size:cover; background-position:center; filter:blur(18px) brightness(.35) saturate(1.4); transform:scale(1.08); transition:background-image .4s; }
+.cat-banner-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(8,8,8,.2) 0%, rgba(8,8,8,.5) 60%, rgba(8,8,8,1) 100%); }
+.cat-banner-content { position:relative; z-index:2; max-width:1280px; width:100%; margin:0 auto; padding:32px 24px 36px; display:flex; align-items:center; gap:18px; }
+.cat-banner-icon { width:56px; height:56px; background:rgba(242,125,38,.15); border:1px solid rgba(242,125,38,.25); border-radius:16px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--brand); }
+.cat-banner-icon svg { width:24px; height:24px; }
+.cat-banner-title { font-size:2.2rem; font-weight:900; color:#fff; letter-spacing:-.03em; line-height:1; text-shadow:0 2px 12px rgba(0,0,0,.5); }
+.cat-banner-meta { font-size:.8rem; color:rgba(255,255,255,.45); margin-top:6px; font-weight:600; }
+@media (max-width:640px) {
+  .cat-banner { min-height:200px; }
+  .cat-banner-title { font-size:1.6rem; }
+  .cat-banner-content { padding:24px 14px 28px; gap:14px; }
+  .cat-banner-icon { width:44px; height:44px; border-radius:12px; }
+}
 .page-header { max-width: 1280px; margin: 0 auto; padding: 68px 24px 0; }
 @media (max-width: 640px) { .page-header { padding: 58px 14px 0; } }
 .page-header-row { display: flex; align-items: center; gap: 14px; padding: 24px 0 18px; }
@@ -753,8 +772,11 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 
 
 
-        <p id="watch-desc" class="watch-desc"></p>
-        <div id="watch-tags"></div>
+        <div id="watch-desc-wrap">
+          <p id="watch-desc" class="watch-desc" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden"></p>
+          <span class="watch-desc-expand" id="watch-desc-toggle" onclick="toggleDesc()" style="display:none">Show more ▾</span>
+        </div>
+        <div class="watch-tags" id="watch-tags"></div>
 
         <!-- Comments — after description -->
         <div class="comments-section">
@@ -819,14 +841,17 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
        CATEGORY PAGE
   ═══════════════════════════════════════ -->
   <div id="page-cat" class="page">
-    <div class="page-header">
-      <div class="page-header-row">
-        <div class="page-header-icon">
-          <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+    <!-- Category Banner -->
+    <div class="cat-banner" id="cat-banner">
+      <div class="cat-banner-bg" id="cat-banner-bg"></div>
+      <div class="cat-banner-overlay"></div>
+      <div class="cat-banner-content">
+        <div class="cat-banner-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
         </div>
         <div>
-          <h1 class="page-header-title" id="cat-title"></h1>
-          <p class="page-header-desc" id="cat-desc"></p>
+          <h1 class="cat-banner-title" id="cat-title"></h1>
+          <p class="cat-banner-meta" id="cat-desc"></p>
         </div>
       </div>
     </div>
@@ -937,8 +962,30 @@ window.showHistoryPage=()=>{
 
 // ── Helpers ──
 const $=id=>document.getElementById(id);
-function toSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,80)||'video'; }
+function toSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,80); }
+// Returns best URL slug for a video — uses title if latin, else uses ID
+function videoSlug(v){
+  const s=toSlug(v.title||'');
+  return s.length>=3 ? s : v.id;
+}
+// Returns best URL slug for a playlist
+function playlistSlug(pl){
+  const s=toSlug(pl.name||'');
+  return s.length>=3 ? s : pl.id;
+}
 const fmtViews=n=>n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(1)+"K":String(n||0);
+function timeAgo(ts){
+  if(!ts) return '';
+  const date=ts?.toDate?ts.toDate():new Date(ts?.seconds?ts.seconds*1000:ts);
+  if(isNaN(date)) return '';
+  const sec=Math.floor((Date.now()-date)/1000);
+  if(sec<60) return 'Just now';
+  if(sec<3600) return Math.floor(sec/60)+' min ago';
+  if(sec<86400) return Math.floor(sec/3600)+' hr ago';
+  if(sec<2592000) return Math.floor(sec/86400)+' days ago';
+  if(sec<31536000) return Math.floor(sec/2592000)+' months ago';
+  return Math.floor(sec/31536000)+' years ago';
+}
 
 const getThumb=v=>v.customThumb||v.thumbnail||
   ((v.platform||v.source||"")==="dailymotion"
@@ -1076,7 +1123,34 @@ function showPage(id,push=true){
   // Reset meta for non-video pages
   if(id==='home') updateMeta({title:null, desc:'Your ultimate destination for curated video content.'});
 }
-window.goHome=e=>{e?.preventDefault();showPage("home");};
+window.goHome=e=>{
+  e?.preventDefault();
+  showPage("home");
+  setNavActive('home');
+  // Silent background refresh
+  silentRefresh();
+};
+
+async function silentRefresh(){
+  try{
+    const[vidSnap,secSnap]=await Promise.all([
+      getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
+      getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
+    ]);
+    const newVideos=vidSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const newSections=secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+    // Only rebuild if data changed
+    const changed=JSON.stringify(newVideos.map(v=>v.id))!==JSON.stringify(videos.map(v=>v.id))
+      ||newSections.length!==sections.length;
+    if(changed){
+      videos=newVideos;
+      sections=newSections;
+      buildHero();
+      buildSections();
+      initRecommended();
+    }
+  }catch(e){}
+}
 window.goBack=()=>{
   if(previousPage&&previousPage!==location.pathname){
     history.back();
@@ -1096,7 +1170,7 @@ function routeFromUrl(push=false){
       // playlist video: /watch/playlist-slug/ep-N
       const plSlug=parts[0];
       const epNum=parseInt((parts[1]||'').replace('ep-',''))||1;
-      const pl=playlists.find(p=>toSlug(p.name)===plSlug);
+      const pl=playlists.find(p=>playlistSlug(p)===plSlug||toSlug(p.name)===plSlug);
       if(pl&&(pl.videos||[]).length){
         const vid=videos.find(v=>v.id===pl.videos[epNum-1])||videos.find(v=>v.id===pl.videos[0]);
         if(vid){ openVideo(vid.id,false); return; }
@@ -1105,7 +1179,7 @@ function routeFromUrl(push=false){
     if(parts.length===1){
       // single video: /watch/video-slug (or /watch/id as fallback)
       const vSlug=parts[0];
-      const vid=videos.find(v=>toSlug(v.title)===vSlug)||videos.find(v=>v.id===vSlug);
+      const vid=videos.find(v=>videoSlug(v)===vSlug||toSlug(v.title)===vSlug||v.id===vSlug);
       if(vid){ openVideo(vid.id,false); return; }
     }
     showPage("home",false); return;
@@ -1227,6 +1301,15 @@ function buildNav(){
     +`<a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a><a href="/admin">Admin</a>`;
 }
 
+// Set active nav link
+function setNavActive(matchId){
+  document.querySelectorAll('#nav-cats a').forEach(a=>{
+    const isHome=a.getAttribute('href')==='/'||a.getAttribute('onclick')?.includes('goHome');
+    if(matchId==='home') a.classList.toggle('active', isHome);
+    else a.classList.toggle('active', a.getAttribute('onclick')?.includes(`navGo('${matchId}')`) || false);
+  });
+}
+
 // Single entry point for all nav category clicks
 window.navGo=(id)=>{
   const c=categories.find(x=>x.id===id); if(!c)return;
@@ -1234,6 +1317,7 @@ window.navGo=(id)=>{
   const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
   const slug='/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   history.pushState({page:'cat',catId:id},"",slug);
+  setNavActive(id);
   if(c.target_type==='playlist'&&ids.length){
     openCategoryById(id);
   } else if(c.target_type==='video'&&ids.length){
@@ -1248,7 +1332,7 @@ window.navGo=(id)=>{
 function buildCard(v){
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
-  const watchUrl=pl?`/watch/${toSlug(pl.name)}/ep-${epNum}`:`/watch/${toSlug(v.title)||v.id}`;
+  const watchUrl=pl?`/watch/${playlistSlug(pl)}/ep-${epNum}`:`/watch/${videoSlug(v)}`;
   const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
   return`<a class="vcard" href="${watchUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
@@ -1262,7 +1346,11 @@ function buildCard(v){
       ${pl?`<div class="vcard-series">Series</div>`:""}
     </div>
     <div class="vcard-title">${v.title||""}</div>
-    <div class="vcard-sub">${v.category||""}${v.duration?` · ${v.duration}`:""}</div>
+    <div class="vcard-sub">${[
+      v.category,
+      v.views||v.viewsDisplay ? fmtViews(v.views||0)+' views' : '',
+      timeAgo(v.createdAt)
+    ].filter(Boolean).join(' · ')}</div>
   </a>`;
 }
 
@@ -1312,7 +1400,7 @@ function updateHero(i){
 
   // Update hero button href
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
-  const heroUrl=pl?`/watch/${toSlug(pl.name)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${toSlug(v.title)||v.id}`;
+  const heroUrl=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
   $("hero-watch-btn")?.setAttribute("data-url",heroUrl);
 
   document.querySelectorAll(".hero-dot").forEach((d,j)=>d.classList.toggle("active",j===i));
@@ -1354,7 +1442,7 @@ function buildContinueWatching(container){
     <div class="cw-row hide-scroll">
       ${cwVids.map(v=>{
         const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
-        const url=pl?`/watch/${toSlug(pl.name)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${toSlug(v.title)}`;
+        const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
         const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
         return`<div class="cw-card" onclick="${click}">
           <div class="cw-thumb">
@@ -1408,7 +1496,7 @@ function buildSections(){
 function buildPlaylistCard(pl){
   const count=(pl.videos||[]).length;
   const thumbVids=(pl.videos||[]).slice(0,4).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
-  const watchUrl=`/watch/${toSlug(pl.name)}/ep-1`;
+  const watchUrl=`/watch/${playlistSlug(pl)}/ep-1`;
 
   // Netflix-style multi-thumb grid
   let thumbHtml='';
@@ -1534,7 +1622,12 @@ window.seeAll=sid=>{
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
   window.scrollTo(0,0);
   $("cat-title").textContent=sec.title||"All Videos";
-  $("cat-desc").textContent=`Browse all ${sec.title||""} content.`;
+  const seeAllCount=(sec.video_ids||[]).length||0;
+  $("cat-desc").textContent=`${seeAllCount} video${seeAllCount!==1?'s':''} · Browse all ${sec.title||""} content`;
+  // Banner background from first video in section
+  const saBg=$("cat-banner-bg");
+  const saFirst=(sec.video_ids||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean)[0];
+  if(saBg) saBg.style.backgroundImage=saFirst?`url('${getThumb(saFirst)}')`:'none';
   updateMeta({title:sec.title, desc:`Browse all ${sec.title} content`, url:location.href});
 
   let list=[];
@@ -1578,11 +1671,10 @@ window.openVideo=async (id,push=true)=>{
     const pl2=playlists.find(p=>(p.videos||[]).includes(id));
     if(pl2){
       const epNum=(pl2.videos||[]).indexOf(id)+1;
-      const watchUrl=`/watch/${toSlug(pl2.name)}/ep-${epNum}`;
+      const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
       history.pushState({page:'watch',videoId:id},"",watchUrl);
     } else {
-      const vSlugUrl=toSlug(v.title)||id;
-      history.pushState({page:'watch',videoId:id},"",`/watch/${vSlugUrl}`);
+      history.pushState({page:'watch',videoId:id},"",`/watch/${videoSlug(v)}`);
     }
   }
 
@@ -1592,18 +1684,27 @@ window.openVideo=async (id,push=true)=>{
   $("watch-cat").textContent=v.category||"";
   $("watch-views").textContent=fmtViews((v.views||0)+1);
   $("watch-date").textContent=v.createdAt?.toDate?v.createdAt.toDate().toLocaleDateString():"—";
-  $("watch-desc").textContent=v.description||`${v.category||""} content from ${v.platform||v.source||""}.`;
+  // Description with expand toggle
+  const descText=v.description||`${v.category||""} content from ${v.platform||v.source||""}.`;
+  $("watch-desc").textContent=descText;
+  const toggle=$("watch-desc-toggle");
+  if(toggle){
+    toggle.style.display=descText.length>120?'':'none';
+    toggle.textContent='Show more ▾';
+    $("watch-desc").style.webkitLineClamp='3';
+    $("watch-desc").style.overflow='hidden';
+  }
+
+  // Tags
+  const tagsEl=$("watch-tags");
+  if(tagsEl){
+    const tags=[v.category,v.platform||v.source].filter(Boolean);
+    tagsEl.innerHTML=tags.map(t=>`<span class="watch-tag" onclick="doSearch('${t}')">${t}</span>`).join('');
+  }
 
   // SEO + History
   addToHistory(id);
   updateMeta({ title:v.title, desc:v.description||`Watch ${v.title} on ${siteName}`, image:getThumb(v), url:location.href });
-
-  // Related tags
-  const tagsEl=document.getElementById('watch-tags');
-  if(tagsEl){
-    const related=videos.filter(x=>x.category===v.category&&x.id!==id).slice(0,6);
-    tagsEl.innerHTML=v.category?`<div class="tag-chips"><span class="tag-chip" onclick="doSearch('${v.category}')">${v.category}</span>${related.map(r=>`<span class="tag-chip" onclick="openVideo('${r.id}')">${(r.title||'').slice(0,28)}…</span>`).join('')}</div>`:'';
-  }
 
   updateDoc(doc(db,"videos",id),{views:increment(1)}).catch(()=>{});
   const lv=videos.find(x=>x.id===id);if(lv)lv.views=(lv.views||0)+1;
@@ -1619,7 +1720,7 @@ window.openVideo=async (id,push=true)=>{
       const isWatched=watchedIds.includes(pv.id);
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
-        href="/watch/${toSlug(pl.name)}/ep-${pi+1}"
+        href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
         onclick="event.preventDefault();openVideo('${pv.id}')">
         <div class="pl-thumb">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
@@ -1648,7 +1749,7 @@ window.openVideo=async (id,push=true)=>{
   const watched=getHistory();
   $("suggested-list").innerHTML=related.map(x=>{
     const xpl=playlists.find(p=>(p.videos||[]).includes(x.id));
-    const xUrl=xpl?`/watch/${toSlug(xpl.name)}/ep-${(xpl.videos||[]).indexOf(x.id)+1}`:`/watch/${toSlug(x.title)||x.id}`;
+    const xUrl=xpl?`/watch/${playlistSlug(xpl)}/ep-${(xpl.videos||[]).indexOf(x.id)+1}`:`/watch/${videoSlug(x)}`;
     const xClick=xpl?`openPlaylist('${xpl.id}','${x.id}')`:`openVideo('${x.id}')`;
     const isWatched=watched.includes(x.id);
     return`<a class="sugg-item" href="${xUrl}" onclick="event.preventDefault();${xClick}">
@@ -1711,6 +1812,15 @@ function startCountdown(){
   _countdownTimer=setInterval(tick,1000);
 }
 
+window.toggleDesc=()=>{
+  const el=$('watch-desc'), btn=$('watch-desc-toggle');
+  if(!el||!btn) return;
+  const collapsed=el.style.overflow==='hidden';
+  el.style.overflow=collapsed?'visible':'hidden';
+  el.style.webkitLineClamp=collapsed?'unset':'3';
+  btn.textContent=collapsed?'Show less ▴':'Show more ▾';
+};
+
 window.playNext=()=>{
   clearCountdown();
   const n=playlistQueue[plQueueIdx+1];
@@ -1742,24 +1852,39 @@ function showCatPage(cat){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
   window.scrollTo(0,0);
   $("cat-title").textContent=cat.name;
-  $("cat-desc").textContent=`Discover the best ${cat.name} content.`;
   updateMeta({ title:cat.name, desc:`Discover the best ${cat.name} content`, url:location.href });
+
   const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
 
+  // Get list of videos for this category
+  let catVideos=[];
   if(cat.target_type==="playlist"){
-    // Show one playlist card per playlist — not individual videos
+    const pls=ids.map(pid=>playlists.find(p=>p.id===pid)).filter(Boolean);
+    catVideos=pls.flatMap(pl=>(pl.videos||[]).map(vid=>videos.find(v=>v.id===vid)).filter(Boolean));
+  } else if(cat.target_type==="video"){
+    catVideos=ids.map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
+  } else {
+    catVideos=videos.filter(v=>v.category===cat.name);
+  }
+
+  // Banner: use thumbnail of first video as blurred background
+  const bannerBg=$("cat-banner-bg");
+  const firstThumb=catVideos.length?getThumb(catVideos[0]):'';
+  if(bannerBg) bannerBg.style.backgroundImage=firstThumb?`url('${firstThumb}')`:'none';
+
+  // Video count in meta
+  const count=catVideos.length;
+  $("cat-desc").textContent=`${count} video${count!==1?'s':''} · ${cat.description||'Browse and enjoy'}`;
+
+  // Render grid
+  if(cat.target_type==="playlist"){
     const cards=ids.map(pid=>playlists.find(p=>p.id===pid)).filter(Boolean)
       .map(pl=>buildPlaylistCard(pl)).join("");
     $("cat-grid").innerHTML=cards||`<div style="padding:2rem;color:#555;text-align:center">No playlists found.</div>`;
-  } else if(cat.target_type==="video"){
-    const list=ids.map(vid=>videos.find(v=>v.id===vid)).filter(Boolean);
-    renderGrid($("cat-grid"),list);
   } else {
-    const list=videos.filter(v=>v.category===cat.name);
-    renderGrid($("cat-grid"),list);
-  NP.done();
-    NP.done();
+    renderGrid($("cat-grid"),catVideos);
   }
+  NP.done();
 }
 
 // Called from navGo for playlist/video types (URL already pushed)
