@@ -1288,7 +1288,7 @@ function buildNav(){
 
   function navLink(c, closeMobile=false){
     const close=closeMobile?'toggleMobileMenu();':'';
-    return `<a href="${slug(c)}" onclick="event.preventDefault();${close}navGo('${c.id}')">${c.name}</a>`;
+    return `<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();${close}navGo('${c.id}')">${c.name}</a>`;
   }
 
   const curSlug=location.pathname;
@@ -1304,9 +1304,11 @@ function buildNav(){
 // Set active nav link
 function setNavActive(matchId){
   document.querySelectorAll('#nav-cats a').forEach(a=>{
-    const isHome=a.getAttribute('href')==='/'||a.getAttribute('onclick')?.includes('goHome');
-    if(matchId==='home') a.classList.toggle('active', isHome);
-    else a.classList.toggle('active', a.getAttribute('onclick')?.includes(`navGo('${matchId}')`) || false);
+    if(matchId==='home'){
+      a.classList.toggle('active', !a.dataset.catid);
+    } else {
+      a.classList.toggle('active', a.dataset.catid===matchId);
+    }
   });
 }
 
