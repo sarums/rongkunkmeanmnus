@@ -1,14 +1,14 @@
 {
-  "rewrites": [
-    { "source": "/admin",          "destination": "/admin.html" },
-    { "source": "/about",          "destination": "/pages.html" },
-    { "source": "/privacy",        "destination": "/pages.html" },
-    { "source": "/terms",          "destination": "/pages.html" },
-    { "source": "/contact",        "destination": "/pages.html" },
-    { "source": "/watch/:slug",    "destination": "/index.html" },
-    { "source": "/watch/:pl/:ep",  "destination": "/index.html" },
-    { "source": "/search",         "destination": "/index.html" },
-    { "source": "/history",        "destination": "/index.html" },
-    { "source": "/(.*)",           "destination": "/index.html" }
+  "routes": [
+    { "src": "/admin",         "dest": "/admin.html" },
+    { "src": "/about",         "dest": "/pages.html" },
+    { "src": "/privacy",       "dest": "/pages.html" },
+    { "src": "/terms",         "dest": "/pages.html" },
+    { "src": "/contact",       "dest": "/pages.html" },
+    { "src": "/watch/([^/]+)/([^/]+)", "dest": "/index.html" },
+    { "src": "/watch/([^/]+)", "dest": "/index.html" },
+    { "src": "/search",        "dest": "/index.html" },
+    { "src": "/history",       "dest": "/index.html" },
+    { "src": "/(.*)",          "dest": "/index.html" }
   ]
 }
