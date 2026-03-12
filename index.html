@@ -431,12 +431,25 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .empty-state p { font-size: .95rem; font-weight: 700; color: #444; }
 
 /* ══ FOOTER ══ */
-footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: center; }
+/* ── Full footer (home only) ── */
+footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-align: center; }
 .footer-logo { display: inline-flex; align-items: center; gap: 9px; margin-bottom: 14px; }
 .footer-desc { font-size: .8rem; color: #555; max-width: 440px; margin: 0 auto 20px; line-height: 1.6; }
-.footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+.footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
 .footer-links a { font-size: .72rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .08em; transition: color .2s; }
 .footer-links a:hover { color: var(--brand); }
+.footer-copy { font-size: .7rem; color: #333; margin-top: 8px; }
+
+/* ── Slim footer (inner pages) ── */
+.slim-footer { border-top: 1px solid var(--border); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+.slim-footer-copy { font-size: .7rem; color: #333; }
+.slim-footer-links { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.slim-footer-links a { font-size: .7rem; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: .06em; transition: color .2s; }
+.slim-footer-links a:hover { color: var(--brand); }
+@media (max-width: 640px) {
+  .slim-footer { justify-content: center; text-align: center; }
+  .slim-footer-links { justify-content: center; }
+}
 
 /* ══ PAGE TRANSITIONS ══ */
 .page { animation: none; }
@@ -627,6 +640,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
       </div>
       <p class="footer-desc" id="footer-desc"></p>
       <div class="footer-links" id="footer-links"></div>
+      <p class="footer-copy" id="footer-copy"></p>
     </footer>
   </div>
 
@@ -653,6 +667,16 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
       <div class="empty-state" id="history-empty" style="display:none">
         <div class="empty-state-icon">🎬</div>
         <p>No watch history yet</p>
+      </div>
+    </div>
+    <div class="slim-footer">
+      <span class="slim-footer-copy" id="slim-copy-hist"></span>
+      <div class="slim-footer-links">
+        <a href="/" onclick="goHome(event)">Home</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
       </div>
     </div>
   </div>
@@ -795,7 +819,16 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
         <div id="suggested-list"></div>
       </div>
 
-
+    </div>
+    <div class="slim-footer">
+      <span class="slim-footer-copy" id="slim-copy-watch"></span>
+      <div class="slim-footer-links">
+        <a href="/" onclick="goHome(event)">Home</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
+      </div>
     </div>
   </div>
 
@@ -816,6 +849,16 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
     </div>
     <div class="page-content">
       <div class="video-grid" id="cat-grid"></div>
+    </div>
+    <div class="slim-footer">
+      <span class="slim-footer-copy" id="slim-copy-cat"></span>
+      <div class="slim-footer-links">
+        <a href="/" onclick="goHome(event)">Home</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
+      </div>
     </div>
   </div>
 
@@ -838,6 +881,16 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px; text-align: ce
     </div>
     <div class="page-content">
       <div class="video-grid" id="search-grid"></div>
+    </div>
+    <div class="slim-footer">
+      <span class="slim-footer-copy" id="slim-copy-search"></span>
+      <div class="slim-footer-links">
+        <a href="/" onclick="goHome(event)">Home</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
+      </div>
     </div>
   </div>
 
@@ -1128,10 +1181,21 @@ async function loadAll(){
     const stDoc=await getDoc(doc(db,"settings","main")).catch(()=>null);
     if(stDoc?.exists()){
       const s=stDoc.data();
-      if(s.name){siteName=s.name;["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=s.name;});document.title=s.name;document.getElementById('og-site')?.setAttribute('content',s.name);}
+      if(s.name){
+        siteName=s.name;
+        ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=s.name;});
+        document.title=s.name;
+        document.getElementById('og-site')?.setAttribute('content',s.name);
+        const yr=new Date().getFullYear();
+        const copy=`© ${yr} ${s.name}. All rights reserved.`;
+        ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{if($(id))$(id).textContent=copy;});
+      }
       if(s.footer&&$("footer-desc"))$("footer-desc").textContent=s.footer;
     }else{
       ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=siteDefaults.name;});
+      const yr=new Date().getFullYear();
+      const copy=`© ${yr} ${siteDefaults.name}. All rights reserved.`;
+      ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{if($(id))$(id).textContent=copy;});
       document.title=siteDefaults.name;
       if($("footer-desc"))$("footer-desc").textContent=siteDefaults.footer;
     }
