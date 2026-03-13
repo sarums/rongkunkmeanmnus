@@ -1450,8 +1450,7 @@ window.deleteComment=async(id)=>{
 };
 
 window.closeMiniPlayer = () => {
-  deactivateMiniPlayer();
-  // Stop main player too
+  // Stop player
   $('player-iframe').src = '';
 };
 
