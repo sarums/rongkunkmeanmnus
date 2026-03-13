@@ -244,7 +244,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* ── Player ── */
 .player-outer { position: relative; background: #000; border-radius: 14px; overflow: hidden; }
-.player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
+.player-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
 .player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
 
 /* Mobile: video sticky top, page scrolls normally */
