@@ -1454,8 +1454,6 @@ window.closeMiniPlayer = () => {
   $('player-iframe').src = '';
 };
 
-// Reset mini player when navigating away from watch page
-const _origShowPage = window.showPage || function(){};
 
 // ── KEYBOARD SHORTCUTS ──
 document.addEventListener('keydown',e=>{
