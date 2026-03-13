@@ -154,5 +154,4 @@ window.skipPreroll = function(){
   if(cb) cb();
 };
 
-// Load config on startup
-window.loadAdsConfig();
+// Config loaded on demand in app.js before each ad
