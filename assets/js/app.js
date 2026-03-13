@@ -818,7 +818,9 @@ window.openVideo=async (id,push=true)=>{
     }
   }
 
-  $("player-iframe").src=getEmbedUrl(v);
+  // Show pre-roll ad, then load video
+  const loadVideo=()=>{ $("player-iframe").src=getEmbedUrl(v); };
+  showPreroll(loadVideo);
   $("watch-title").textContent=v.title||"";
   $("watch-source").textContent=v.platform||v.source||"";
   $("watch-cat").textContent=v.category||"";
