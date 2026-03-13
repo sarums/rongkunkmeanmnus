@@ -817,6 +817,10 @@ async function loadAdsSettings(){
       qs('adPublisherId').value   = s.publisherId    || '';
       qs('adSlotId').value        = s.adSlot         || '';
       qs('adImageUrl').value      = s.imageUrl       || '';
+      qs('adFeedAds').value       = s.feedAds        ?? 1;
+      qs('adFeedEvery').value     = s.feedEvery      ?? 6;
+      qs('adFeedImageUrl').value  = s.feedImageUrl   || '';
+      qs('adFeedUrl').value       = s.feedAdUrl      || '';
     }
   } catch(e){ showToast('Error loading ads settings', e.message, 'err'); }
 }
@@ -833,6 +837,10 @@ window.saveAdsSettings = async ()=>{
     publisherId  : qs('adPublisherId').value.trim(),
     adSlot       : qs('adSlotId').value.trim(),
     imageUrl     : qs('adImageUrl').value.trim(),
+    feedAds      : parseInt(qs('adFeedAds').value),
+    feedEvery    : parseInt(qs('adFeedEvery').value)   || 6,
+    feedImageUrl : qs('adFeedImageUrl').value.trim(),
+    feedAdUrl    : qs('adFeedUrl').value.trim(),
   };
   try {
     await setDoc(doc(db,'settings','ads'), data, {merge:true});
