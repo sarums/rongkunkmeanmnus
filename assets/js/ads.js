@@ -12,9 +12,9 @@ let AD_CONFIG = {
   duration     : 10,
   midrollEvery : 5,
   minDuration  : 5,
-  publisherId  : 'ca-pub-3940256099942544',
-  adSlot       : '6300978111',
-  imageUrl     : 'https://i.ytimg.com/vi/eHRgByN_07A/maxresdefault.jpg',
+  publisherId  : '', // set from Admin → Ads Settings
+  adSlot       : '', // set from Admin → Ads Settings
+  imageUrl     : '', // set from Admin → Ads Settings
 };
 
 // ── LOAD CONFIG FROM FIRESTORE ───────────────────────
