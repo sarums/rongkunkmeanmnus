@@ -5,7 +5,7 @@
 
 // ── DEFAULT CONFIG (overridden by Firestore) ─────────
 let AD_CONFIG = window.AD_CONFIG = {
-  enabled      : 1,
+  enabled      : 0,  // OFF by default — turn on via Admin → Ads Settings
   preroll      : 1,
   midroll      : 1,
   skipAfter    : 5,
