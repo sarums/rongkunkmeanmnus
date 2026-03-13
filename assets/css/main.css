@@ -245,6 +245,21 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 /* ── Player ── */
 .player-outer { position: relative; background: #000; border-radius: 14px; overflow: hidden; }
 .player-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
+/* ── AD CARD ─────────────────────────────────────── */
+.vcard-ad { cursor: pointer; }
+.vcard-ad .vcard-thumb { position: relative; background: #111; }
+.vcard-ad-badge {
+  position: absolute; bottom: 6px; left: 6px;
+  background: rgba(242,125,38,.9); color: #000;
+  font-size: .6rem; font-weight: 900;
+  padding: 2px 7px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: .05em;
+  z-index: 2;
+}
+.sugg-ad { cursor: pointer; opacity: .9; }
+.sugg-ad:hover { opacity: 1; }
+.sugg-ad .sugg-thumb { position: relative; }
+
 #preroll-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; z-index: 20; flex-direction: column; align-items: stretch; justify-content: space-between; padding: 16px 20px; overflow: hidden; }
 #preroll-overlay.active { display: flex !important; }
 .player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
