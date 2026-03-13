@@ -38,6 +38,7 @@
 
       <div class="sidebar-section">System</div>
       <button class="nav-item" onclick="showPanel('settings',this)"><span class="ico">⚙️</span>Settings</button>
+      <button class="nav-item" onclick="showPanel('ads',this)"><span class="ico">📢</span>Ads Settings</button>
     </div>
 
     <!-- MAIN PANELS -->
@@ -324,6 +325,98 @@
           </div>
           <button class="submit-btn" style="margin-top:1.25rem;" onclick="saveSettings()">💾 Save Settings</button>
         </div>
+      </div>
+
+      <!-- ═══ ADS SETTINGS PANEL ═══ -->
+      <div class="panel" id="panel-ads">
+        <div class="panel-title">📢 Ads Settings</div>
+
+        <!-- Global Toggle -->
+        <div class="form-card" style="margin-bottom:1.25rem;">
+          <div class="form-card-title">🔌 Global Control</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label class="flabel">Ads Enabled</label>
+              <select class="fselect" id="adEnabled">
+                <option value="1">✅ Enabled</option>
+                <option value="0">❌ Disabled</option>
+              </select>
+              <div class="fhint">Turn off all ads globally without removing code</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Ad Image URL (placeholder)</label>
+              <input type="text" class="finput" id="adImageUrl" placeholder="https://...">
+              <div class="fhint">Shows this image in ad overlay (until real AdSense)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pre-roll Settings -->
+        <div class="form-card" style="margin-bottom:1.25rem;">
+          <div class="form-card-title">▶ Pre-roll Ad</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label class="flabel">Pre-roll Enabled</label>
+              <select class="fselect" id="adPreroll">
+                <option value="1">✅ Enabled</option>
+                <option value="0">❌ Disabled</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">Skip After (seconds)</label>
+              <input type="number" class="finput" id="adSkipAfter" min="1" max="30" placeholder="5">
+              <div class="fhint">How many seconds before Skip button appears</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Total Ad Duration (seconds)</label>
+              <input type="number" class="finput" id="adDuration" min="5" max="60" placeholder="10">
+              <div class="fhint">Auto-skip after this many seconds</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mid-roll Settings -->
+        <div class="form-card" style="margin-bottom:1.25rem;">
+          <div class="form-card-title">⏱ Mid-roll Ad</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label class="flabel">Mid-roll Enabled</label>
+              <select class="fselect" id="adMidroll">
+                <option value="1">✅ Enabled</option>
+                <option value="0">❌ Disabled</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">Show Every (minutes)</label>
+              <input type="number" class="finput" id="adMidrollEvery" min="1" max="30" placeholder="5">
+              <div class="fhint">Mid-roll appears every X minutes of video</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Min Video Length (minutes)</label>
+              <input type="number" class="finput" id="adMinDuration" min="1" max="30" placeholder="5">
+              <div class="fhint">Only show mid-roll if video is longer than this</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AdSense Settings -->
+        <div class="form-card" style="margin-bottom:1.25rem;">
+          <div class="form-card-title">💰 AdSense (Real Ads)</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label class="flabel">Publisher ID</label>
+              <input type="text" class="finput" id="adPublisherId" placeholder="ca-pub-XXXXXXXXXXXXXXXX">
+              <div class="fhint">Your Google AdSense Publisher ID</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Ad Slot ID</label>
+              <input type="text" class="finput" id="adSlotId" placeholder="XXXXXXXXXX">
+              <div class="fhint">Your AdSense Ad Unit ID</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="submit-btn" onclick="saveAdsSettings()">💾 Save Ads Settings</button>
       </div>
 
       <!-- ═══ SECTIONS PANEL ═══ -->
