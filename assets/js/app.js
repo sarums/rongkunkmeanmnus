@@ -110,8 +110,8 @@ window.showToast=(msg,type="ok")=>{
 // ── SEO Meta Updater ──
 function updateMeta({title, desc, image, url, type='website', videoId=''}){
   const sn = siteName||'RongKunKmeanMnus';
-  const fullTitle = title ? `${title} | ${sn}` : `${sn} - វីដេអូកម្សាន្ត`;
-  const fullDesc  = desc  || 'មើលវីដេអូកម្សាន្ត រឿងភាគ និងភាពយន្តល្អៗ។ Watch Khmer drama and entertainment videos online.';
+  const fullTitle = title ? `${title} | ${sn}` : `${sn} - Watch Videos Online`;
+  const fullDesc  = desc  || 'Watch Khmer drama, series and entertainment videos online.';
   const fullUrl   = url   || location.href;
   const fullImg   = image || 'https://rongkunkmeanmnus.vercel.app/assets/img/og-default.jpg';
 
@@ -150,17 +150,16 @@ function updateMeta({title, desc, image, url, type='website', videoId=''}){
       "url": fullUrl,
       "embedUrl": fullUrl,
       "uploadDate": new Date().toISOString(),
-      "inLanguage": "km"
+      "inLanguage": "en"
     });
   } else if(jsonld && type === 'website'){
     jsonld.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": sn,
-      "alternateName": "រ៉ុងគ្នាមានអ្នស",
       "url": "https://rongkunkmeanmnus.vercel.app",
       "description": fullDesc,
-      "inLanguage": ["km","en"],
+      "inLanguage": "en",
       "potentialAction": {
         "@type": "SearchAction",
         "target": { "@type": "EntryPoint", "urlTemplate": "https://rongkunkmeanmnus.vercel.app/search?q={search_term_string}" },
@@ -292,7 +291,7 @@ function showPage(id,push=true){
   const bnMap={home:'bn-home',search:'bn-search',history:'bn-history'};
   if(bnMap[id]) $(bnMap[id])?.classList.add('active');
   // Reset meta for non-video pages
-  if(id==='home') updateMeta({title:null, desc:'មើលវីដេអូកម្សាន្ត រឿងភាគ និងភាពយន្តល្អៗ។ Watch Khmer drama and entertainment videos online.', url:'https://rongkunkmeanmnus.vercel.app'});
+  if(id==='home') updateMeta({title:null, desc:'Watch Khmer drama, series and entertainment videos online.', url:'https://rongkunkmeanmnus.vercel.app'});
 }
 window.goHome=e=>{
   e?.preventDefault();
@@ -1005,7 +1004,7 @@ window.openVideo=async (id,push=true)=>{
   addToHistory(id);
   updateMeta({
     title : v.title,
-    desc  : v.description || `មើល ${v.title} នៅលើ ${siteName}។ Watch ${v.title} on ${siteName}.`,
+    desc  : v.description || `Watch ${v.title} on ${siteName}.`,
     image : getThumb(v),
     url   : location.href,
     type  : 'video.other'
