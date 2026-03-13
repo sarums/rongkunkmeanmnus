@@ -1,20 +1,40 @@
 // ═══════════════════════════════════════════════════
 //  ads.js — All advertising logic for RongKunKmeanMnus
-//  To disable all ads: remove <script> tag in index.html
+//  Controlled from Admin Dashboard → Ads Settings
 // ═══════════════════════════════════════════════════
 
-// ── CONFIG ──────────────────────────────────────────
-const AD_CONFIG = {
-  publisherId : 'ca-pub-3940256099942544', // ← replace with real ID
-  adSlot      : '6300978111',              // ← replace with real slot
-  duration    : 10,   // total ad display seconds
-  skipAfter   : 5,    // skip button appears after X seconds
-  midrollEvery: 5,    // show mid-roll every X minutes
-  minDuration : 5,    // minimum video duration (min) to show mid-roll
+// ── DEFAULT CONFIG (overridden by Firestore) ─────────
+let AD_CONFIG = {
+  enabled      : 1,
+  preroll      : 1,
+  midroll      : 1,
+  skipAfter    : 5,
+  duration     : 10,
+  midrollEvery : 5,
+  minDuration  : 5,
+  publisherId  : 'ca-pub-3940256099942544',
+  adSlot       : '6300978111',
+  imageUrl     : 'https://i.ytimg.com/vi/eHRgByN_07A/maxresdefault.jpg',
+};
+
+// ── LOAD CONFIG FROM FIRESTORE ───────────────────────
+window.loadAdsConfig = async function(){
+  try{
+    // Use Firebase already initialized in app.js
+    const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const { getApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+    const db   = getFirestore(getApp());
+    const snap = await getDoc(doc(db,'settings','ads'));
+    if(snap.exists()){
+      AD_CONFIG = { ...AD_CONFIG, ...snap.data() };
+      console.log('✅ Ads config loaded from Firestore');
+    }
+  } catch(e){
+    console.log('ℹ️ Using default ads config');
+  }
 };
 
 // ── HELPERS ─────────────────────────────────────────
-// Parse "MM:SS" or "HH:MM:SS" → total seconds
 function parseDuration(str){
   if(!str) return 0;
   const parts = str.trim().split(':').map(Number);
@@ -23,22 +43,15 @@ function parseDuration(str){
   return 0;
 }
 
-// Build mid-roll schedule based on video duration
-// Returns array of milliseconds when mid-rolls should fire
 function buildSchedule(durationStr){
   const totalSec = parseDuration(durationStr);
   const totalMin = totalSec / 60;
   const schedule = [];
-
-  // Only add mid-rolls if video is long enough
   if(totalMin < AD_CONFIG.minDuration) return schedule;
-
-  // Every X minutes → add a mid-roll
   const intervalMs = AD_CONFIG.midrollEvery * 60 * 1000;
   const totalMs    = totalSec * 1000;
-  let   t          = intervalMs;
-
-  while(t < totalMs - 30000){ // stop 30s before end
+  let t = intervalMs;
+  while(t < totalMs - 30000){
     schedule.push(t);
     t += intervalMs;
   }
@@ -49,15 +62,11 @@ function buildSchedule(durationStr){
 let _midrollTimers = [];
 
 window.scheduleMidrolls = function(durationStr){
-  // Clear any existing mid-roll timers
   clearMidrolls();
-
+  if(!AD_CONFIG.enabled || !AD_CONFIG.midroll) return;
   const schedule = buildSchedule(durationStr);
   if(!schedule.length) return;
-
-  console.log(`📺 Mid-roll schedule: ${schedule.map(t=>Math.round(t/60000)+'min').join(', ')}`);
-
-  schedule.forEach((ms, i) => {
+  schedule.forEach((ms, i)=>{
     const t = setTimeout(()=>{
       showMidroll(i+1, schedule.length);
     }, ms);
@@ -71,26 +80,32 @@ window.clearMidrolls = function(){
 };
 
 function showMidroll(num, total){
-  // Pause-like effect — show overlay again
-  showPreroll(()=>{
-    // After ad — video continues automatically (iframe keeps playing)
-    console.log(`✅ Mid-roll ${num}/${total} done`);
-  }, `Mid-roll ${num}/${total}`);
+  showPreroll(()=>{}, `Mid-roll ${num}/${total}`);
 }
 
 // ── PRE-ROLL / MID-ROLL DISPLAY ──────────────────────
 let _prerollTimer = null;
 
 window.showPreroll = function(onDone, label){
-  const overlay    = document.getElementById('preroll-overlay');
-  const countdown  = document.getElementById('preroll-countdown');
-  const skipBtn    = document.getElementById('preroll-skip-btn');
-  const progress   = document.getElementById('preroll-progress');
-  const adLabel    = document.getElementById('preroll-label');
+  if(!AD_CONFIG.enabled || !AD_CONFIG.preroll){
+    return onDone();
+  }
+  const overlay   = document.getElementById('preroll-overlay');
+  const countdown = document.getElementById('preroll-countdown');
+  const skipBtn   = document.getElementById('preroll-skip-btn');
+  const progress  = document.getElementById('preroll-progress');
+  const adLabel   = document.getElementById('preroll-label');
+  const adImg     = document.getElementById('preroll-ad-image');
   if(!overlay) return onDone();
 
-  // Update label (pre-roll vs mid-roll)
+  // Update label
   if(adLabel) adLabel.textContent = label || 'Advertisement';
+
+  // Update ad image from config
+  if(adImg && AD_CONFIG.imageUrl){
+    adImg.src = AD_CONFIG.imageUrl;
+    adImg.style.display = '';
+  }
 
   overlay.style.display = 'flex';
   skipBtn.style.display  = 'none';
@@ -98,7 +113,7 @@ window.showPreroll = function(onDone, label){
   progress.style.transition = 'none';
   progress.style.width      = '0%';
 
-  // Load AdSense
+  // Load AdSense if real IDs configured
   try{ (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
 
   let elapsed = 0;
@@ -138,3 +153,6 @@ window.skipPreroll = function(){
   hidePreroll();
   if(cb) cb();
 };
+
+// Load config on startup
+window.loadAdsConfig();
