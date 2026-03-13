@@ -823,7 +823,12 @@ window.openVideo=async (id,push=true)=>{
     $("player-iframe").src=getEmbedUrl(v);
     scheduleMidrolls(v.duration||'');
   };
-  showPreroll(loadVideo);
+  // Wait for ads config to load from Firestore first
+  if(window.loadAdsConfig){
+    window.loadAdsConfig().then(()=> showPreroll(loadVideo));
+  } else {
+    showPreroll(loadVideo);
+  }
   $("watch-title").textContent=v.title||"";
   $("watch-source").textContent=v.platform||v.source||"";
   $("watch-cat").textContent=v.category||"";
