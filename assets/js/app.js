@@ -554,12 +554,13 @@ function buildContinueWatching(container){
         const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
         const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
         return`<div class="cw-card" onclick="${click}">
-          <div class="cw-thumb">
+          <div class="cw-thumb" style="position:relative;">
             <img src="${getThumb(v)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
             <div class="cw-play"><div class="cw-play-icon">
               <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
             </div></div>
             <div class="cw-progress"><div class="cw-progress-bar"></div></div>
+            ${v.episodeNum?`<div style="position:absolute;top:5px;left:5px;width:24px;height:24px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:3;line-height:1">${v.episodeNum}</div>`:''}
           </div>
           <div class="cw-title">${v.title||''}</div>
           <div class="cw-meta">${v.category||''}</div>
