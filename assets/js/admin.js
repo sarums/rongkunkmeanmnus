@@ -64,6 +64,7 @@ window.showPanel = (id, btn) => {
   if(id==='categories') renderCategories();
   if(id==='sections') renderSections();
   if(id==='settings') loadSettings();
+  if(id==='ads') loadAdsSettings();
   if(id==='addvideo'){ populateSelects(); }
 };
 
@@ -795,6 +796,49 @@ window.saveSettings = async ()=>{
     showToast('Settings Saved!','Changes applied successfully','ok');
     qs('sNewPw').value='';
   } catch(e){ showToast('Error',e.message,'err'); }
+};
+
+// ── ADS SETTINGS ────────────────────────────────────
+let adsSettings = {};
+
+async function loadAdsSettings(){
+  try {
+    const snap = await getDoc(doc(db,'settings','ads'));
+    if(snap.exists()){
+      adsSettings = snap.data();
+      const s = adsSettings;
+      qs('adEnabled').value       = s.enabled       ?? 1;
+      qs('adPreroll').value       = s.preroll        ?? 1;
+      qs('adMidroll').value       = s.midroll        ?? 1;
+      qs('adSkipAfter').value     = s.skipAfter      ?? 5;
+      qs('adDuration').value      = s.duration       ?? 10;
+      qs('adMidrollEvery').value  = s.midrollEvery   ?? 5;
+      qs('adMinDuration').value   = s.minDuration    ?? 5;
+      qs('adPublisherId').value   = s.publisherId    || '';
+      qs('adSlotId').value        = s.adSlot         || '';
+      qs('adImageUrl').value      = s.imageUrl       || '';
+    }
+  } catch(e){ showToast('Error loading ads settings', e.message, 'err'); }
+}
+
+window.saveAdsSettings = async ()=>{
+  const data = {
+    enabled      : parseInt(qs('adEnabled').value),
+    preroll      : parseInt(qs('adPreroll').value),
+    midroll      : parseInt(qs('adMidroll').value),
+    skipAfter    : parseInt(qs('adSkipAfter').value)    || 5,
+    duration     : parseInt(qs('adDuration').value)     || 10,
+    midrollEvery : parseInt(qs('adMidrollEvery').value) || 5,
+    minDuration  : parseInt(qs('adMinDuration').value)  || 5,
+    publisherId  : qs('adPublisherId').value.trim(),
+    adSlot       : qs('adSlotId').value.trim(),
+    imageUrl     : qs('adImageUrl').value.trim(),
+  };
+  try {
+    await setDoc(doc(db,'settings','ads'), data, {merge:true});
+    adsSettings = data;
+    showToast('Ads Settings Saved!', 'Changes applied to site immediately', 'ok');
+  } catch(e){ showToast('Error', e.message, 'err'); }
 };
 
 // ══════════════════════════════════════════
