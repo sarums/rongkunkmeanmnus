@@ -416,6 +416,36 @@
           </div>
         </div>
 
+        <!-- Feed Ad Settings -->
+        <div class="form-card" style="margin-bottom:1.25rem;">
+          <div class="form-card-title">🃏 Feed Ad Cards</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label class="flabel">Feed Ads Enabled</label>
+              <select class="fselect" id="adFeedAds">
+                <option value="1">✅ Enabled</option>
+                <option value="0">❌ Disabled</option>
+              </select>
+              <div class="fhint">Show ad cards in home feed & suggested videos</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Show Every (cards)</label>
+              <input type="number" class="finput" id="adFeedEvery" min="2" max="20" placeholder="6">
+              <div class="fhint">Insert ad card every X video cards</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Feed Ad Image URL</label>
+              <input type="text" class="finput" id="adFeedImageUrl" placeholder="https://...">
+              <div class="fhint">Image shown inside feed ad card</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Feed Ad Link URL</label>
+              <input type="text" class="finput" id="adFeedUrl" placeholder="https://...">
+              <div class="fhint">Where user goes when clicking the ad card</div>
+            </div>
+          </div>
+        </div>
+
         <button class="submit-btn" onclick="saveAdsSettings()">💾 Save Ads Settings</button>
       </div>
 
