@@ -243,7 +243,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .watch-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
 
 /* ── Player ── */
-.player-outer { background: #000; border-radius: 14px; overflow: hidden; }
+.player-outer { position: relative; background: #000; border-radius: 14px; overflow: hidden; }
 .player-wrap { width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
 .player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
 
