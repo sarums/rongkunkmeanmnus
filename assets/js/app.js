@@ -328,6 +328,9 @@ window.addEventListener("popstate",e=>{
 // ── Load Data ──
 async function loadAll(){
   try{
+    // Load ads config first so feed cards render correctly
+    if(window.loadAdsConfig) await window.loadAdsConfig();
+
     const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
       getDocs(collection(db,"categories")),
       getDocs(collection(db,"playlists")),
@@ -903,12 +906,9 @@ window.openVideo=async (id,push=true)=>{
     $("player-iframe").src=getEmbedUrl(v);
     scheduleMidrolls(v.duration||'');
   };
-  // Wait for ads config to load from Firestore first
-  if(window.loadAdsConfig){
-    window.loadAdsConfig().then(()=> showPreroll(loadVideo));
-  } else {
-    showPreroll(loadVideo);
-  }
+  // Show pre-roll (config already loaded at startup)
+  if(window.showPreroll) showPreroll(loadVideo);
+  else loadVideo();
   $("watch-title").textContent=v.title||"";
   $("watch-source").textContent=v.platform||v.source||"";
   $("watch-cat").textContent=v.category||"";
