@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════
 
 // ── DEFAULT CONFIG (overridden by Firestore) ─────────
-let AD_CONFIG = {
+let AD_CONFIG = window.AD_CONFIG = {
   enabled      : 1,
   preroll      : 1,
   midroll      : 1,
@@ -27,6 +27,7 @@ window.loadAdsConfig = async function(){
     const snap = await getDoc(doc(db,'settings','ads'));
     if(snap.exists()){
       AD_CONFIG = { ...AD_CONFIG, ...snap.data() };
+      window.AD_CONFIG = AD_CONFIG; // expose globally for app.js
       console.log('✅ Ads config loaded from Firestore');
     }
   } catch(e){
