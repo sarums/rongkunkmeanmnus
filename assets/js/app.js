@@ -831,9 +831,10 @@ window.openVideo=async (id,push=true)=>{
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
         href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
         onclick="event.preventDefault();openVideo('${pv.id}')">
-        <div class="pl-thumb">
+        <div class="pl-thumb" style="position:relative;">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
           ${isCurrent?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:''}
+          ${pv.episodeNum?`<div style="position:absolute;top:4px;left:4px;width:22px;height:22px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:2;line-height:1">${pv.episodeNum}</div>`:''}
         </div>
         <div style="display:flex;flex-direction:column;justify-content:center;min-width:0;flex:1">
           <div class="pl-title">${pv.title||""}</div>
@@ -862,10 +863,11 @@ window.openVideo=async (id,push=true)=>{
     const xClick=xpl?`openPlaylist('${xpl.id}','${x.id}')`:`openVideo('${x.id}')`;
     const isWatched=watched.includes(x.id);
     return`<a class="sugg-item" href="${xUrl}" onclick="event.preventDefault();${xClick}">
-      <div class="sugg-thumb">
+      <div class="sugg-thumb" style="position:relative;">
         <img src="${getThumb(x)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${x.id}/320/180'">
         ${x.duration?`<div class="sugg-dur">${x.duration}</div>`:""}
         ${isWatched?`<div style="position:absolute;top:4px;right:4px;background:rgba(34,197,94,.85);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff">✓</div>`:""}
+        ${x.episodeNum?`<div style="position:absolute;top:4px;left:4px;width:22px;height:22px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:2;line-height:1">${x.episodeNum}</div>`:""}
       </div>
       <div class="sugg-info">
         <div class="sugg-title-text">${x.title||""}</div>
