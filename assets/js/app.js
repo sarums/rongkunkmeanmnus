@@ -130,6 +130,36 @@ window.doSearch=(q2)=>{
   renderGrid($("search-grid"),results);
   NP.done();
 };
+window.openDesktopSearch=()=>{
+  // Create overlay if not exists
+  let overlay=$('desktop-search-overlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='desktop-search-overlay';
+    overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding-top:120px;backdrop-filter:blur(6px);';
+    overlay.innerHTML=`
+      <div style="width:100%;max-width:600px;padding:0 20px;">
+        <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 18px;">
+          <svg width="18" height="18" fill="none" stroke="#f27d26" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="desktop-search-input" type="text" placeholder="Search videos..." autofocus
+            style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:1rem;font-family:inherit;"
+            onkeydown="if(event.key==='Enter'){closeDesktopSearch();doSearch(this.value);} if(event.key==='Escape') closeDesktopSearch();">
+          <button onclick="closeDesktopSearch()" style="background:none;border:none;color:#555;cursor:pointer;font-size:1.2rem;line-height:1;">✕</button>
+        </div>
+        <p style="text-align:center;color:#444;font-size:.75rem;margin-top:12px;">Press Enter to search · Esc to close</p>
+      </div>`;
+    overlay.addEventListener('click', e=>{ if(e.target===overlay) closeDesktopSearch(); });
+    document.body.appendChild(overlay);
+  } else {
+    overlay.style.display='flex';
+  }
+  setTimeout(()=>$('desktop-search-input')?.focus(),50);
+};
+window.closeDesktopSearch=()=>{
+  const o=$('desktop-search-overlay');
+  if(o) o.style.display='none';
+};
+
 function matchSearch(v,q){
   const lq=q.toLowerCase();
   return (v.title||'').toLowerCase().includes(lq)||(v.category||'').toLowerCase().includes(lq)||(v.description||'').toLowerCase().includes(lq);
