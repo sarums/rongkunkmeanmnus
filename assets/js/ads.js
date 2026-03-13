@@ -107,8 +107,8 @@ window.showPreroll = function(onDone, label){
     adImg.style.display = '';
   }
 
-  overlay.style.display = 'flex';
-  skipBtn.style.display  = 'none';
+  overlay.classList.add('active');
+  skipBtn.style.display = 'none';
   countdown.textContent  = `Skip in ${AD_CONFIG.skipAfter}s`;
   progress.style.transition = 'none';
   progress.style.width      = '0%';
@@ -143,7 +143,7 @@ window.showPreroll = function(onDone, label){
 
 window.hidePreroll = function(){
   const overlay = document.getElementById('preroll-overlay');
-  if(overlay) overlay.style.display = 'none';
+  if(overlay) overlay.classList.remove('active');
   clearInterval(_prerollTimer);
 };
 
