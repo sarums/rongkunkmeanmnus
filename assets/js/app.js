@@ -1,5 +1,5 @@
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import{getFirestore,collection,getDocs,addDoc,deleteDoc,doc,updateDoc,increment,query,orderBy,getDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import{getFirestore,collection,getDocs,addDoc,deleteDoc,doc,updateDoc,increment,query,orderBy,getDoc,serverTimestamp,onSnapshot}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ── Firebase Config ──
 const firebaseConfig={apiKey:"AIzaSyAnXxuc92620WOz_bVkovnUEQ_LL4YFPp8",authDomain:"streamhub-ce717.firebaseapp.com",projectId:"streamhub-ce717",storageBucket:"streamhub-ce717.firebasestorage.app",messagingSenderId:"223272731262",appId:"1:223272731262:web:d17866d4a12f610c864e2f"};
@@ -340,12 +340,35 @@ async function loadAll(){
     if(loader){ loader.classList.add('hidden'); setTimeout(()=>loader.remove(),500); }
     // Lazy load images with IntersectionObserver
     setupLazyLoad();
+    // Real-time listener — auto-update cards when videos change in Firestore
+    startVideoListener();
   }catch(err){
     console.error(err);
     showToast("Failed to load data","err");
     const loader=$('page-loader');
     if(loader){ loader.classList.add('hidden'); setTimeout(()=>loader.remove(),500); }
   }
+}
+
+function startVideoListener(){
+  onSnapshot(query(collection(db,"videos"),orderBy("createdAt","desc")), snap=>{
+    const updated = snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Check if any episodeNum changed
+    let changed = false;
+    updated.forEach(uv=>{
+      const old = videos.find(v=>v.id===uv.id);
+      if(old && old.episodeNum !== uv.episodeNum){ changed=true; Object.assign(old,{episodeNum:uv.episodeNum}); }
+      if(!old){ changed=true; videos.unshift(uv); }
+    });
+    if(changed){
+      // Rebuild all visible card grids
+      document.querySelectorAll('.vid-grid').forEach(grid=>{
+        const ids = [...grid.querySelectorAll('.vcard')].map(c=>c.dataset.id).filter(Boolean);
+        if(!ids.length) return;
+        grid.innerHTML = videos.filter(v=>ids.includes(v.id)).map(v=>buildCard(v)).join('');
+      });
+    }
+  });
 }
 
 function setupLazyLoad(){
@@ -419,7 +442,7 @@ function buildCard(v){
   const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
   const watchUrl=pl?`/watch/${playlistSlug(pl)}/ep-${epNum}`:`/watch/${videoSlug(v)}`;
   const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
-  return`<a class="vcard" href="${watchUrl}" onclick="event.preventDefault();${click}">
+  return`<a class="vcard" data-id="${v.id}" href="${watchUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
       <img src="${getThumb(v)}" alt="${(v.title||"").replace(/"/g,"")}" loading="lazy"
         onerror="this.src='https://picsum.photos/seed/${v.id}x/800/450'">
