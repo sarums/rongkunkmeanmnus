@@ -406,3 +406,9 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;vertical-align:middle;}
   .sidebar{display:none;}
   .panel{padding:1.25rem;}
 }
+/* Analytics two-column grid responsive */
+@media(max-width:900px){
+  .panel > div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns: 1fr !important;
+  }
+}
