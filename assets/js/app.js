@@ -495,10 +495,90 @@ function buildCard(v){
 
 function skelRow(n=4){return Array(n).fill(0).map(()=>`<div class="skel-card"><div class="skeleton skel-thumb"></div><div class="skeleton skel-title"></div><div class="skeleton skel-sub"></div></div>`).join("");}
 
+// ── AD CARD ──────────────────────────────────────────
+function buildAdCard(){
+  const cfg = window.AD_CONFIG||{};
+  if(!cfg.enabled || !cfg.feedAds) return '';
+  const img = cfg.feedImageUrl||cfg.imageUrl||'';
+  const url = cfg.feedAdUrl||'#';
+  const target = url==='#'?'':'target="_blank" rel="noopener"';
+  return`<a class="vcard vcard-ad" href="${url}" ${target}>
+    <div class="vcard-thumb">
+      ${img?`<img src="${img}" alt="Advertisement" loading="lazy" onerror="this.parentElement.style.background='#1a1a1a'">`:
+        `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#111;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>`}
+      <div class="vcard-ad-badge">Ad</div>
+    </div>
+    <div class="vcard-title" style="color:#888;">Advertisement</div>
+    <div class="vcard-sub">Sponsored</div>
+  </a>`;
+}
+
+// Inject ad cards every N cards into a list
+function injectAdCards(list, every=6){
+  const result=[];
+  list.forEach((item,i)=>{
+    result.push(item);
+    if((i+1)%every===0) result.push('__AD__');
+  });
+  return result;
+}
+
+function buildFeedWithAds(list, every=6){
+  const injected = injectAdCards(list, every);
+  return injected.map(item => item==='__AD__' ? buildAdCard() : buildCard(item)).join('');
+}
+
+function buildSuggWithAds(list, every=6){
+  const injected = injectAdCards(list, every);
+  return injected.map((item,i) => {
+    if(item==='__AD__') return buildSuggAdCard();
+    const x=item;
+    const xpl=playlists.find(p=>(p.videos||[]).includes(x.id));
+    const xUrl=xpl?`/watch/${playlistSlug(xpl)}/ep-${(xpl.videos||[]).indexOf(x.id)+1}`:`/watch/${videoSlug(x)}`;
+    const xClick=xpl?`openPlaylist('${xpl.id}','${x.id}')`:`openVideo('${x.id}')`;
+    const isWatched=getHistory().includes(x.id);
+    return`<a class="sugg-item" href="${xUrl}" onclick="event.preventDefault();${xClick}">
+      <div class="sugg-thumb" style="position:relative;">
+        <img src="${getThumb(x)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${x.id}/320/180'">
+        ${x.duration?`<div class="sugg-dur">${x.duration}</div>`:''}
+        ${isWatched?`<div style="position:absolute;top:4px;right:4px;background:rgba(34,197,94,.85);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff">✓</div>`:''}
+        ${x.episodeNum?`<div style="position:absolute;top:4px;left:4px;width:22px;height:22px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:2;line-height:1">${x.episodeNum}</div>`:''}
+      </div>
+      <div class="sugg-info">
+        <div class="sugg-title-text">${x.title||''}</div>
+        <div class="sugg-meta"><em>${x.category||x.platform||''}</em> · ${fmtViews(x.views)} views${xpl?' · Series':''}</div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+function buildSuggAdCard(){
+  const cfg = window.AD_CONFIG||{};
+  if(!cfg.enabled || !cfg.feedAds) return '';
+  const img = cfg.feedImageUrl||cfg.imageUrl||'';
+  const url = cfg.feedAdUrl||'#';
+  const target = url==='#'?'':'target="_blank" rel="noopener"';
+  return`<a class="sugg-item sugg-ad" href="${url}" ${target}>
+    <div class="sugg-thumb" style="position:relative;">
+      ${img?`<img src="${img}" alt="Ad" loading="lazy">`:
+        `<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+        </div>`}
+      <div class="vcard-ad-badge">Ad</div>
+    </div>
+    <div class="sugg-info">
+      <div class="sugg-title-text" style="color:#888;">Advertisement</div>
+      <div class="sugg-meta">Sponsored</div>
+    </div>
+  </a>`;
+}
+
 function renderGrid(el,list){
   if(!el)return;
   el.innerHTML=list.length
-    ?list.map(v=>buildCard(v)).join("")
+    ?buildFeedWithAds(list,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6)
     :`<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🎬</div><p>No videos found</p></div>`;
 }
 
@@ -687,13 +767,13 @@ function fillSection(sec,rowId){
   }
   if(sec.target_type==="single_videos"&&(sec.custom_videos||[]).length){
     const list=(sec.custom_videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
-    el.innerHTML=list.length?list.map(v=>buildCard(v)).join(""):skelRow();
+    el.innerHTML=list.length?buildFeedWithAds(list,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6):skelRow();
     return;
   }
   if(sec.target_type==="category"&&sec.target_id){
     const cat=categories.find(c=>c.id===sec.target_id);
     const list=videos.filter(v=>v.category===(cat?.name||sec.target_id)||v.category_id===sec.target_id).slice(0,12);
-    el.innerHTML=list.length?list.map(v=>buildCard(v)).join(""):skelRow();
+    el.innerHTML=list.length?buildFeedWithAds(list,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6):skelRow();
     return;
   }
   let list=isTrending?[...videos].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,12):videos.slice(0,12);
@@ -728,7 +808,7 @@ function loadMoreRecommended(){
   if(!batch.length){ _recDone=true; if(loader) loader.textContent=''; _recLoading=false; return; }
 
   setTimeout(()=>{
-    if(grid) grid.innerHTML+=batch.map(v=>buildCard(v)).join('');
+    if(grid) grid.innerHTML+=buildFeedWithAds(batch,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
     _recShown+=batch.length;
     if(_recShown>=_recPool.length) _recDone=true;
     if(loader) loader.textContent=_recDone?'':' ';
@@ -898,24 +978,7 @@ window.openVideo=async (id,push=true)=>{
   const others=videos.filter(x=>x.id!==id&&x.category!==v.category);
   const related=[...sameCat,...others].slice(0,10);
   const watched=getHistory();
-  $("suggested-list").innerHTML=related.map(x=>{
-    const xpl=playlists.find(p=>(p.videos||[]).includes(x.id));
-    const xUrl=xpl?`/watch/${playlistSlug(xpl)}/ep-${(xpl.videos||[]).indexOf(x.id)+1}`:`/watch/${videoSlug(x)}`;
-    const xClick=xpl?`openPlaylist('${xpl.id}','${x.id}')`:`openVideo('${x.id}')`;
-    const isWatched=watched.includes(x.id);
-    return`<a class="sugg-item" href="${xUrl}" onclick="event.preventDefault();${xClick}">
-      <div class="sugg-thumb" style="position:relative;">
-        <img src="${getThumb(x)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${x.id}/320/180'">
-        ${x.duration?`<div class="sugg-dur">${x.duration}</div>`:""}
-        ${isWatched?`<div style="position:absolute;top:4px;right:4px;background:rgba(34,197,94,.85);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff">✓</div>`:""}
-        ${x.episodeNum?`<div style="position:absolute;top:4px;left:4px;width:22px;height:22px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:2;line-height:1">${x.episodeNum}</div>`:""}
-      </div>
-      <div class="sugg-info">
-        <div class="sugg-title-text">${x.title||""}</div>
-        <div class="sugg-meta"><em>${x.category||x.platform||""}</em> · ${fmtViews(x.views)} views${xpl?' · Series':''}</div>
-      </div>
-    </a>`;
-  }).join("");
+  $("suggested-list").innerHTML=buildSuggWithAds(related,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
 
   // Load likes/dislikes + comments for this video
   loadReactions(id);
