@@ -139,6 +139,16 @@
               <input type="number" class="finput" id="fEpNum" placeholder="e.g. 1, 2, 3..." min="1" max="999" oninput="previewThumb()">
               <div class="fhint">Shows orange circle badge on thumbnail</div>
             </div>
+            <div class="fg">
+              <label class="flabel">Badge Position</label>
+              <select class="fselect" id="fBadgePos" onchange="previewThumb()">
+                <option value="top-left">↖ Top Left</option>
+                <option value="top-right">↗ Top Right</option>
+                <option value="bottom-left">↙ Bottom Left</option>
+                <option value="bottom-right">↘ Bottom Right</option>
+              </select>
+              <div class="fhint">Where to show the episode number</div>
+            </div>
           </div>
           <div class="fg full" style="margin-bottom:1rem;">
             <label class="flabel">Title</label>
@@ -588,6 +598,15 @@
         <div class="fg">
           <label class="flabel">Episode Number <span style="color:#555;font-weight:500">(optional)</span></label>
           <input type="number" class="finput" id="editEpNum" placeholder="e.g. 1, 2, 3..." min="1" max="999" oninput="previewEditThumb()">
+          <div style="margin-top:.5rem">
+            <label class="flabel">Badge Position</label>
+            <select class="fselect" id="editBadgePos" onchange="previewEditThumb()">
+              <option value="top-left">↖ Top Left</option>
+              <option value="top-right">↗ Top Right</option>
+              <option value="bottom-left">↙ Bottom Left</option>
+              <option value="bottom-right">↘ Bottom Right</option>
+            </select>
+          </div>
           <div class="fhint">Shows orange circle badge on thumbnail</div>
         </div>
       </div>
