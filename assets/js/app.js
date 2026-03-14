@@ -789,16 +789,9 @@ function buildPlaylistCard(pl){
   const thumbVids=(pl.videos||[]).slice(0,4).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
   const watchUrl=`/watch/${playlistSlug(pl)}/ep-1`;
 
-  // Netflix-style multi-thumb grid
-  let thumbHtml='';
-  if(thumbVids.length>=4){
-    thumbHtml=`<div class="pl-multithumb-grid">
-      ${thumbVids.map(v=>`<img src="${getThumb(v)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">`).join('')}
-    </div>`;
-  } else {
-    const img=pl.thumbnail||(thumbVids[0]?getThumb(thumbVids[0]):`https://picsum.photos/seed/${pl.id}/800/450`);
-    thumbHtml=`<div class="pl-multithumb-single"><img src="${img}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pl.id}/800/450'"></div>`;
-  }
+  // Single thumbnail (use custom thumbnail, or first video thumb)
+  const img=pl.thumbnail||(thumbVids[0]?getThumb(thumbVids[0]):`https://picsum.photos/seed/${pl.id}/800/450`);
+  const thumbHtml=`<div class="pl-multithumb-single"><img src="${img}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pl.id}/800/450'"></div>`;
 
   return`<a class="vcard" href="${watchUrl}" onclick="event.preventDefault();openPlaylistById('${pl.id}')">
     <div class="pl-multithumb">
