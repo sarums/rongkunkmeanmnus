@@ -1,15 +1,60 @@
 {
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        }
+      ]
+    }
+  ],
   "rewrites": [
-    { "source": "/admin",           "destination": "/admin/index.html" },
-    { "source": "/thumbnail",       "destination": "/pages/thumbnail.html" },
-    { "source": "/about",           "destination": "/pages/about.html" },
-    { "source": "/privacy",         "destination": "/pages/privacy.html" },
-    { "source": "/terms",           "destination": "/pages/terms.html" },
-    { "source": "/contact",         "destination": "/pages/contact.html" },
-    { "source": "/watch/:pl/:ep",   "destination": "/index.html" },
-    { "source": "/watch/:slug",     "destination": "/index.html" },
-    { "source": "/search",          "destination": "/index.html" },
-    { "source": "/history",         "destination": "/index.html" },
-    { "source": "/(.*)",            "destination": "/index.html" }
+    {
+      "source": "/admin",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/pages/about.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/pages/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/pages/terms.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/pages/contact.html"
+    },
+    {
+      "source": "/watch/:pl/:ep",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/watch/:slug",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/search",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/history",
+      "destination": "/index.html"
+    }
   ]
 }
