@@ -185,13 +185,16 @@ window.toggleMobileMenu=()=>{
   const backdrop= $("sheet-backdrop");
   if(mobileMenuOpen){
     backdrop.style.display='block';
-    setTimeout(()=>{ backdrop.style.background='rgba(0,0,0,.6)'; },10);
-    sheet.style.transform='translateY(0)';
-    setTimeout(()=>$("mobile-search-input")?.focus(),350);
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        backdrop.style.background='rgba(0,0,0,.65)';
+        sheet.style.transform='translateY(0)';
+      });
+    });
   } else {
     backdrop.style.background='rgba(0,0,0,0)';
     sheet.style.transform='translateY(100%)';
-    setTimeout(()=>{ backdrop.style.display='none'; },350);
+    setTimeout(()=>{ backdrop.style.display='none'; }, 400);
   }
 };
 window.doSearch=(q2)=>{
@@ -499,8 +502,12 @@ function buildNav(activeId){
   function slug(c){ return '/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
   function navLink(c, closeMobile=false){
     const close=closeMobile?'toggleMobileMenu();':'';
-    return `<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();${close}navGo('${c.id}')">
-      <span style="font-size:1.1rem;width:24px;text-align:center">${c.ico||'▶'}</span>
+    return `<a href="${slug(c)}" data-catid="${c.id}"
+      onclick="event.preventDefault();${close}navGo('${c.id}')"
+      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.92rem;font-weight:600;color:rgba(255,255,255,.75);text-decoration:none;transition:background .15s,color .15s;"
+      onmouseover="this.style.background='rgba(242,125,38,.09)';this.style.color='#f27d26'"
+      onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.75)'">
+      <span style="width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">${c.ico||'▶'}</span>
       ${c.name}
     </a>`;
   }
@@ -514,8 +521,15 @@ function buildNav(activeId){
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
     +cats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("");
   $("mobile-cats").innerHTML=
-    `<a href="/" onclick="event.preventDefault();toggleMobileMenu();goHome(event)" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;font-size:.88rem;font-weight:600;color:#ccc;transition:all .2s;text-decoration:none;" onmouseover="this.style.background='rgba(242,125,38,.1)';this.style.color='#f27d26'" onmouseout="this.style.background='';this.style.color='#ccc'">
-      <span style="font-size:1.1rem;width:24px;text-align:center">🏠</span> Home
+    `<div style="font-size:.63rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.2);padding:4px 12px 8px;">Menu</div>`
+    +`<a href="/" onclick="event.preventDefault();toggleMobileMenu();goHome(event)"
+      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.92rem;font-weight:600;color:rgba(255,255,255,.75);text-decoration:none;transition:background .15s,color .15s;"
+      onmouseover="this.style.background='rgba(242,125,38,.09)';this.style.color='#f27d26'"
+      onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.75)'">
+      <span style="width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      </span>
+      Home
     </a>`
     +cats.map(c=>navLink(c,true)).join("");
   $("footer-links").innerHTML=
