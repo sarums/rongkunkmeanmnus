@@ -209,7 +209,11 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 @media (max-width: 640px) { .vcard { flex: 0 0 calc(50% - 6px); min-width: 150px; } }
 
 .vcard-thumb { position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #1a1a1a; margin-bottom: 8px; }
-.ep-badge { position:absolute; top:7px; left:7px; width:32px; height:32px; background:var(--brand); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:900; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.6); border:2px solid rgba(255,255,255,.2); z-index:3; line-height:1; }
+.ep-badge { position:absolute; width:32px; height:32px; background:var(--brand); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:900; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.6); border:2px solid rgba(255,255,255,.2); z-index:3; line-height:1; top:7px; left:7px; }
+.ep-badge--top-left     { top:7px;    left:7px;   bottom:auto; right:auto; }
+.ep-badge--top-right    { top:7px;    right:7px;  bottom:auto; left:auto;  }
+.ep-badge--bottom-left  { bottom:7px; left:7px;   top:auto;    right:auto; }
+.ep-badge--bottom-right { bottom:7px; right:7px;  top:auto;    left:auto;  }
 .vcard-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
 .vcard:hover .vcard-thumb img { transform: scale(1.07); }
 .vcard-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.7) 0%, transparent 55%); opacity: 0; transition: opacity .3s; }
