@@ -553,7 +553,7 @@ function buildCard(v){
       </div></div>
       ${v.duration?`<div class="vcard-duration">${v.duration}</div>`:""}
       ${pl?`<div class="vcard-series">Series</div>`:""}
-      ${v.episodeNum?`<div class="ep-badge">${v.episodeNum}</div>`:""}
+      ${v.episodeNum?`<div class="ep-badge ep-badge--${v.badgePos||'top-left'}">${v.episodeNum}</div>`:""}
     </div>
     <div class="vcard-title">${v.title||""}</div>
     <div class="vcard-sub">${[
