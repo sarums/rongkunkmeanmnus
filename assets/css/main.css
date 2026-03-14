@@ -513,5 +513,3 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 #page-loader.hidden { opacity:0; pointer-events:none; }
 .loader-ring { width:40px; height:40px; border:3px solid #1a1a1a; border-top-color:var(--brand); border-radius:50%; animation:spin .7s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
-.mobile-cats a { display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;font-size:.88rem;font-weight:600;color:#ccc;transition:all .2s;text-decoration:none; }
-.mobile-cats a:hover,.mobile-cats a.active { background:rgba(242,125,38,.1);color:#f27d26; }
