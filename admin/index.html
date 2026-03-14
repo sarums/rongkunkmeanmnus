@@ -666,6 +666,76 @@
   </div>
 </div>
 
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:1rem;">
+  <!-- background with blurred gradient -->
+  <div style="position:absolute;inset:0;background:#080808;"></div>
+  <div style="position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(242,125,38,.15) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-60%);pointer-events:none;"></div>
+  <div style="position:absolute;width:300px;height:300px;background:radial-gradient(circle,rgba(242,125,38,.08) 0%,transparent 70%);bottom:10%;right:10%;pointer-events:none;"></div>
+
+  <!-- card -->
+  <div style="position:relative;width:100%;max-width:420px;margin:1rem auto;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:24px;overflow:hidden;backdrop-filter:blur(20px);">
+
+    <!-- top accent bar -->
+    <div style="height:3px;background:linear-gradient(90deg,#f27d26,#ff9a56,#f27d26);background-size:200% 100%;animation:shimmer 2s linear infinite;"></div>
+
+    <div style="padding:2.5rem 2rem 2rem;">
+      <!-- logo -->
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:2.25rem;">
+        <div style="width:64px;height:64px;background:linear-gradient(135deg,#f27d26,#ff9a56);border-radius:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(242,125,38,.4);margin-bottom:1.1rem;">
+          <svg viewBox="0 0 24 24" fill="#fff" width="28" height="28"><polygon points="5,3 19,12 5,21"/></svg>
+        </div>
+        <div style="font-size:1.5rem;font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1;">RKMN <span style="color:#f27d26;">ADMIN</span></div>
+        <div style="font-size:.78rem;color:#444;margin-top:6px;font-weight:500;">Secure Admin Dashboard</div>
+      </div>
+
+      <!-- error -->
+      <div id="loginError" style="display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171;border-radius:12px;padding:11px 16px;font-size:.82rem;font-weight:600;margin-bottom:1.25rem;align-items:center;gap:8px;">
+        <span style="font-size:1rem;">⚠️</span> Incorrect password. Please try again.
+      </div>
+
+      <!-- input -->
+      <div style="margin-bottom:1.25rem;">
+        <label style="font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#444;display:block;margin-bottom:8px;">Admin Password</label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.3;font-size:1rem;">🔑</span>
+          <input type="password" id="loginPwInput" placeholder="Enter your password"
+            style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px 48px 13px 44px;color:#fff;font-size:.9rem;outline:none;transition:all .2s;font-family:inherit;box-sizing:border-box;"
+            onkeydown="if(event.key==='Enter')doLogin()"
+            onfocus="this.style.borderColor='rgba(242,125,38,.6)';this.style.background='rgba(242,125,38,.05)'"
+            onblur="this.style.borderColor='rgba(255,255,255,.1)';this.style.background='rgba(255,255,255,.05)'">
+          <button onclick="togglePwVis()" id="pwVisBtn"
+            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#444;cursor:pointer;padding:4px;border-radius:6px;transition:color .2s;font-size:.9rem;"
+            onmouseover="this.style.color='#f27d26'" onmouseout="this.style.color='#444'">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- login button -->
+      <button onclick="doLogin()" id="loginBtn"
+        style="width:100%;padding:13px;background:linear-gradient(135deg,#f27d26,#ff9a56);color:#000;font-weight:900;font-size:.92rem;border:none;border-radius:12px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:.03em;box-shadow:0 4px 20px rgba(242,125,38,.3);"
+        onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 28px rgba(242,125,38,.45)'"
+        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(242,125,38,.3)'">
+        Unlock Dashboard →
+      </button>
+
+      <!-- footer -->
+      <div style="text-align:center;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,.05);">
+        <div style="font-size:.7rem;color:#2a2a2a;">🔒 Protected area · RongKunKmeanMnus</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+</style>
+
 <!-- TOAST CONTAINER -->
 <div class="toast-wrap" id="toastWrap"></div>
 
