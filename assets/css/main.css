@@ -96,8 +96,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 
 
-.mobile-menu { display: none; background: rgba(8,8,8,.98); border-top: 1px solid var(--border); padding: 14px 20px 18px; }
-.mobile-menu.open { display: block; }
+/* mobile bottom sheet — controlled via JS transform */
 .mobile-search { position: relative; margin-bottom: 12px; }
 .mobile-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: .4; }
 .mobile-search input { width: 100%; background: #1c1c1c; border: 1px solid var(--border); border-radius: 9999px; padding: 8px 14px 8px 36px; color: #fff; font-size: .82rem; outline: none; }
@@ -514,3 +513,5 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 #page-loader.hidden { opacity:0; pointer-events:none; }
 .loader-ring { width:40px; height:40px; border:3px solid #1a1a1a; border-top-color:var(--brand); border-radius:50%; animation:spin .7s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
+.mobile-cats a { display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;font-size:.88rem;font-weight:600;color:#ccc;transition:all .2s;text-decoration:none; }
+.mobile-cats a:hover,.mobile-cats a.active { background:rgba(242,125,38,.1);color:#f27d26; }
