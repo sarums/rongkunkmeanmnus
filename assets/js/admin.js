@@ -501,7 +501,7 @@ function renderPlaylists(){
     const autoThumb=pl.thumbnail||(vids[0]?thumbUrl(vids[0]):'');
     return `<div class="pl-card">
       <!-- Header -->
-      <div class="pl-card-head">
+      <div class="pl-card-head" onclick="togglePlEpisodes('${pl.id}')" style="cursor:pointer;" title="Click to expand/collapse episodes">
         <div style="display:flex;align-items:center;gap:.85rem;flex:1;min-width:0">
           <div style="width:80px;aspect-ratio:16/9;border-radius:7px;overflow:hidden;background:var(--bg3);border:1px solid var(--border2);flex-shrink:0;position:relative">
             ${autoThumb
@@ -519,6 +519,7 @@ function renderPlaylists(){
         </div>
         <div class="pl-card-actions">
           <span class="pl-card-meta">${vids.length} video${vids.length!==1?'s':''}</span>
+          <span id="pl-chevron-${pl.id}" style="font-size:.75rem;color:var(--text2);transition:transform .25s;display:inline-block">▼</span>
           <button class="act-btn" style="background:rgba(232,160,32,.12);color:var(--accent);border:1px solid rgba(232,160,32,.25)" onclick="togglePlAddVideo('${pl.id}')">➕ Add Videos</button>
           <button class="act-btn act-edit" onclick="editPlaylist('${pl.id}')">✏️ Edit</button>
           <button class="act-btn act-del" onclick="deletePlaylist('${pl.id}','${pl.name.replace(/'/g,"\\'").substring(0,30)}')">🗑️</button>
@@ -539,8 +540,8 @@ function renderPlaylists(){
         <div id="pl-results-${pl.id}" style="max-height:260px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px"></div>
       </div>
 
-      <!-- Video list -->
-      <div class="pl-items-list">
+      <!-- Video list (collapsed by default) -->
+      <div class="pl-items-list" id="pl-eplist-${pl.id}" style="display:none;border-top:1px solid var(--border);">
         ${vids.length?vids.map((v,i)=>`
           <div class="pl-item-row">
             <div class="pl-num">${i+1}</div>
@@ -1359,6 +1360,15 @@ window.saveSecEdit=async id=>{
 // ══════════════════════════════════════════
 //  PLAYLIST ADD-VIDEO (inline per playlist)
 // ══════════════════════════════════════════
+window.togglePlEpisodes=plId=>{
+  const list    = document.getElementById(`pl-eplist-${plId}`);
+  const chevron = document.getElementById(`pl-chevron-${plId}`);
+  if(!list) return;
+  const isOpen = list.style.display !== 'none';
+  list.style.display = isOpen ? 'none' : 'block';
+  if(chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+};
+
 window.togglePlAddVideo=plId=>{
   const box=document.getElementById(`pl-addvid-${plId}`);
   if(!box)return;
