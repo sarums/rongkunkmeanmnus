@@ -502,12 +502,15 @@ function buildNav(activeId){
   function slug(c){ return '/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
   function navLink(c, closeMobile=false){
     const close=closeMobile?'toggleMobileMenu();':'';
+    const icon = c.ico && c.ico.trim() && c.ico!=='▶'
+      ? `<span style="font-size:1.05rem">${c.ico}</span>`
+      : `<span style="font-size:.75rem;font-weight:800;color:#f27d26">${(c.name||'?').charAt(0).toUpperCase()}</span>`;
     return `<a href="${slug(c)}" data-catid="${c.id}"
       onclick="event.preventDefault();${close}navGo('${c.id}')"
-      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.92rem;font-weight:600;color:rgba(255,255,255,.75);text-decoration:none;transition:background .15s,color .15s;"
-      onmouseover="this.style.background='rgba(242,125,38,.09)';this.style.color='#f27d26'"
-      onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.75)'">
-      <span style="width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">${c.ico||'▶'}</span>
+      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.8);text-decoration:none;transition:background .18s,color .18s;"
+      onmouseover="this.style.background='rgba(242,125,38,.08)';this.style.color='#f27d26';this.querySelector('div').style.background='rgba(242,125,38,.15)'"
+      onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.8)';this.querySelector('div').style.background='rgba(255,255,255,.05)'">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .18s">${icon}</div>
       ${c.name}
     </a>`;
   }
@@ -523,12 +526,12 @@ function buildNav(activeId){
   $("mobile-cats").innerHTML=
     `<div style="font-size:.63rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.2);padding:4px 12px 8px;">Menu</div>`
     +`<a href="/" onclick="event.preventDefault();toggleMobileMenu();goHome(event)"
-      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.92rem;font-weight:600;color:rgba(255,255,255,.75);text-decoration:none;transition:background .15s,color .15s;"
-      onmouseover="this.style.background='rgba(242,125,38,.09)';this.style.color='#f27d26'"
-      onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.75)'">
-      <span style="width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
-      </span>
+      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.8);text-decoration:none;transition:background .18s,color .18s;"
+      onmouseover="this.style.background='rgba(242,125,38,.08)';this.style.color='#f27d26'"
+      onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.8)'">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      </div>
       Home
     </a>`
     +cats.map(c=>navLink(c,true)).join("");
