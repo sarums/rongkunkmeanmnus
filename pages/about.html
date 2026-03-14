@@ -4,17 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About Us | RongKunKmeanMnus</title>
-  <meta name="description" content="Learn about RongKunKmeanMnus — your curated video streaming destination.">
+  <meta name="description" content="Learn about RongKunKmeanMnus — your free curated video streaming destination for Chinese Drama, Thai Drama and more.">
   <style>
-@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--brand:#f27d26;--bg:#0a0a0a;--bg2:#111111;--bg3:#181818;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#e4e4e7;--text2:#71717a;}
+:root{--brand:#f27d26;--bg:#0a0a0a;--bg2:#111;--bg3:#181818;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#e4e4e7;--text2:#71717a;}
 html{scroll-behavior:smooth}
-body{font-family:'Kantumruy Pro','Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 a{text-decoration:none;color:inherit}
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:9999px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:9999px}
 #navbar{position:fixed;top:0;left:0;right:0;z-index:200}
 #nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px;padding:0 32px;background:rgba(8,8,8,.97);border-bottom:1px solid var(--border)}
 .nav-logo{display:flex;align-items:center;gap:9px}
@@ -27,7 +25,7 @@ a{text-decoration:none;color:inherit}
 .page-wrap{max-width:820px;margin:0 auto;padding:96px 24px 80px}
 @media(max-width:640px){.page-wrap{padding:84px 16px 60px}}
 .page-tabs{display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:48px;flex-wrap:wrap}
-.page-tab{flex:1;min-width:120px;text-align:center;padding:8px 12px;border-radius:9px;font-size:.78rem;font-weight:700;color:var(--text2);cursor:pointer;transition:all .2s;border:none;background:none;text-decoration:none;display:block}
+.page-tab{flex:1;min-width:100px;text-align:center;padding:8px 12px;border-radius:9px;font-size:.78rem;font-weight:700;color:var(--text2);transition:all .2s;text-decoration:none;display:block}
 .page-tab.active{background:var(--brand);color:#000}
 .page-tab:hover:not(.active){color:#fff;background:rgba(255,255,255,.05)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -36,16 +34,18 @@ a{text-decoration:none;color:inherit}
 .page-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(242,125,38,.12);color:var(--brand);font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:9999px;margin-bottom:14px}
 .page-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1.1;margin-bottom:10px}
 .page-subtitle{font-size:.92rem;color:var(--text2);line-height:1.65;max-width:580px}
-h2{font-size:1.15rem;font-weight:800;color:#fff;margin:36px 0 12px;display:flex;align-items:center;gap:10px}
-h2::before{content:'';display:block;width:4px;height:1.15rem;background:var(--brand);border-radius:2px;flex-shrink:0}
+h2{font-size:1.1rem;font-weight:800;color:#fff;margin:36px 0 12px;display:flex;align-items:center;gap:10px}
+h2::before{content:'';display:block;width:4px;height:1.1rem;background:var(--brand);border-radius:2px;flex-shrink:0}
 p{font-size:.88rem;color:#888;line-height:1.75;margin-bottom:12px}
+ul{padding-left:1.4rem;margin-bottom:12px}
+li{font-size:.88rem;color:#888;line-height:1.75;margin-bottom:6px}
 strong{color:#ccc;font-weight:700}
 a.inline{color:var(--brand);font-weight:600}
 a.inline:hover{text-decoration:underline}
-.info-card{background:var(--bg3);border:1px solid var(--border2);border-radius:14px;padding:20px 24px;margin-bottom:16px;transition:border-color .2s}
+.info-card{background:var(--bg3);border:1px solid var(--border2);border-radius:14px;padding:20px 24px;margin-bottom:12px;transition:border-color .2s}
 .info-card:hover{border-color:rgba(242,125,38,.3)}
 .info-card-label{font-size:.63rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
-.info-card-value{font-size:.9rem;font-weight:700;color:#ddd}
+.info-card-value{font-size:.88rem;color:#ccc;line-height:1.6}
 .page-footer{border-top:1px solid var(--border);padding:40px 24px;text-align:center;max-width:820px;margin:0 auto}
 .pf-links{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:14px}
 .pf-links a{font-size:.7rem;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:.08em;transition:color .2s}
@@ -75,25 +75,49 @@ a.inline:hover{text-decoration:underline}
   </div>
   <div class="page-content">
     <div class="page-hero">
-      <div class="page-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg> About Us</div>
-      <h1 class="page-title">We Curate the<br>Best Content for You</h1>
-      <p class="page-subtitle">RongKunKmeanMnus is a free video streaming platform bringing together the best videos from across the web — organized, curated, and always free to watch.</p>
+      <div class="page-badge">▶ About Us</div>
+      <h1 class="page-title">Your Free Streaming<br>Destination</h1>
+      <p class="page-subtitle">RongKunKmeanMnus is a free video streaming platform bringing together the best Chinese Drama, Thai Drama, and entertainment videos — curated, organized, and always free to watch.</p>
     </div>
+
     <h2>Who We Are</h2>
-    <p>RongKunKmeanMnus is an independent video curation platform. We hand-pick and organize video content from trusted public platforms like <strong>Dailymotion</strong> and <strong>Rumble</strong>, making it easy for our audience to discover great content in one place.</p>
-    <p>We are not a video hosting service — we embed publicly available videos and organize them into categories and playlists for a better viewing experience.</p>
+    <p>RongKunKmeanMnus is an independent video curation platform based in Cambodia. We hand-pick and organize video content from trusted public platforms like <strong>Dailymotion</strong> and <strong>Rumble</strong>, making it easy for our audience to discover great content in one place.</p>
+    <p>We are not a video hosting service. We embed publicly available videos and organize them into categories and playlists to create a better viewing experience for our users.</p>
+
     <h2>What We Offer</h2>
-    <div class="info-card"><div class="info-card-label">🎬 Curated Video Collections</div><div class="info-card-value">Hand-picked videos organized into playlists and categories for easy discovery.</div></div>
-    <div class="info-card"><div class="info-card-label">📋 Playlists</div><div class="info-card-value">Series and thematic collections you can watch in order from start to finish.</div></div>
-    <div class="info-card"><div class="info-card-label">🔍 Smart Search</div><div class="info-card-value">Find any video instantly by title, category, or description.</div></div>
-    <div class="info-card"><div class="info-card-label">📱 Mobile Friendly</div><div class="info-card-value">Fully responsive design — watch on any device, any time, for free.</div></div>
+    <div class="info-card">
+      <div class="info-card-label">🎬 Curated Video Collections</div>
+      <div class="info-card-value">Hand-picked videos organized into playlists and categories. We focus on Chinese Drama, Thai Drama, and popular entertainment series dubbed in Khmer.</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">📋 Series Playlists</div>
+      <div class="info-card-value">Watch full drama series in order from Episode 1 to the latest episode. New episodes are added regularly.</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">🔍 Easy Search & Discovery</div>
+      <div class="info-card-value">Find any video or series instantly by title, category, or keyword. Browse by genre or use the search bar.</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">📱 Free on Any Device</div>
+      <div class="info-card-value">Fully responsive — watch comfortably on your phone, tablet, or desktop. No account needed, always free.</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">📖 Watch History</div>
+      <div class="info-card-value">Your watch history is saved locally on your device so you can always continue where you left off.</div>
+    </div>
+
     <h2>Our Mission</h2>
-    <p>Our mission is simple: make great video content easy to find and enjoyable to watch. We believe everyone deserves access to quality entertainment without complicated interfaces or paywalls.</p>
+    <p>Our mission is to make great video content — especially Asian drama series — easy to find and enjoyable to watch for Cambodian audiences. We believe everyone deserves access to quality entertainment without paywalls or complicated sign-ups.</p>
+
     <h2>Content Sources</h2>
-    <p>All videos are embedded from <strong>Dailymotion</strong> and <strong>Rumble</strong> using their official embed APIs. We do not host, upload, or store any video files. All rights belong to their respective creators.</p>
-    <p>If you are a content creator and wish to have your content removed, please <a class="inline" href="/contact">contact us</a>.</p>
+    <p>All videos on RongKunKmeanMnus are embedded from <strong>Dailymotion</strong> and <strong>Rumble</strong> using their official embed APIs. We do not host, upload, download, or store any video files on our servers. All video rights belong to their respective creators and copyright holders.</p>
+    <p>If you are a content creator or rights holder and wish to have your content removed, please <a class="inline" href="/contact">contact us</a> and we will act promptly.</p>
+
     <h2>Advertising</h2>
-    <p>RongKunKmeanMnus is supported by <strong>Google AdSense</strong>. Ads help us keep the platform free. We do not allow advertisers to influence our content curation decisions.</p>
+    <p>RongKunKmeanMnus is supported by advertising through <strong>Google AdSense</strong>. Ads help us keep the platform free for all users. We do not allow advertisers to influence our content curation decisions. For more information see our <a class="inline" href="/privacy">Privacy Policy</a>.</p>
+
+    <h2>Contact Us</h2>
+    <p>Have questions, feedback, or a content removal request? We are happy to help. Email us at <a class="inline" href="mailto:soksarum.mii@gmail.com">soksarum.mii@gmail.com</a> or visit our <a class="inline" href="/contact">Contact page</a>.</p>
   </div>
 </div>
 <div class="page-footer">
@@ -103,7 +127,7 @@ a.inline:hover{text-decoration:underline}
   </div>
   <div class="pf-links">
     <a href="/">Home</a>
-    <a href="/about"   class="active">About</a>
+    <a href="/about" class="active">About</a>
     <a href="/privacy">Privacy</a>
     <a href="/terms">Terms</a>
     <a href="/contact">Contact</a>
