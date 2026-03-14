@@ -15,7 +15,73 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// No login required — show dashboard immediately
+// ── AUTH ──────────────────────────────────────────────
+const SESSION_KEY = 'rkmn_admin_auth';
+
+function isLoggedIn(){
+  return sessionStorage.getItem(SESSION_KEY) === '1';
+}
+
+function showLoginScreen(){ 
+  const s = document.getElementById('loginScreen');
+  if(s) s.style.display = 'flex';
+}
+
+function hideLoginScreen(){
+  const s = document.getElementById('loginScreen');
+  if(s) s.style.display = 'none';
+}
+
+window.togglePwVis = ()=>{
+  const inp  = document.getElementById('loginPwInput');
+  const icon = document.getElementById('eyeIcon');
+  if(!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  if(icon){
+    icon.innerHTML = inp.type === 'password'
+      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  }
+};
+
+window.doLogin = async ()=>{
+  const inp = document.getElementById('loginPwInput');
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  const pw  = inp?.value.trim();
+  if(!pw){ inp?.focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  err.style.display = 'none';
+
+  // Helper: grant access
+  function grantAccess(){
+    sessionStorage.setItem(SESSION_KEY, '1');
+    hideLoginScreen();
+    loadAll();
+  }
+
+  // Helper: show error
+  function showError(){
+    err.style.display = 'flex';
+    inp.value = '';
+    inp.focus();
+    btn.disabled = false;
+    btn.textContent = 'Unlock Dashboard →';
+  }
+
+  try {
+    const snap = await getDoc(doc(db,'settings','main'));
+    const correctPw = snap.exists() ? (snap.data().password || 'streamhub2024') : 'streamhub2024';
+    if(pw === correctPw){ grantAccess(); }
+    else { showError(); }
+  } catch(e){
+    // Firestore failed — use hardcoded default
+    if(pw === 'streamhub2024'){ grantAccess(); }
+    else { showError(); }
+  }
+};
 
 // ── STATE ─────────────────────────────────────────────
 let allVideos=[], allPlaylists=[], allCategories=[];
@@ -50,7 +116,7 @@ window.showConfirm = (title, msg, cb) => {
 window.closeConfirm = ()=>{ qs('confirmOverlay').classList.remove('open'); };
 
 // ── LOGIN ─────────────────────────────────────────────
-window.doLogout = ()=>{ location.reload(); };
+window.doLogout = ()=>{ sessionStorage.removeItem(SESSION_KEY); location.reload(); };
 
 // ── PANELS ────────────────────────────────────────────
 window.showPanel = (id, btn) => {
@@ -1399,4 +1465,12 @@ window.showPanel=(id,btn)=>{
   if(id==='comments') loadComments();
 };
 
-loadAll();
+// ── INIT ──────────────────────────────────────────────
+if(isLoggedIn()){
+  hideLoginScreen();
+  loadAll();
+} else {
+  showLoginScreen();
+  // Focus password input
+  setTimeout(()=>{ document.getElementById('loginPwInput')?.focus(); }, 100);
+}
