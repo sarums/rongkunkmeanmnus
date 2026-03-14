@@ -190,6 +190,18 @@ window.setEditPlatform = (p)=>{
 };
 
 // ── THUMBNAIL PREVIEW ─────────────────────────────────
+
+// ── BADGE POSITION HELPER ─────────────────────────────
+function badgePosStyle(pos){
+  const map = {
+    'top-left'    : 'top:8px;left:8px',
+    'top-right'   : 'top:8px;right:8px',
+    'bottom-left' : 'bottom:8px;left:8px',
+    'bottom-right': 'bottom:8px;right:8px',
+  };
+  return map[pos] || 'top:8px;left:8px';
+}
+
 window.previewThumb = ()=>{
   const custom=qs('fThumb').value.trim();
   const vid=qs('fVidId').value.trim();
@@ -197,9 +209,10 @@ window.previewThumb = ()=>{
   const url = custom || (plat==='dailymotion'&&vid ? `https://www.dailymotion.com/thumbnail/video/${vid}` : '');
   const p=qs('thumbPreview');
   const epN=parseInt(qs('fEpNum')?.value)||0;
+  const bPos=badgePosStyle(qs('fBadgePos')?.value||'top-left');
   if(url){
     p.innerHTML=`<img src="${url}" onerror="this.parentElement.innerHTML='<span>Could not load thumbnail</span>'">`
-      +(epN?`<div style="position:absolute;top:8px;right:8px;width:44px;height:44px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.25);z-index:2">${epN}</div>`:'');
+      +(epN?`<div style="position:absolute;${bPos};width:44px;height:44px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.25);z-index:2">${epN}</div>`:'');
   } else p.innerHTML='<span>Enter Video ID to preview thumbnail</span>';
 };
 window.previewEditThumb = ()=>{
@@ -209,9 +222,10 @@ window.previewEditThumb = ()=>{
   const url = custom || (plat==='dailymotion'&&vid ? `https://www.dailymotion.com/thumbnail/video/${vid}` : '');
   const p=qs('editThumbPreview');
   const epN=parseInt(qs('editEpNum')?.value)||0;
+  const bPos=badgePosStyle(qs('editBadgePos')?.value||'top-left');
   if(url){
     p.innerHTML=`<img src="${url}" onerror="this.parentElement.innerHTML='<span>Could not load thumbnail</span>'">`
-      +(epN?`<div style="position:absolute;top:8px;right:8px;width:44px;height:44px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.25);z-index:2">${epN}</div>`:'');
+      +(epN?`<div style="position:absolute;${bPos};width:44px;height:44px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.25);z-index:2">${epN}</div>`:'');
   } else p.innerHTML='<span>No thumbnail</span>';
 };
 
@@ -223,12 +237,13 @@ window.addVideo = async ()=>{
   const plId=qs('fPlaylist').value, duration=qs('fDuration').value.trim();
   const customThumb=qs('fThumb').value.trim(), viewsDisplay=qs('fViews').value.trim();
   const epNum=parseInt(qs('fEpNum')?.value)||0;
+  const badgePos=qs('fBadgePos')?.value||'top-left';
   if(!videoId||!title){ showToast('Missing Fields','Video ID and Title are required','err'); return; }
   const btn=qs('addVidBtn'); btn.disabled=true; btn.textContent='Adding...';
   try {
     const data={ platform,videoId,title,description,category,featured:section==='featured'?'yes':'no',
       section:section||'', duration:duration||'', customThumb:customThumb||'',
-      viewsDisplay:viewsDisplay||'', views:0, episodeNum:epNum||0, createdAt:serverTimestamp() };
+      viewsDisplay:viewsDisplay||'', views:0, episodeNum:epNum||0, badgePos:badgePos, createdAt:serverTimestamp() };
     const ref=await addDoc(collection(db,'videos'),data);
     const newV={id:ref.id,...data};
     allVideos.unshift(newV);
@@ -242,6 +257,7 @@ window.addVideo = async ()=>{
     qs('fSection').value=''; qs('fPlaylist').value='';
     qs('thumbPreview').innerHTML='<span>Enter Video ID to preview thumbnail</span>';
     setPlatform('dailymotion');
+    if(qs('fBadgePos')) qs('fBadgePos').value='top-left';
     renderOverview();
   } catch(e){ showToast('Error',e.message,'err'); }
   btn.disabled=false; btn.textContent='➕ Add Video';
@@ -295,6 +311,7 @@ window.openEdit = (id)=>{
   qs('editDuration').value=v.duration||'';
   qs('editThumb').value=v.customThumb||'';
   qs('editEpNum').value=v.episodeNum||'';
+  setTimeout(()=>{ if(qs('editBadgePos')) qs('editBadgePos').value=v.badgePos||'top-left'; },50);
   qs('editSection').value=v.featured==='yes'?'featured':(v.section||'');
   populateSelects();
   setTimeout(()=>{
@@ -314,12 +331,13 @@ window.saveEdit = async ()=>{
   const category=qs('editCat').value, section=qs('editSection').value;
   const duration=qs('editDuration').value.trim(), customThumb=qs('editThumb').value.trim();
   const epNum=parseInt(qs('editEpNum')?.value)||0;
+  const badgePos=qs('editBadgePos')?.value||'top-left';
   const newPlId=qs('editPlaylist').value;
   if(!videoId||!title){ showToast('Missing Fields','Video ID and Title required','err'); return; }
   try {
     const data={ platform,videoId,title,description,category,
       featured:section==='featured'?'yes':'no', section:section||'',
-      duration, customThumb, episodeNum:epNum||0 };
+      duration, customThumb, episodeNum:epNum||0, badgePos:badgePos };
     await updateDoc(doc(db,'videos',id),data);
     const v=allVideos.find(x=>x.id===id);
     if(v) Object.assign(v,data);
