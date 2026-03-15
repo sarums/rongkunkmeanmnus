@@ -1,6 +1,7 @@
 {
   "headers": [
     {
+      "source": "/ads.txt",
       "source": "/sitemap.xml",
       "headers": [
         {
