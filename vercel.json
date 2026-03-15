@@ -1,15 +1,6 @@
 {
   "headers": [
     {
-      "source": "/ads.txt",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/plain"
-        }
-      ]
-    },
-    {
       "source": "/sitemap.xml",
       "headers": [
         {
@@ -71,12 +62,3 @@
     }
   ]
 }
-```
-
----
-
-## Also create the actual `ads.txt` file
-
-Create a file named `ads.txt` in the **root** of your project with this content:
-```
-google.com, pub-6821890542678085, DIRECT, f08c47fec0942fa0
