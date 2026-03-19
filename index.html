@@ -133,26 +133,31 @@
     <div id="sheet-backdrop" onclick="toggleMobileMenu()" style="display:none;position:fixed;inset:0;z-index:299;background:rgba(0,0,0,0);transition:background .35s ease;"></div>
 
     <!-- BOTTOM SHEET -->
-    <div id="mobile-menu" style="position:fixed;bottom:0;left:0;right:0;z-index:300;background:#0f0f0f;border-radius:18px 18px 0 0;border-top:1px solid rgba(255,255,255,.07);transform:translateY(100%);transition:transform .4s cubic-bezier(.25,.46,.45,.94);height:75vh;display:flex;flex-direction:column;">
+    <div id="mobile-menu" style="position:fixed;bottom:0;left:0;right:0;z-index:300;background:#0f0f0f;border-radius:18px 18px 0 0;border-top:1px solid rgba(255,255,255,.07);transform:translateY(100%);transition:transform .4s cubic-bezier(.25,.46,.45,.94);height:80vh;display:flex;flex-direction:column;overflow:hidden;">
       <!-- Handle -->
       <div style="flex-shrink:0;display:flex;justify-content:center;padding:10px 0 6px;cursor:pointer;" onclick="toggleMobileMenu()">
         <div style="width:40px;height:4px;background:rgba(255,255,255,.12);border-radius:9999px;"></div>
       </div>
 
       <!-- Search bar -->
-      <div style="flex-shrink:0;padding:6px 16px 14px;">
-        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 14px;transition:border-color .2s;">
+      <div style="flex-shrink:0;padding:6px 16px 14px;display:flex;gap:8px;">
+        <div style="flex:1;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 14px;transition:border-color .2s;">
           <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input id="mobile-search-input" type="text" placeholder="Search videos..."
-            onkeydown="if(event.key==='Enter'){doSearch();}"
+            onkeydown="if(event.key==='Enter'){doSearch(this.value);}"
             onfocus="this.parentElement.style.borderColor='rgba(242,125,38,.5)'"
             onblur="this.parentElement.style.borderColor='rgba(255,255,255,.08)'"
             style="background:none;border:none;outline:none;color:#fff;font-size:.88rem;width:100%;font-family:inherit;caret-color:#f27d26;">
         </div>
+        <button onclick="doSearch(document.getElementById('mobile-search-input').value)"
+          style="flex-shrink:0;background:#f27d26;border:none;border-radius:12px;padding:0 16px;color:#000;font-weight:800;font-size:.82rem;cursor:pointer;">
+          Go
+        </button>
       </div>
 
       <!-- Scrollable nav list -->
-      <div style="overflow-y:auto;flex:1;padding:0 12px 0;" id="mobile-cats"><div style="height:calc(80px + env(safe-area-inset-bottom,16px));"></div></div>
+      <div style="overflow-y:auto;flex:1;padding:0 12px 0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;" id="mobile-cats"></div>
+      <div style="flex-shrink:0;height:calc(16px + env(safe-area-inset-bottom,0px));"></div>
     </div>
   </div>
 
