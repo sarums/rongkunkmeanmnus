@@ -205,6 +205,28 @@ window.toggleMobileMenu=()=>{
     setTimeout(()=>{ backdrop.style.display='none'; }, 400);
   }
 };
+window.toggleMoreMenu=()=>{
+  const menu    = $("nav-more-menu");
+  const chevron = $("nav-more-chevron");
+  if(!menu) return;
+  const isOpen = menu.style.display !== 'none';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if(chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+};
+
+window.closeMoreMenu=()=>{
+  const menu    = $("nav-more-menu");
+  const chevron = $("nav-more-chevron");
+  if(menu) menu.style.display='none';
+  if(chevron) chevron.style.transform='';
+};
+
+// Close More menu when clicking outside
+document.addEventListener('click', e=>{
+  const wrap = $("nav-more-wrap");
+  if(wrap && !wrap.contains(e.target)) closeMoreMenu();
+});
+
 window.doSearch=(q2)=>{
   const q=(q2!=null?q2:($("search-input")?.value||$("mobile-search-input")?.value||"")).trim();
   if(!q)return;
@@ -532,6 +554,26 @@ function buildNav(activeId){
   $("nav-cats").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
     +desktopCats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("");
+
+  // Populate More dropdown with overflow categories
+  const moreCats = sorted.slice(8);
+  const moreWrap = $("nav-more-wrap");
+  const moreMenu = $("nav-more-menu");
+  if(moreWrap && moreMenu){
+    if(moreCats.length){
+      moreWrap.style.display='block';
+      moreMenu.innerHTML = moreCats.map(c=>`
+        <a href="${slug(c)}" data-catid="${c.id}"
+          onclick="event.preventDefault();closeMoreMenu();navGo('${c.id}')"
+          style="display:block;padding:9px 12px;border-radius:8px;font-size:.82rem;font-weight:600;color:#ccc;text-decoration:none;transition:background .15s,color .15s;white-space:nowrap;"
+          onmouseover="this.style.background='rgba(242,125,38,.1)';this.style.color='#f27d26'"
+          onmouseout="this.style.background='';this.style.color='#ccc'">
+          ${c.ico&&c.ico!=='▶'?c.ico+' ':''  }${c.name}
+        </a>`).join('');
+    } else {
+      moreWrap.style.display='none';
+    }
+  }
   $("mobile-cats").innerHTML=
     `<div style="font-size:.63rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.2);padding:4px 12px 8px;">Menu</div>`
     +`<a href="/" onclick="event.preventDefault();toggleMobileMenu();goHome(event)"
