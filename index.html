@@ -107,6 +107,18 @@
         </a>
         <div id="nprogress-spinner"></div>
         <nav class="nav-links" id="nav-cats"></nav>
+        <!-- More dropdown -->
+        <div id="nav-more-wrap" style="display:none;position:relative;">
+          <button id="nav-more-btn" onclick="toggleMoreMenu()"
+            style="display:flex;align-items:center;gap:5px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 12px;color:#aaa;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;"
+            onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,.35)'"
+            onmouseout="this.style.color='#aaa';this.style.borderColor='rgba(255,255,255,.15)'">
+            More
+            <svg id="nav-more-chevron" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s"><polyline points="6,9 12,15 18,9"/></svg>
+          </button>
+          <div id="nav-more-menu" style="display:none;position:absolute;top:calc(100% + 8px);left:0;background:#181818;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:6px;min-width:180px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+          </div>
+        </div>
       </div>
 
       <div class="nav-right">
