@@ -198,7 +198,7 @@ window.toggleMobileMenu=()=>{
   }
 };
 window.doSearch=(q2)=>{
-  const q=(q2||$("search-input").value||$("mobile-search-input")?.value||"").trim();
+  const q=(q2!=null?q2:($("search-input")?.value||$("mobile-search-input")?.value||"")).trim();
   if(!q)return;
   NP.start();
   if(mobileMenuOpen){ mobileMenuOpen=false; const s=$("mobile-menu"),b=$("sheet-backdrop"); if(s)s.style.transform='translateY(100%)'; if(b){b.style.background='rgba(0,0,0,0)';setTimeout(()=>b.style.display='none',350);} }
