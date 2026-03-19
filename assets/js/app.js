@@ -505,7 +505,8 @@ function setupLazyLoad(){
 // ── Nav ──
 function buildNav(activeId){
   const sorted=[...categories].sort((a,b)=>(a.display_order||0)-(b.display_order||0));
-  const cats=sorted.slice(0,8);
+  const desktopCats=sorted.slice(0,8); // desktop navbar limited to 8
+  const cats=sorted;                    // mobile sheet shows all
 
   function slug(c){ return '/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
   function navLink(c, closeMobile=false){
@@ -530,7 +531,7 @@ function buildNav(activeId){
 
   $("nav-cats").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
-    +cats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("");
+    +desktopCats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("");
   $("mobile-cats").innerHTML=
     `<div style="font-size:.63rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.2);padding:4px 12px 8px;">Menu</div>`
     +`<a href="/" onclick="event.preventDefault();toggleMobileMenu();goHome(event)"
