@@ -416,7 +416,20 @@ function routeFromUrl(push=false){
     return;
   }
 
-  showPage("home",false);
+  // History
+  if(path==='/history'){ showHistoryPage(); return; }
+
+  // Nothing matched — show 404
+  show404();
+}
+
+function show404(){
+  NP.done();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const p=$('page-404');
+  if(p) p.classList.add('active');
+  window.scrollTo(0,0);
+  updateMeta({title:'404 — Page Not Found', desc:'The page you are looking for does not exist.'});
 }
 
 
