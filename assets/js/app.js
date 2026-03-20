@@ -1045,6 +1045,7 @@ window.openVideo=async (id,push=true)=>{
   $("player-iframe").src="";
   $("playlist-panel").style.display="none";
   $("suggested-list").style.display="";
+  if($("suggested-list-mobile")) $("suggested-list-mobile").style.display="";
   $("watch-next-btn").style.display="none";
   clearCountdown();
   // Reset filter chips
@@ -1053,6 +1054,7 @@ window.openVideo=async (id,push=true)=>{
   const chipPl=$("chip-playlist");
   if(chipPl)chipPl.style.display='none';
   $("suggested-list").innerHTML=skelRow(3);
+  if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=skelRow(3);
 
   const v=videos.find(x=>x.id===id);if(!v)return;
 
@@ -1151,7 +1153,9 @@ window.openVideo=async (id,push=true)=>{
   const others=videos.filter(x=>x.id!==id&&x.category!==v.category);
   const related=[...sameCat,...others].slice(0,10);
   const watched=getHistory();
-  $("suggested-list").innerHTML=buildSuggWithAds(related,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
+  const suggHtml=buildSuggWithAds(related,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
+  $("suggested-list").innerHTML=suggHtml;
+  if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=suggHtml;
 
   // Load likes/dislikes + comments for this video
   loadReactions(id);
@@ -1222,9 +1226,11 @@ window.setWatchFilter=(type,btn)=>{
   if(type==='playlist'){
     $('playlist-panel').style.display='';
     $('suggested-list').style.display='none';
+    if($('suggested-list-mobile')) $('suggested-list-mobile').style.display='none';
   } else {
     $('playlist-panel').style.display='none';
     $('suggested-list').style.display='';
+    if($('suggested-list-mobile')) $('suggested-list-mobile').style.display='';
   }
 };
 window.openPlaylistById=id=>{
