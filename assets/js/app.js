@@ -387,7 +387,10 @@ function routeFromUrl(push=false){
     if(parts.length>=2){
       // playlist video: /watch/playlist-slug/ep-N
       const plSlug=parts[0];
-      const epNum=parseInt((parts[1]||'').replace('ep-',''))||1;
+      const epRaw=parts[1]||'';
+      // Must be exactly 'ep-N' format where N is digits only
+      if(!/^ep-\d+$/.test(epRaw)){ show404(); return; }
+      const epNum=parseInt(epRaw.replace('ep-',''))||1;
       const pl=playlists.find(p=>playlistSlug(p)===plSlug||toSlug(p.name)===plSlug);
       if(pl&&(pl.videos||[]).length){
         const vid=videos.find(v=>v.id===pl.videos[epNum-1])||videos.find(v=>v.id===pl.videos[0]);
