@@ -113,7 +113,7 @@ function updateMeta({title, desc, image, url, type='website', videoId=''}){
   const fullTitle = title ? `${title} | ${sn}` : `${sn} - Watch Videos Online`;
   const fullDesc  = desc  || 'Watch Khmer drama, series and entertainment videos online.';
   const fullUrl   = url   || location.href;
-  const fullImg   = image || 'https://rongkunkmeanmnus.vercel.app/assets/img/og-default.png';
+  const fullImg   = image || 'https://www.rongkunkmeanmnus.com/assets/img/og-default.png';
 
   document.title = fullTitle;
 
@@ -157,12 +157,12 @@ function updateMeta({title, desc, image, url, type='website', videoId=''}){
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": sn,
-      "url": "https://rongkunkmeanmnus.vercel.app",
+      "url": "https://www.rongkunkmeanmnus.com",
       "description": fullDesc,
       "inLanguage": "en",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": { "@type": "EntryPoint", "urlTemplate": "https://rongkunkmeanmnus.vercel.app/search?q={search_term_string}" },
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://www.rongkunkmeanmnus.com/search?q={search_term_string}" },
         "query-input": "required name=search_term_string"
       }
     });
@@ -335,7 +335,7 @@ function showPage(id,push=true){
   const bnMap={home:'bn-home',search:'bn-search',history:'bn-history'};
   if(bnMap[id]) $(bnMap[id])?.classList.add('active');
   // Reset meta for non-video pages
-  if(id==='home') updateMeta({title:null, desc:'Watch Khmer drama, series and entertainment videos online.', url:'https://rongkunkmeanmnus.vercel.app'});
+  if(id==='home') updateMeta({title:null, desc:'Watch Khmer drama, series and entertainment videos online.', url:'https://www.rongkunkmeanmnus.com'});
 }
 window.goHome=e=>{
   e?.preventDefault();
@@ -1315,7 +1315,7 @@ window.shareAction=(type)=>{
   const watchMatch = location.pathname.match(/^\/watch\/([^/]+)/);
   const videoId    = watchMatch ? watchMatch[1] : null;
   const shareUrl   = videoId
-    ? `https://rongkunkmeanmnus.vercel.app/api/og?id=${videoId}`
+    ? `https://www.rongkunkmeanmnus.com/api/og?id=${videoId}`
     : pageUrl;
 
   if(type==="copy"){
