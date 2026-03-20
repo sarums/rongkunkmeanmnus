@@ -6,6 +6,17 @@
 
   <!-- ═══ PRIMARY SEO ═══ -->
   <title id="page-title">RongKunKmeanMnus - Watch Videos Online</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RKMN">
+  <meta name="application-name" content="RongKunKmeanMnus">
+  <meta name="msapplication-TileColor" content="#f27d26">
+  <meta name="theme-color" content="#f27d26">
+  <link rel="apple-touch-icon" href="/assets/img/icon-192.png">
+
   <meta name="google-site-verification" content="aGa40iTcNKkOUzNSEK-MY1AuqdWM7eHNOxmvKYWKudU">
   <meta name="description" id="meta-desc" content="RongKunKmeanMnus - Watch Khmer drama, series and entertainment videos online. Your ultimate destination for curated video content.">
   <meta name="keywords" content="khmer drama, khmer series, khmer video, rongkunkmeanmnus, khmer movies, watch online, entertainment">
@@ -588,5 +599,14 @@
   <!-- ═══ SCRIPTS ═══ -->
   <script src="/assets/js/ads.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('/sw.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
 </body>
 </html>
