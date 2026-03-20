@@ -131,6 +131,7 @@ window.showPanel = (id, btn) => {
   if(id==='sections') renderSections();
   if(id==='settings') loadSettings();
   if(id==='ads') loadAdsSettings();
+  if(id==='products') loadProducts();
   if(id==='addvideo'){ populateSelects(); }
 };
 
@@ -1417,6 +1418,176 @@ window.addCheckedToPlaylist=async plId=>{
 };
 
 // (settings loaded via initLogin below)
+
+// ══════════════════════════════════════════
+//  PRODUCTS MANAGER
+// ══════════════════════════════════════════
+let allProducts = [];
+
+async function loadProducts(){
+  try {
+    const snap = await getDocs(collection(db,'products'));
+    allProducts = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    renderProducts();
+  } catch(e){ showToast('Error',e.message,'err'); }
+}
+
+function renderProducts(){
+  const list = qs('prod-list');
+  const empty = qs('prod-empty');
+  const count = qs('prod-count');
+  if(!list) return;
+  count.textContent = `(${allProducts.length})`;
+  if(!allProducts.length){ empty.style.display='block'; list.innerHTML=''; return; }
+  empty.style.display='none';
+  list.innerHTML = allProducts.map(p=>`
+    <div style="display:flex;align-items:center;gap:.85rem;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:.75rem 1rem;transition:border-color .2s"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+      <div style="width:56px;height:56px;border-radius:8px;overflow:hidden;background:var(--bg4);flex-shrink:0;">
+        ${p.image ? `<img src="${p.image}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.4rem">🛍️</div>'}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.88rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name||'—'}</div>
+        <div style="font-size:.72rem;color:var(--text2);margin-top:2px;">$${p.price||0} · ${p.category||'No category'} · ${p.commission||0}% commission</div>
+        <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;">
+          <span style="font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:4px;background:${p.is_active?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)'};color:${p.is_active?'#22c55e':'#ef4444'}">${p.is_active?'Active':'Inactive'}</span>
+          <span style="font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:4px;background:${p.show_as_ad?'rgba(242,125,38,.1)':'rgba(255,255,255,.05)'};color:${p.show_as_ad?'var(--accent)':'var(--muted)'}">${p.show_as_ad?'📢 Ad':'Store only'}</span>
+          <span style="font-size:.62rem;color:var(--text2);padding:2px 8px;background:var(--bg4);border-radius:4px;">👆 ${p.clicks||0} clicks</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+        <button class="act-btn act-edit" onclick="editProduct('${p.id}')">✏️ Edit</button>
+        <button class="act-btn act-del" onclick="deleteProduct('${p.id}','${(p.name||'').replace(/'/g,"\'")}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+window.previewProdImg = ()=>{
+  const url = qs('prodImage')?.value.trim();
+  const wrap = qs('prodImgPreview');
+  const img  = qs('prodImgEl');
+  if(url && wrap && img){
+    wrap.style.display='block';
+    img.src=url;
+  } else if(wrap){
+    wrap.style.display='none';
+  }
+};
+
+window.addProduct = async ()=>{
+  const name       = qs('prodName').value.trim();
+  const category   = qs('prodCat').value.trim();
+  const price      = parseFloat(qs('prodPrice').value)||0;
+  const currency   = qs('prodCurrency').value;
+  const commission = parseFloat(qs('prodCommission').value)||0;
+  const badge      = qs('prodBadge').value.trim();
+  const image      = qs('prodImage').value.trim();
+  const link       = qs('prodLink').value.trim();
+  const description= qs('prodDesc').value.trim();
+  const show_as_ad = parseInt(qs('prodShowAd').value)===1;
+  const is_active  = parseInt(qs('prodActive').value)===1;
+
+  if(!name){ showToast('Missing','Product name is required','err'); return; }
+  if(!link){ showToast('Missing','Seller link is required','err'); return; }
+
+  try {
+    const data = { name, category, price, currency, commission, badge, image, link,
+      description, show_as_ad, is_active, clicks:0, is_sold_out:false, createdAt:serverTimestamp() };
+    const ref = await addDoc(collection(db,'products'), data);
+    allProducts.unshift({id:ref.id,...data});
+    // Clear form
+    ['prodName','prodCat','prodPrice','prodCommission','prodBadge','prodImage','prodLink','prodDesc']
+      .forEach(id=>{ if(qs(id)) qs(id).value=''; });
+    if(qs('prodImgPreview')) qs('prodImgPreview').style.display='none';
+    showToast('Product Added!',`"${name}" is now live`,'ok');
+    renderProducts();
+  } catch(e){ showToast('Error',e.message,'err'); }
+};
+
+window.deleteProduct = (id, name)=>{
+  showConfirm('Delete Product?',`"${name}" will be permanently removed.`, async()=>{
+    try {
+      await deleteDoc(doc(db,'products',id));
+      allProducts = allProducts.filter(p=>p.id!==id);
+      renderProducts();
+      showToast('Deleted','Product removed','warn');
+    } catch(e){ showToast('Error',e.message,'err'); }
+  });
+};
+
+window.editProduct = id=>{
+  const p = allProducts.find(x=>x.id===id); if(!p) return;
+  const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem" id="prodEditOverlay">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.75rem;width:520px;max-width:100%;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <span style="font-size:1rem;font-weight:800;">✏️ Edit Product</span>
+      <button onclick="document.getElementById('prodEditOverlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;">×</button>
+    </div>
+    <label class="flabel">Name</label><input type="text" class="finput" id="epName" value="${p.name||''}" style="margin-bottom:.75rem;">
+    <label class="flabel">Category</label><input type="text" class="finput" id="epCat" value="${p.category||''}" style="margin-bottom:.75rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+      <div><label class="flabel">Price</label><input type="number" class="finput" id="epPrice" value="${p.price||0}" step="0.01"></div>
+      <div><label class="flabel">Commission %</label><input type="number" class="finput" id="epCommission" value="${p.commission||0}"></div>
+    </div>
+    <label class="flabel">Image URL</label><input type="text" class="finput" id="epImage" value="${p.image||''}" style="margin-bottom:.75rem;">
+    <label class="flabel">Seller Link</label><input type="text" class="finput" id="epLink" value="${p.link||''}" style="margin-bottom:.75rem;">
+    <label class="flabel">Description</label><textarea class="ftextarea" id="epDesc" style="height:60px;margin-bottom:.75rem;">${p.description||''}</textarea>
+    <label class="flabel">Badge</label><input type="text" class="finput" id="epBadge" value="${p.badge||''}" style="margin-bottom:.75rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">
+      <div>
+        <label class="flabel">Show as Ad</label>
+        <select class="fselect" id="epShowAd">
+          <option value="1" ${p.show_as_ad?'selected':''}>✅ Yes</option>
+          <option value="0" ${!p.show_as_ad?'selected':''}>❌ No</option>
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Status</label>
+        <select class="fselect" id="epActive">
+          <option value="1" ${p.is_active?'selected':''}>✅ Active</option>
+          <option value="0" ${!p.is_active?'selected':''}>❌ Inactive</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">
+      <div>
+        <label class="flabel">Sold Out</label>
+        <select class="fselect" id="epSoldOut">
+          <option value="0" ${!p.is_sold_out?'selected':''}>No</option>
+          <option value="1" ${p.is_sold_out?'selected':''}>Yes</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="saveProduct('${id}')" class="submit-btn" style="width:100%">💾 Save Changes</button>
+  </div>
+</div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+};
+
+window.saveProduct = async id=>{
+  const data = {
+    name        : document.getElementById('epName')?.value.trim(),
+    category    : document.getElementById('epCat')?.value.trim(),
+    price       : parseFloat(document.getElementById('epPrice')?.value)||0,
+    commission  : parseFloat(document.getElementById('epCommission')?.value)||0,
+    image       : document.getElementById('epImage')?.value.trim(),
+    link        : document.getElementById('epLink')?.value.trim(),
+    description : document.getElementById('epDesc')?.value.trim(),
+    badge       : document.getElementById('epBadge')?.value.trim(),
+    show_as_ad  : document.getElementById('epShowAd')?.value==='1',
+    is_active   : document.getElementById('epActive')?.value==='1',
+    is_sold_out : document.getElementById('epSoldOut')?.value==='1',
+  };
+  try {
+    await updateDoc(doc(db,'products',id), data);
+    const p = allProducts.find(x=>x.id===id);
+    if(p) Object.assign(p, data);
+    document.getElementById('prodEditOverlay')?.remove();
+    showToast('Saved!','Product updated','ok');
+    renderProducts();
+  } catch(e){ showToast('Error',e.message,'err'); }
+};
 
 // ── AUTO START ──
 // ── COMMENTS PANEL ──────────────────────────────────
