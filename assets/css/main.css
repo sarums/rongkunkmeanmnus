@@ -284,7 +284,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
   /* Player stays fixed at top — never scrolls away */
   .player-outer { border-radius: 0; flex-shrink: 0; z-index: 150; }
   /* Everything below player scrolls independently */
-  .watch-scroll-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .watch-scroll-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: 80px; }
   .watch-col-right { padding: 0 14px; }
   .watch-info-wrap { padding: 0 14px; }
   #playlist-panel  { margin: 12px 14px 0; }
