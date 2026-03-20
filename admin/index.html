@@ -32,6 +32,7 @@
       <button class="nav-item" onclick="showPanel('playlists',this)"><span class="ico">📋</span>Playlists</button>
       <button class="nav-item" onclick="showPanel('categories',this)"><span class="ico">🏷️</span>Categories</button>
       <button class="nav-item" onclick="showPanel('sections',this)"><span class="ico">🗂️</span>Home Sections</button>
+      <button class="nav-item" onclick="showPanel('products',this)"><span class="ico">🛍️</span>Products</button>
 
       <div class="sidebar-section">Community</div>
       <button class="nav-item" onclick="showPanel('comments',this)"><span class="ico">💬</span>Comments</button>
@@ -573,7 +574,88 @@
 </div><!-- /app -->
 
 <!-- EDIT MODAL -->
-<div class="emodal-overlay" id="editModal">
+      <!-- ═══ PRODUCTS PANEL ═══ -->
+      <div class="panel" id="panel-products">
+        <div class="panel-title">🛍️ Products</div>
+
+        <!-- Add Product Form -->
+        <div class="form-card" style="margin-bottom:1.5rem;">
+          <div class="form-card-title">➕ Add New Product</div>
+          <div class="form-grid" style="margin-bottom:1rem;">
+            <div class="fg">
+              <label class="flabel">Product Name</label>
+              <input type="text" class="finput" id="prodName" placeholder="e.g. Silk Dress">
+            </div>
+            <div class="fg">
+              <label class="flabel">Category</label>
+              <input type="text" class="finput" id="prodCat" placeholder="e.g. Fashion, Electronics">
+            </div>
+            <div class="fg">
+              <label class="flabel">Price</label>
+              <input type="number" class="finput" id="prodPrice" placeholder="e.g. 29.99" min="0" step="0.01">
+            </div>
+            <div class="fg">
+              <label class="flabel">Currency</label>
+              <select class="fselect" id="prodCurrency">
+                <option value="USD">USD ($)</option>
+                <option value="KHR">KHR (៛)</option>
+                <option value="THB">THB (฿)</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">Commission %</label>
+              <input type="number" class="finput" id="prodCommission" placeholder="e.g. 10" min="0" max="100">
+              <div class="fhint">Your cut per sale</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Badge Label (optional)</label>
+              <input type="text" class="finput" id="prodBadge" placeholder="e.g. Hot, New, Sale">
+            </div>
+          </div>
+          <div class="fg full" style="margin-bottom:1rem;">
+            <label class="flabel">Product Image URL</label>
+            <input type="text" class="finput" id="prodImage" placeholder="https://...image.jpg" oninput="previewProdImg()">
+            <div id="prodImgPreview" style="margin-top:.5rem;width:100px;height:100px;border-radius:10px;overflow:hidden;background:var(--bg3);border:1px solid var(--border2);display:none;">
+              <img id="prodImgEl" src="" style="width:100%;height:100%;object-fit:cover">
+            </div>
+          </div>
+          <div class="fg full" style="margin-bottom:1rem;">
+            <label class="flabel">Seller Link (affiliate URL)</label>
+            <input type="text" class="finput" id="prodLink" placeholder="https://seller-store.com/product/...">
+            <div class="fhint">User will be redirected here when they click Buy Now</div>
+          </div>
+          <div class="fg full" style="margin-bottom:1rem;">
+            <label class="flabel">Description (optional)</label>
+            <textarea class="ftextarea" id="prodDesc" placeholder="Short product description..." style="height:70px;"></textarea>
+          </div>
+          <div class="form-grid" style="margin-bottom:1rem;">
+            <div class="fg">
+              <label class="flabel">Show as Ad</label>
+              <select class="fselect" id="prodShowAd">
+                <option value="1">✅ Yes — show in feed & pre-roll</option>
+                <option value="0">❌ No — store page only</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">Status</label>
+              <select class="fselect" id="prodActive">
+                <option value="1">✅ Active</option>
+                <option value="0">❌ Inactive</option>
+              </select>
+            </div>
+          </div>
+          <button class="submit-btn" onclick="addProduct()">➕ Add Product</button>
+        </div>
+
+        <!-- Products List -->
+        <div class="form-card">
+          <div class="form-card-title">📦 All Products <span id="prod-count" style="font-size:.75rem;color:var(--text2);font-weight:500"></span></div>
+          <div id="prod-empty" style="display:none;padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;">No products yet</div>
+          <div id="prod-list" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <div class="emodal-overlay" id="editModal">
   <div class="emodal">
     <div class="emodal-head">
       <div class="emodal-title">Edit Video</div>
