@@ -97,6 +97,14 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 
 /* mobile bottom sheet — controlled via JS transform */
+
+/* Suggested list: mobile shows inside scroll, desktop shows in sidebar */
+.mobile-suggested { display: none; }
+.desktop-suggested { display: block; }
+@media (max-width: 960px) {
+  .mobile-suggested { display: block; }
+  .desktop-suggested { display: none; }
+}
 .mobile-search { position: relative; margin-bottom: 12px; }
 .mobile-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: .4; }
 .mobile-search input { width: 100%; background: #1c1c1c; border: 1px solid var(--border); border-radius: 9999px; padding: 8px 14px 8px 36px; color: #fff; font-size: .82rem; outline: none; }
@@ -269,8 +277,14 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 
 /* Mobile: video sticky top, page scrolls normally */
 @media (max-width: 960px) {
-  .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0 0 80px; }
-  .player-outer { border-radius: 0; position: sticky; top: 60px; z-index: 150; transition: top .3s ease; }
+  /* Make watch page fill the screen with fixed player */
+  #page-watch { display: flex; flex-direction: column; height: 100vh; overflow: hidden; padding-bottom: 68px; }
+  .watch-layout { grid-template-columns: 1fr; gap: 0; padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .watch-col-left { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  /* Player stays fixed at top — never scrolls away */
+  .player-outer { border-radius: 0; flex-shrink: 0; z-index: 150; }
+  /* Everything below player scrolls independently */
+  .watch-scroll-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .watch-col-right { padding: 0 14px; }
   .watch-info-wrap { padding: 0 14px; }
   #playlist-panel  { margin: 12px 14px 0; }
