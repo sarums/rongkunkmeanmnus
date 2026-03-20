@@ -58,7 +58,7 @@
     },
     {
       "source": "/watch/:pl/:ep",
-      "destination": "/api/og?id=:ep"
+      "destination": "/api/og?pl=:pl&ep=:ep"
     },
     {
       "source": "/(.*)",
