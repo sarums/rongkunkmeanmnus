@@ -12,7 +12,7 @@ let AD_CONFIG = window.AD_CONFIG = {
   duration     : 10,
   midrollEvery : 5,
   minDuration  : 5,
-  publisherId  : '', // set from Admin → Ads Settings
+  publisherId  : 'ca-pub-6821890542678085', // your real AdSense Publisher ID
   adSlot       : '', // set from Admin → Ads Settings
   imageUrl     : '', // set from Admin → Ads Settings
 };
