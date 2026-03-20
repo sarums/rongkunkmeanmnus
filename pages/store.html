@@ -171,8 +171,10 @@ let currentFilter = 'all';
 // Load products
 async function loadProducts(){
   try {
-    const snap = await getDocs(query(collection(db,'products'), where('is_active','==',true), orderBy('createdAt','desc')));
-    allProducts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const snap = await getDocs(collection(db,'products'));
+    allProducts = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(p=>p.is_active!==false)  // filter active in JS
+      .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     renderStore();
   } catch(e){
     console.error(e);
