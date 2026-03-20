@@ -400,7 +400,7 @@ function routeFromUrl(push=false){
       const vid=videos.find(v=>videoSlug(v)===vSlug||toSlug(v.title)===vSlug||v.id===vSlug);
       if(vid){ openVideo(vid.id,false); return; }
     }
-    showPage("home",false); return;
+    show404(); return;  // /watch/ URL didn't match any video or playlist
   }
 
   // Category slug
