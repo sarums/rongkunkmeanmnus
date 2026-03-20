@@ -393,7 +393,10 @@ function routeFromUrl(push=false){
       const epNum=parseInt(epRaw.replace('ep-',''))||1;
       const pl=playlists.find(p=>playlistSlug(p)===plSlug||toSlug(p.name)===plSlug);
       if(pl&&(pl.videos||[]).length){
-        const vid=videos.find(v=>v.id===pl.videos[epNum-1])||videos.find(v=>v.id===pl.videos[0]);
+        // No fallback — episode must exist exactly
+        const vidId=pl.videos[epNum-1];
+        if(!vidId){ show404(); return; } // episode number out of range
+        const vid=videos.find(v=>v.id===vidId);
         if(vid){ openVideo(vid.id,false); return; }
       }
     }
