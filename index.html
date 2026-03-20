@@ -535,6 +535,48 @@
     </div>
   </div>
 
+  <!-- ═══ 404 PAGE ═══ -->
+  <div id="page-404" class="page" style="min-height:100vh;display:none;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;flex-direction:column;">
+    <div style="max-width:480px;width:100%;">
+      <!-- 404 number -->
+      <div style="font-size:clamp(6rem,18vw,10rem);font-weight:900;line-height:1;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.07);position:relative;user-select:none;margin-bottom:-1rem;">404</div>
+
+      <!-- Play icon -->
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(242,125,38,.12);border:1.5px solid rgba(242,125,38,.25);display:flex;align-items:center;justify-content:center;margin:0 auto 1.75rem;animation:pulse404 2.5s ease-in-out infinite;">
+        <svg viewBox="0 0 24 24" fill="#f27d26" width="26" height="26" style="transform:translateX(3px)"><polygon points="5,3 19,12 5,21"/></svg>
+      </div>
+
+      <h1 style="font-size:1.5rem;font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:10px;">Page Not Found</h1>
+      <p style="font-size:.88rem;color:#666;line-height:1.7;margin-bottom:2rem;">The page you're looking for doesn't exist.<br>It may have been moved or the URL is incorrect.</p>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+        <a href="/" onclick="goHome(event)" style="display:inline-flex;align-items:center;gap:8px;padding:11px 26px;background:#f27d26;color:#000;font-weight:800;font-size:.86rem;border-radius:9999px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='#ff9340'" onmouseout="this.style.background='#f27d26'">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Go Home
+        </a>
+        <button onclick="history.back()" style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:transparent;color:#666;font-weight:700;font-size:.84rem;border-radius:9999px;border:1px solid rgba(255,255,255,.1);cursor:pointer;font-family:inherit;transition:all .2s;" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.color='#666';this.style.borderColor='rgba(255,255,255,.1)'">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Go Back
+        </button>
+      </div>
+
+      <div style="margin-top:2.5rem;padding-top:2rem;border-top:1px solid rgba(255,255,255,.06);">
+        <div style="font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#2a2a2a;margin-bottom:12px;">Quick Links</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+          <a href="/about"   style="padding:6px 14px;background:#181818;border:1px solid rgba(255,255,255,.08);border-radius:9999px;font-size:.75rem;font-weight:600;color:#666;text-decoration:none;transition:all .2s;" onmouseover="this.style.color='#f27d26';this.style.borderColor='rgba(242,125,38,.3)'" onmouseout="this.style.color='#666';this.style.borderColor='rgba(255,255,255,.08)'">About</a>
+          <a href="/contact" style="padding:6px 14px;background:#181818;border:1px solid rgba(255,255,255,.08);border-radius:9999px;font-size:.75rem;font-weight:600;color:#666;text-decoration:none;transition:all .2s;" onmouseover="this.style.color='#f27d26';this.style.borderColor='rgba(242,125,38,.3)'" onmouseout="this.style.color='#666';this.style.borderColor='rgba(255,255,255,.08)'">Contact</a>
+          <a href="/privacy" style="padding:6px 14px;background:#181818;border:1px solid rgba(255,255,255,.08);border-radius:9999px;font-size:.75rem;font-weight:600;color:#666;text-decoration:none;transition:all .2s;" onmouseover="this.style.color='#f27d26';this.style.borderColor='rgba(242,125,38,.3)'" onmouseout="this.style.color='#666';this.style.borderColor='rgba(255,255,255,.08)'">Privacy</a>
+          <a href="/terms"   style="padding:6px 14px;background:#181818;border:1px solid rgba(255,255,255,.08);border-radius:9999px;font-size:.75rem;font-weight:600;color:#666;text-decoration:none;transition:all .2s;" onmouseover="this.style.color='#f27d26';this.style.borderColor='rgba(242,125,38,.3)'" onmouseout="this.style.color='#666';this.style.borderColor='rgba(255,255,255,.08)'">Terms</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes pulse404{0%,100%{box-shadow:0 0 0 0 rgba(242,125,38,.3)}50%{box-shadow:0 0 0 14px rgba(242,125,38,0)}}
+    #page-404.active{display:flex!important;}
+  </style>
+
   <!-- ═══ SCRIPTS ═══ -->
   <script src="/assets/js/ads.js"></script>
   <script type="module" src="/assets/js/app.js"></script>
