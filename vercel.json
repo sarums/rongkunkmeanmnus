@@ -1,7 +1,6 @@
 {
   "headers": [
     {
-      "source": "/ads.txt",
       "source": "/sitemap.xml",
       "headers": [
         {
@@ -42,20 +41,24 @@
       "destination": "/pages/contact.html"
     },
     {
-      "source": "/watch/:pl/:ep",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/watch/:slug",
-      "destination": "/index.html"
-    },
-    {
       "source": "/search",
       "destination": "/index.html"
     },
     {
       "source": "/history",
       "destination": "/index.html"
+    },
+    {
+      "source": "/api/og",
+      "destination": "/api/og.js"
+    },
+    {
+      "source": "/watch/:slug",
+      "destination": "/api/og?id=:slug"
+    },
+    {
+      "source": "/watch/:pl/:ep",
+      "destination": "/api/og?id=:ep"
     },
     {
       "source": "/(.*)",
