@@ -57,6 +57,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/store",
+      "destination": "/pages/store.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
