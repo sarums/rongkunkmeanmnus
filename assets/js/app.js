@@ -113,7 +113,7 @@ function updateMeta({title, desc, image, url, type='website', videoId=''}){
   const fullTitle = title ? `${title} | ${sn}` : `${sn} - Watch Videos Online`;
   const fullDesc  = desc  || 'Watch Khmer drama, series and entertainment videos online.';
   const fullUrl   = url   || location.href;
-  const fullImg   = image || 'https://rongkunkmeanmnus.vercel.app/assets/img/og-default.jpg';
+  const fullImg   = image || 'https://rongkunkmeanmnus.vercel.app/assets/img/og-default.png';
 
   document.title = fullTitle;
 
@@ -565,10 +565,11 @@ function buildNav(activeId){
       moreMenu.innerHTML = moreCats.map(c=>`
         <a href="${slug(c)}" data-catid="${c.id}"
           onclick="event.preventDefault();closeMoreMenu();navGo('${c.id}')"
-          style="display:block;padding:9px 12px;border-radius:8px;font-size:.82rem;font-weight:600;color:#ccc;text-decoration:none;transition:background .15s,color .15s;white-space:nowrap;"
-          onmouseover="this.style.background='rgba(242,125,38,.1)';this.style.color='#f27d26'"
-          onmouseout="this.style.background='';this.style.color='#ccc'">
-          ${c.ico&&c.ico!=='▶'?c.ico+' ':''  }${c.name}
+          style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:.82rem;font-weight:600;color:#aaa;text-decoration:none;transition:background .15s,color .15s;white-space:nowrap;"
+          onmouseover="this.style.background='rgba(242,125,38,.08)';this.style.color='#f27d26';this.querySelector('span').style.background='#f27d26'"
+          onmouseout="this.style.background='';this.style.color='#aaa';this.querySelector('span').style.background='#444'">
+          <span style="width:6px;height:6px;border-radius:50%;background:#444;flex-shrink:0;transition:background .15s;"></span>
+          ${c.name}
         </a>`).join('');
     } else {
       moreWrap.style.display='none';
@@ -1280,15 +1281,25 @@ window.toggleSharePanel=(e)=>{
 document.addEventListener("click",()=>$("share-panel")?.classList.remove("open"));
 
 window.shareAction=(type)=>{
-  const url=location.href;
-  const title=document.title;
+  const pageUrl = location.href;
+  const title   = document.title;
   $("share-panel")?.classList.remove("open");
+
+  // For Telegram/Facebook: use the OG API URL so bots get the correct thumbnail
+  // Extract video ID from current URL /watch/VIDEO_ID or /watch/PLAYLIST/EP
+  const watchMatch = location.pathname.match(/^\/watch\/([^/]+)/);
+  const videoId    = watchMatch ? watchMatch[1] : null;
+  const shareUrl   = videoId
+    ? `https://rongkunkmeanmnus.vercel.app/api/og?id=${videoId}`
+    : pageUrl;
+
   if(type==="copy"){
-    navigator.clipboard.writeText(url).then(()=>showToast("Link copied!","ok"));
+    // Copy the real watch URL (not the API URL)
+    navigator.clipboard.writeText(pageUrl).then(()=>showToast("Link copied!","ok"));
   } else if(type==="telegram"){
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,'_blank');
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`,'_blank');
   } else if(type==="facebook"){
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,'_blank');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,'_blank');
   }
 };
 window.copyLink=()=>shareAction('copy');
