@@ -1,0 +1,45 @@
+{
+  "name": "RongKunKmeanMnus",
+  "short_name": "RKMN",
+  "description": "Watch Chinese Drama, Thai Drama and more — free online.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#f27d26",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/assets/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search",
+      "url": "/search",
+      "description": "Search videos"
+    },
+    {
+      "name": "History",
+      "url": "/history",
+      "description": "Watch history"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/img/og-default.png",
+      "sizes": "1200x630",
+      "type": "image/png"
+    }
+  ]
+}
