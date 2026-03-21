@@ -245,14 +245,27 @@ function renderOverview(){
 // ── PLATFORM TOGGLE ───────────────────────────────────
 window.setPlatform = (p)=>{
   qs('fPlatform').value=p;
-  qs('btnDM').className='plat-btn'+(p==='dailymotion'?' active-dm':'');
-  qs('btnRB').className='plat-btn'+(p==='rumble'?' active-rb':'');
+  ['btnDM','btnRB','btnYT','btnVM','btnOD','btnFB'].forEach(id=>{ if(qs(id)) qs(id).className='plat-btn'; });
+  const map={dailymotion:'btnDM',rumble:'btnRB',youtube:'btnYT',vimeo:'btnVM',odysee:'btnOD',facebook:'btnFB'};
+  if(map[p]&&qs(map[p])) qs(map[p]).className='plat-btn active-dm';
+  // Update hints
+  const hint=qs('fVidId')?.nextElementSibling;
+  const hints={
+    dailymotion:'DM: ID after /video/ · e.g. x9ungtu',
+    rumble:'Rumble: embed slug',
+    youtube:'YouTube: ID after ?v= · e.g. dQw4w9WgXcQ',
+    vimeo:'Vimeo: number in URL · e.g. 123456789',
+    odysee:'Odysee: channel/video-slug · e.g. @channel/video-name',
+    facebook:'Facebook: full video URL'
+  };
+  if(hint) hint.textContent=hints[p]||'Enter video ID';
   previewThumb();
 };
 window.setEditPlatform = (p)=>{
   qs('editPlatform').value=p;
-  qs('editBtnDM').className='plat-btn'+(p==='dailymotion'?' active-dm':'');
-  qs('editBtnRB').className='plat-btn'+(p==='rumble'?' active-rb':'');
+  ['editBtnDM','editBtnRB','editBtnYT','editBtnVM','editBtnOD','editBtnFB'].forEach(id=>{ if(qs(id)) qs(id).className='plat-btn'; });
+  const map={dailymotion:'editBtnDM',rumble:'editBtnRB',youtube:'editBtnYT',vimeo:'editBtnVM',odysee:'editBtnOD',facebook:'editBtnFB'};
+  if(map[p]&&qs(map[p])) qs(map[p]).className='plat-btn active-dm';
   previewEditThumb();
 };
 
