@@ -83,16 +83,27 @@ function timeAgo(ts){
   return Math.floor(sec/31536000)+' years ago';
 }
 
-const getThumb=v=>v.customThumb||v.thumbnail||
-  ((v.platform||v.source||"")==="dailymotion"
-    ?`https://www.dailymotion.com/thumbnail/video/${(v.videoId||v.url||"").replace(/.*\//,"")}`
-    :`https://picsum.photos/seed/${v.id}/800/450`);
+const getThumb=v=>{
+  if(v.customThumb||v.thumbnail) return v.customThumb||v.thumbnail;
+  const src=v.platform||v.source||"";
+  const id=v.videoId||"";
+  if(src==="dailymotion") return`https://www.dailymotion.com/thumbnail/video/${id}`;
+  if(src==="youtube")     return`https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  if(src==="vimeo")       return`https://vumbnail.com/${id}.jpg`;
+  if(src==="odysee")      return`https://thumbnails.lbry.com/v1/stream/signed/${id}`;
+  if(src==="facebook")    return`https://picsum.photos/seed/${v.id}/800/450`;
+  return `https://picsum.photos/seed/${v.id}/800/450`;
+};
 
 const getEmbedUrl=v=>{
   const src=v.platform||v.source||"";
   const id=(v.videoId||(v.url||"").split("/").pop()||"");
-  if(src==="dailymotion")return`https://www.dailymotion.com/embed/video/${id}?autoplay=1`;
-  if(src==="rumble")return`https://rumble.com/embed/${id}/?pub=4`;
+  if(src==="dailymotion") return`https://www.dailymotion.com/embed/video/${id}?autoplay=1`;
+  if(src==="rumble")      return`https://rumble.com/embed/${id}/?pub=4`;
+  if(src==="youtube")     return`https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+  if(src==="vimeo")       return`https://player.vimeo.com/video/${id}?autoplay=1`;
+  if(src==="odysee")      return`https://odysee.com/$/embed/${id}?autoplay=1`;
+  if(src==="facebook")    return`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(v.videoId||v.url||"")}&autoplay=1&show_text=false`;
   return v.url||"";
 };
 
