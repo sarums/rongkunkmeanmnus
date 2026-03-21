@@ -1590,29 +1590,37 @@ document.addEventListener('keydown',e=>{
 
 // ── PULL TO REFRESH ──────────────────────────────────────
 (()=>{
-  let startY=0, pulling=false;
-  const threshold=80;
+  let startY=0, canPull=false, active=false;
+  const threshold=70;
   const ind=()=>$('ptr-indicator');
   const txt=()=>ind()?.querySelector('.ptr-text');
   const ico=()=>ind()?.querySelector('.ptr-icon');
 
-  function getScrollEl(){
+  // Check if the scrollable container is at the very top
+  function isAtTop(){
     const wb=document.querySelector('.watch-scroll-body');
-    if(wb&&wb.scrollTop===0) return wb;
-    if(window.scrollY===0) return document.documentElement;
-    return null;
+    if(wb) return wb.scrollTop===0;
+    return window.scrollY===0;
   }
 
   document.addEventListener('touchstart',e=>{
-    if(!getScrollEl()) return;
-    startY=e.touches[0].clientY; pulling=true;
+    // Only allow pull if already at the top
+    if(isAtTop()){
+      startY=e.touches[0].clientY;
+      canPull=true;
+      active=false;
+    } else {
+      canPull=false;
+    }
   },{passive:true});
 
   document.addEventListener('touchmove',e=>{
-    if(!pulling) return;
-    if(!getScrollEl()) return;
+    if(!canPull) return;
+    // Still check we're at top (user might have scrolled)
+    if(!isAtTop()){ canPull=false; return; }
     const dist=e.touches[0].clientY-startY;
-    if(dist<=0) return;
+    if(dist<=0) return; // pulling up — ignore
+    active=true;
     const i=ind(); if(!i) return;
     i.classList.add('visible');
     if(dist>threshold){
@@ -1627,15 +1635,15 @@ document.addEventListener('keydown',e=>{
   },{passive:true});
 
   document.addEventListener('touchend',e=>{
-    if(!pulling) return;
-    pulling=false;
+    if(!canPull||!active) return;
+    canPull=false; active=false;
     const dist=e.changedTouches[0].clientY-startY;
     const i=ind(); if(!i) return;
     if(dist>threshold){
       i.classList.add('loading');
       if(txt()) txt().textContent='Refreshing...';
       if(ico()) ico().textContent='↻';
-      setTimeout(()=>location.reload(),500);
+      setTimeout(()=>location.reload(),600);
     } else {
       i.classList.remove('visible','releasing');
     }
