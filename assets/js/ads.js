@@ -210,15 +210,19 @@ window.showOverlayBanner = function(){
   const btn   = document.getElementById('overlay-banner-btn');
 
   if(img){
-    img.style.display = 'none'; // hide first
+    img.style.display = 'none';
     if(AD_CONFIG.overlayImage){
-      const tempImg = new Image();
-      tempImg.onload = ()=>{
-        img.src = AD_CONFIG.overlayImage;
-        img.style.display = 'block';
+      // Set src directly — let browser handle CORS
+      img.crossOrigin = 'anonymous';
+      img.onload  = ()=>{ img.style.display = 'block'; };
+      img.onerror = ()=>{ 
+        // Try without crossOrigin if CORS fails
+        img.removeAttribute('crossorigin');
+        img.onload  = ()=>{ img.style.display = 'block'; };
+        img.onerror = ()=>{ img.style.display = 'none'; };
+        img.src = AD_CONFIG.overlayImage + '?' + Date.now();
       };
-      tempImg.onerror = ()=>{ img.style.display = 'none'; };
-      tempImg.src = AD_CONFIG.overlayImage;
+      img.src = AD_CONFIG.overlayImage;
     }
   }
   if(title) title.textContent = AD_CONFIG.overlayTitle || 'Special Offer';
