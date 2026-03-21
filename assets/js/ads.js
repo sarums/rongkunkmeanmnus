@@ -17,6 +17,12 @@ let AD_CONFIG = window.AD_CONFIG = {
   imageUrl     : '', // set from Admin → Ads Settings
   clickUrl     : '', // where user goes when clicking the ad
   videoUrl     : '', // MP4 video URL for video ads
+  overlayBanner     : 0,  // ON/OFF
+  overlayDelay      : 5,  // seconds after video starts
+  overlayTitle      : '', // product name
+  overlayDesc       : '', // short description
+  overlayImage      : '', // small image
+  overlayClickUrl   : '', // click URL
 };
 
 // ── LOAD CONFIG FROM FIRESTORE ───────────────────────
@@ -187,6 +193,47 @@ window.skipPreroll = function(){
   const cb = overlay?._onDone;
   hidePreroll();
   if(cb) cb();
+};
+
+// ── IN-VIDEO OVERLAY BANNER ─────────────────────────
+let _overlayTimer = null;
+
+window.showOverlayBanner = function(){
+  if(!AD_CONFIG.enabled || !AD_CONFIG.overlayBanner) return;
+  const banner = document.getElementById('overlay-banner');
+  if(!banner) return;
+
+  // Populate content
+  const img   = document.getElementById('overlay-banner-img');
+  const title = document.getElementById('overlay-banner-title');
+  const desc  = document.getElementById('overlay-banner-desc');
+  const btn   = document.getElementById('overlay-banner-btn');
+
+  if(img)   img.src = AD_CONFIG.overlayImage || '';
+  if(title) title.textContent = AD_CONFIG.overlayTitle || 'Advertisement';
+  if(desc)  desc.textContent  = AD_CONFIG.overlayDesc  || '';
+  if(btn)   btn.href = AD_CONFIG.overlayClickUrl || '#';
+
+  // Show after delay
+  _overlayTimer = setTimeout(()=>{
+    banner.style.display='flex';
+    banner.style.opacity='0';
+    setTimeout(()=>{ banner.style.opacity='1'; }, 50);
+  }, (AD_CONFIG.overlayDelay || 5) * 1000);
+};
+
+window.closeOverlayBanner = function(){
+  const banner = document.getElementById('overlay-banner');
+  if(!banner) return;
+  banner.style.opacity='0';
+  setTimeout(()=>{ banner.style.display='none'; }, 300);
+  clearTimeout(_overlayTimer);
+};
+
+window.clearOverlayBanner = function(){
+  clearTimeout(_overlayTimer);
+  const banner = document.getElementById('overlay-banner');
+  if(banner){ banner.style.display='none'; banner.style.opacity='0'; }
 };
 
 // Config loaded on demand in app.js before each ad
