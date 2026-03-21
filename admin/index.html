@@ -423,6 +423,42 @@
           </div>
         </div>
 
+        <!-- Overlay Banner Settings -->
+        <div class="form-card" style="margin-bottom:1.25rem;">
+          <div class="form-card-title">🎯 In-Video Overlay Banner</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label class="flabel">Overlay Banner</label>
+              <select class="fselect" id="adOverlayBanner">
+                <option value="0">❌ Disabled</option>
+                <option value="1">✅ Enabled</option>
+              </select>
+              <div class="fhint">Shows small banner at bottom of video</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Show After (seconds)</label>
+              <input type="number" class="finput" id="adOverlayDelay" min="1" max="60" placeholder="5">
+              <div class="fhint">How many seconds after video starts</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Product Name</label>
+              <input type="text" class="finput" id="adOverlayTitle" placeholder="e.g. Silk Dress Sale 50% Off">
+            </div>
+            <div class="fg">
+              <label class="flabel">Short Description</label>
+              <input type="text" class="finput" id="adOverlayDesc" placeholder="e.g. Limited time offer">
+            </div>
+            <div class="fg">
+              <label class="flabel">Product Image URL</label>
+              <input type="text" class="finput" id="adOverlayImage" placeholder="https://...image.jpg">
+            </div>
+            <div class="fg">
+              <label class="flabel">Click URL</label>
+              <input type="text" class="finput" id="adOverlayClickUrl" placeholder="https://customer-shop.com">
+            </div>
+          </div>
+        </div>
+
         <!-- Mid-roll Settings -->
         <div class="form-card" style="margin-bottom:1.25rem;">
           <div class="form-card-title">⏱ Mid-roll Ad</div>
