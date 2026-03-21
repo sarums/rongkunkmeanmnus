@@ -944,7 +944,13 @@ async function loadAdsSettings(){
       if(qs('adSlotId'))        qs('adSlotId').value        = s.adSlot         || '';
       if(qs('adImageUrl'))      qs('adImageUrl').value      = s.imageUrl       || '';
       if(qs('adVideoUrl'))      qs('adVideoUrl').value      = s.videoUrl       || '';
-      if(qs('adClickUrl'))      qs('adClickUrl').value      = s.clickUrl       || '';
+      if(qs('adClickUrl'))      qs('adClickUrl').value      = s.clickUrl           || '';
+      if(qs('adOverlayBanner'))  qs('adOverlayBanner').value  = s.overlayBanner     ?? 0;
+      if(qs('adOverlayDelay'))   qs('adOverlayDelay').value   = s.overlayDelay      ?? 5;
+      if(qs('adOverlayTitle'))   qs('adOverlayTitle').value   = s.overlayTitle      || '';
+      if(qs('adOverlayDesc'))    qs('adOverlayDesc').value    = s.overlayDesc       || '';
+      if(qs('adOverlayImage'))   qs('adOverlayImage').value   = s.overlayImage      || '';
+      if(qs('adOverlayClickUrl'))qs('adOverlayClickUrl').value= s.overlayClickUrl   || '';
       if(qs('adFeedAds'))       qs('adFeedAds').value       = s.feedAds        ?? 1;
       if(qs('adFeedEvery'))     qs('adFeedEvery').value     = s.feedEvery      ?? 6;
       if(qs('adFeedImageUrl'))  qs('adFeedImageUrl').value  = s.feedImageUrl   || '';
@@ -966,7 +972,13 @@ window.saveAdsSettings = async ()=>{
     adSlot       : qs('adSlotId').value.trim(),
     imageUrl     : qs('adImageUrl').value.trim(),
     videoUrl     : qs('adVideoUrl')?.value.trim()||'',
-    clickUrl     : qs('adClickUrl')?.value.trim()||'',
+    clickUrl        : qs('adClickUrl')?.value.trim()||'',
+    overlayBanner   : parseInt(qs('adOverlayBanner')?.value||'0'),
+    overlayDelay    : parseInt(qs('adOverlayDelay')?.value||'5')||5,
+    overlayTitle    : qs('adOverlayTitle')?.value.trim()||'',
+    overlayDesc     : qs('adOverlayDesc')?.value.trim()||'',
+    overlayImage    : qs('adOverlayImage')?.value.trim()||'',
+    overlayClickUrl : qs('adOverlayClickUrl')?.value.trim()||'',
     feedAds      : parseInt(qs('adFeedAds')?.value||'1'),
     feedEvery    : parseInt(qs('adFeedEvery')?.value||'6') || 6,
     feedImageUrl : qs('adFeedImageUrl')?.value.trim()||'',
