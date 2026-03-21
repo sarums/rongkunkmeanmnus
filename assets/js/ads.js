@@ -224,7 +224,7 @@ window.showOverlayBanner = function(){
 
   // Show after delay with smooth fade in
   _overlayTimer = setTimeout(()=>{
-    banner.style.display = 'flex';
+    banner.style.display = 'block'; // outer wrapper is block, inner card is flex
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
         banner.style.opacity = '1';
@@ -244,7 +244,13 @@ window.closeOverlayBanner = function(){
 window.clearOverlayBanner = function(){
   clearTimeout(_overlayTimer);
   const banner = document.getElementById('overlay-banner');
-  if(banner){ banner.style.display='none'; banner.style.opacity='0'; }
+  if(banner){ 
+    banner.style.opacity='0'; 
+    banner.style.display='none';
+  }
+  // Reset image
+  const img = document.getElementById('overlay-banner-img');
+  if(img){ img.src=''; img.style.display='none'; }
 };
 
 // Config loaded on demand in app.js before each ad
