@@ -332,6 +332,30 @@
                   <div id="preroll-progress" style="height:100%;background:#f27d26;border-radius:9999px;width:0%;transition:width 1s linear;"></div>
                 </div>
             </div>
+            <!-- IN-VIDEO OVERLAY BANNER AD -->
+            <div id="overlay-banner" style="display:none;position:absolute;bottom:12px;left:12px;right:12px;z-index:15;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px;display:none;align-items:center;gap:10px;backdrop-filter:blur(6px);cursor:pointer;" onclick="overlayBannerClick()">
+              <img id="overlay-banner-img" src="" style="width:48px;height:48px;border-radius:7px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
+              <div style="flex:1;min-width:0;">
+                <div id="overlay-banner-title" style="font-size:.75rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                <div style="font-size:.65rem;color:#f27d26;font-weight:600;margin-top:2px;">Advertisement · Tap to learn more</div>
+              </div>
+              <button onclick="event.stopPropagation();closeOverlayBanner()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+            </div>
+
+            <!-- IN-VIDEO OVERLAY BANNER AD -->
+            <div id="overlay-banner" style="display:none;position:absolute;bottom:10px;left:10px;right:10px;z-index:15;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px;display:none;align-items:center;gap:10px;backdrop-filter:blur(6px);transition:opacity .3s;">
+              <img id="overlay-banner-img" src="" style="width:48px;height:48px;border-radius:7px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
+              <div style="flex:1;min-width:0;">
+                <div id="overlay-banner-title" style="font-size:.75rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                <div id="overlay-banner-desc" style="font-size:.65rem;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+              </div>
+              <a id="overlay-banner-btn" href="#" target="_blank" rel="noopener"
+                style="flex-shrink:0;padding:5px 12px;background:#f27d26;color:#000;font-size:.7rem;font-weight:800;border-radius:9999px;text-decoration:none;white-space:nowrap;">
+                Learn More
+              </a>
+              <button onclick="closeOverlayBanner()" style="flex-shrink:0;background:none;border:none;color:#666;font-size:1rem;cursor:pointer;padding:0 2px;line-height:1;">✕</button>
+            </div>
+
             <iframe id="player-iframe" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
           </div>
         </div>
