@@ -1074,6 +1074,9 @@ window.openVideo=async (id,push=true)=>{
   const loadVideo=()=>{
     $("player-iframe").src=getEmbedUrl(v);
     scheduleMidrolls(v.duration||'');
+    // Show overlay banner after video starts
+    if(window.clearOverlayBanner) clearOverlayBanner();
+    if(window.showOverlayBanner) showOverlayBanner();
   };
   // Show pre-roll (config already loaded at startup)
   if(window.showPreroll) showPreroll(loadVideo);
