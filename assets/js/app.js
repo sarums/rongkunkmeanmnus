@@ -678,19 +678,18 @@ function buildAdCard(){
   if(!cfg.enabled || !cfg.feedAds) return '';
   const img   = cfg.feedImageUrl||cfg.imageUrl||'';
   const url   = cfg.feedAdUrl||cfg.clickUrl||'#';
-  const title = cfg.overlayTitle||'Advertisement';
   const target= url==='#'?'':'target="_blank" rel="noopener"';
   return`<a class="vcard vcard-ad" href="${url}" ${target}>
-    <div class="vcard-thumb" style="overflow:hidden;">
+    <div class="vcard-thumb">
       ${img
-        ?`<img src="${img}" alt="Ad" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`
+        ?`<img src="${img}" alt="Advertisement" loading="lazy" onerror="this.parentElement.style.background='#1a1a1a'">`
         :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#111;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
           </div>`}
       <div class="vcard-ad-badge">Ad</div>
     </div>
-    <div class="vcard-title" style="color:#ddd;">${title}</div>
-    <div class="vcard-sub" style="color:#f27d26;">Sponsored · Tap to learn more</div>
+    <div class="vcard-title" style="color:#888;">Advertisement</div>
+    <div class="vcard-sub">Sponsored</div>
   </a>`;
 }
 
@@ -738,20 +737,19 @@ function buildSuggAdCard(){
   if(!cfg.enabled || !cfg.feedAds) return '';
   const img   = cfg.feedImageUrl||cfg.imageUrl||'';
   const url   = cfg.feedAdUrl||cfg.clickUrl||'#';
-  const title = cfg.overlayTitle||'Advertisement';
   const target= url==='#'?'':'target="_blank" rel="noopener"';
   return`<a class="sugg-item sugg-ad" href="${url}" ${target}>
-    <div class="sugg-thumb" style="position:relative;overflow:hidden;">
+    <div class="sugg-thumb" style="position:relative;">
       ${img
-        ?`<img src="${img}" alt="Ad" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`
+        ?`<img src="${img}" alt="Ad" loading="lazy">`
         :`<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
           </div>`}
       <div class="vcard-ad-badge">Ad</div>
     </div>
     <div class="sugg-info">
-      <div class="sugg-title-text" style="color:#ccc;">${title}</div>
-      <div class="sugg-meta" style="color:#f27d26;">Sponsored</div>
+      <div class="sugg-title-text" style="color:#888;">Advertisement</div>
+      <div class="sugg-meta">Sponsored</div>
     </div>
   </a>`;
 }
@@ -1078,9 +1076,7 @@ window.openVideo=async (id,push=true)=>{
   const loadVideo=()=>{
     $("player-iframe").src=getEmbedUrl(v);
     scheduleMidrolls(v.duration||'');
-    // Show overlay banner after video starts
-    if(window.clearOverlayBanner) clearOverlayBanner();
-    if(window.showOverlayBanner) showOverlayBanner();
+
   };
   // Show pre-roll (config already loaded at startup)
   if(window.showPreroll) showPreroll(loadVideo);
