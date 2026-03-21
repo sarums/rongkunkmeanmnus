@@ -210,12 +210,15 @@ window.showOverlayBanner = function(){
   const btn   = document.getElementById('overlay-banner-btn');
 
   if(img){
+    img.style.display = 'none'; // hide first
     if(AD_CONFIG.overlayImage){
-      img.src = AD_CONFIG.overlayImage;
-      img.onload  = ()=>{ img.style.display='block'; };
-      img.onerror = ()=>{ img.style.display='none'; };
-    } else {
-      img.style.display = 'none';
+      const tempImg = new Image();
+      tempImg.onload = ()=>{
+        img.src = AD_CONFIG.overlayImage;
+        img.style.display = 'block';
+      };
+      tempImg.onerror = ()=>{ img.style.display = 'none'; };
+      tempImg.src = AD_CONFIG.overlayImage;
     }
   }
   if(title) title.textContent = AD_CONFIG.overlayTitle || 'Special Offer';
