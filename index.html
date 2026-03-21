@@ -309,10 +309,23 @@
                   </div>
                 </div>
                 <!-- AD CONTENT -->
-                <div style="flex:1;display:flex;align-items:center;justify-content:center;margin:10px 0;">
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;margin:10px 0;position:relative;border-radius:10px;overflow:hidden;background:#000;">
+                  <!-- Image ad -->
                   <img id="preroll-ad-image" src=""
-                    style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
-                    onerror="this.style.display='none'">
+                    style="width:100%;height:100%;object-fit:cover;border-radius:10px;cursor:pointer;"
+                    onerror="this.style.display='none'"
+                    onclick="if(window.AD_CONFIG&&window.AD_CONFIG.clickUrl)window.open(window.AD_CONFIG.clickUrl,'_blank','noopener')">
+                  <!-- Video ad -->
+                  <video id="preroll-ad-video"
+                    style="display:none;width:100%;height:100%;object-fit:contain;border-radius:10px;cursor:pointer;"
+                    playsinline webkit-playsinline muted
+                    onclick="if(window.AD_CONFIG&&window.AD_CONFIG.clickUrl)window.open(window.AD_CONFIG.clickUrl,'_blank','noopener')">
+                  </video>
+                  <!-- Click overlay for whole ad area -->
+                  <div id="preroll-click-area"
+                    style="position:absolute;inset:0;cursor:pointer;z-index:1;"
+                    onclick="if(window.AD_CONFIG&&window.AD_CONFIG.clickUrl)window.open(window.AD_CONFIG.clickUrl,'_blank','noopener')">
+                  </div>
                 </div>
                 <!-- Bottom: progress bar -->
                 <div style="height:3px;background:#1a1a1a;border-radius:9999px;overflow:hidden;">
