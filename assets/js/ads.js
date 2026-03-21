@@ -211,7 +211,6 @@ window.showOverlayBanner = function(){
 
   if(img){
     if(AD_CONFIG.overlayImage){
-      img.style.display = 'block';
       img.src = AD_CONFIG.overlayImage;
       img.onload  = ()=>{ img.style.display='block'; };
       img.onerror = ()=>{ img.style.display='none'; };
