@@ -943,6 +943,7 @@ async function loadAdsSettings(){
       if(qs('adPublisherId'))   qs('adPublisherId').value   = s.publisherId    || '';
       if(qs('adSlotId'))        qs('adSlotId').value        = s.adSlot         || '';
       if(qs('adImageUrl'))      qs('adImageUrl').value      = s.imageUrl       || '';
+      if(qs('adVideoUrl'))      qs('adVideoUrl').value      = s.videoUrl       || '';
       if(qs('adClickUrl'))      qs('adClickUrl').value      = s.clickUrl       || '';
       if(qs('adFeedAds'))       qs('adFeedAds').value       = s.feedAds        ?? 1;
       if(qs('adFeedEvery'))     qs('adFeedEvery').value     = s.feedEvery      ?? 6;
@@ -964,6 +965,7 @@ window.saveAdsSettings = async ()=>{
     publisherId  : qs('adPublisherId').value.trim(),
     adSlot       : qs('adSlotId').value.trim(),
     imageUrl     : qs('adImageUrl').value.trim(),
+    videoUrl     : qs('adVideoUrl')?.value.trim()||'',
     clickUrl     : qs('adClickUrl')?.value.trim()||'',
     feedAds      : parseInt(qs('adFeedAds')?.value||'1'),
     feedEvery    : parseInt(qs('adFeedEvery')?.value||'6') || 6,
