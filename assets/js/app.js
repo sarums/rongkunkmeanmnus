@@ -1598,9 +1598,18 @@ document.addEventListener('keydown',e=>{
 
   // Check if the scrollable container is at the very top
   function isAtTop(){
-    const wb=document.querySelector('.watch-scroll-body');
+    // Watch page — scroll body
+    const wb=document.querySelector('#page-watch.active .watch-scroll-body');
     if(wb) return wb.scrollTop===0;
+    // Home feed and other pages — window scroll
     return window.scrollY===0;
+  }
+
+  // Get the active scroll container
+  function getScrollContainer(){
+    const wb=document.querySelector('#page-watch.active .watch-scroll-body');
+    if(wb) return wb;
+    return window;
   }
 
   document.addEventListener('touchstart',e=>{
