@@ -209,23 +209,29 @@ window.showOverlayBanner = function(){
   const desc  = document.getElementById('overlay-banner-desc');
   const btn   = document.getElementById('overlay-banner-btn');
 
-  if(img)   img.src = AD_CONFIG.overlayImage || '';
-  if(title) title.textContent = AD_CONFIG.overlayTitle || 'Advertisement';
+  if(img){
+    if(AD_CONFIG.overlayImage){ img.src=AD_CONFIG.overlayImage; img.style.display=''; }
+    else img.style.display='none';
+  }
+  if(title) title.textContent = AD_CONFIG.overlayTitle || 'Special Offer';
   if(desc)  desc.textContent  = AD_CONFIG.overlayDesc  || '';
   if(btn)   btn.href = AD_CONFIG.overlayClickUrl || '#';
 
-  // Show after delay
+  // Show after delay with smooth fade in
   _overlayTimer = setTimeout(()=>{
-    banner.style.display='flex';
-    banner.style.opacity='0';
-    setTimeout(()=>{ banner.style.opacity='1'; }, 50);
+    banner.style.display = 'flex';
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        banner.style.opacity = '1';
+      });
+    });
   }, (AD_CONFIG.overlayDelay || 5) * 1000);
 };
 
 window.closeOverlayBanner = function(){
   const banner = document.getElementById('overlay-banner');
   if(!banner) return;
-  banner.style.opacity='0';
+  banner.style.opacity = '0';
   setTimeout(()=>{ banner.style.display='none'; }, 300);
   clearTimeout(_overlayTimer);
 };
