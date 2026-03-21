@@ -15,6 +15,7 @@ let AD_CONFIG = window.AD_CONFIG = {
   publisherId  : 'ca-pub-6821890542678085', // your real AdSense Publisher ID
   adSlot       : '', // set from Admin → Ads Settings
   imageUrl     : '', // set from Admin → Ads Settings
+  clickUrl     : '', // where user goes when clicking the ad
 };
 
 // ── LOAD CONFIG FROM FIRESTORE ───────────────────────
@@ -108,6 +109,16 @@ window.showPreroll = function(onDone, label){
     adImg.style.display = '';
   }
 
+  // Make ad image clickable
+  if(adImg){
+    adImg.style.cursor = AD_CONFIG.clickUrl ? 'pointer' : 'default';
+    adImg.onclick = ()=>{
+      if(AD_CONFIG.clickUrl){
+        window.open(AD_CONFIG.clickUrl, '_blank', 'noopener');
+      }
+    };
+  }
+
   overlay.classList.add('active');
   skipBtn.style.display = 'none';
   countdown.textContent  = `Skip in ${AD_CONFIG.skipAfter}s`;
@@ -140,6 +151,14 @@ window.showPreroll = function(onDone, label){
   }, 1000);
 
   overlay._onDone = onDone;
+
+  // Click on overlay (not skip btn) goes to ad URL
+  overlay.onclick = (e)=>{
+    if(e.target === skipBtn || skipBtn.contains(e.target)) return;
+    if(AD_CONFIG.clickUrl){
+      window.open(AD_CONFIG.clickUrl, '_blank', 'noopener');
+    }
+  };
 };
 
 window.hidePreroll = function(){
