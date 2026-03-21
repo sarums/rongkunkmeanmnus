@@ -674,21 +674,23 @@ function skelRow(n=4){return Array(n).fill(0).map(()=>`<div class="skel-card"><d
 
 // ── AD CARD ──────────────────────────────────────────
 function buildAdCard(){
-  const cfg = window.AD_CONFIG||{};
+  const cfg   = window.AD_CONFIG||{};
   if(!cfg.enabled || !cfg.feedAds) return '';
-  const img = cfg.feedImageUrl||cfg.imageUrl||'';
-  const url = cfg.feedAdUrl||'#';
-  const target = url==='#'?'':'target="_blank" rel="noopener"';
+  const img   = cfg.feedImageUrl||cfg.imageUrl||'';
+  const url   = cfg.feedAdUrl||cfg.clickUrl||'#';
+  const title = cfg.overlayTitle||'Advertisement';
+  const target= url==='#'?'':'target="_blank" rel="noopener"';
   return`<a class="vcard vcard-ad" href="${url}" ${target}>
-    <div class="vcard-thumb">
-      ${img?`<img src="${img}" alt="Advertisement" loading="lazy" onerror="this.parentElement.style.background='#1a1a1a'">`:
-        `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#111;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        </div>`}
+    <div class="vcard-thumb" style="overflow:hidden;">
+      ${img
+        ?`<img src="${img}" alt="Ad" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`
+        :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#111;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          </div>`}
       <div class="vcard-ad-badge">Ad</div>
     </div>
-    <div class="vcard-title" style="color:#888;">Advertisement</div>
-    <div class="vcard-sub">Sponsored</div>
+    <div class="vcard-title" style="color:#ddd;">${title}</div>
+    <div class="vcard-sub" style="color:#f27d26;">Sponsored · Tap to learn more</div>
   </a>`;
 }
 
@@ -732,22 +734,24 @@ function buildSuggWithAds(list, every=6){
 }
 
 function buildSuggAdCard(){
-  const cfg = window.AD_CONFIG||{};
+  const cfg   = window.AD_CONFIG||{};
   if(!cfg.enabled || !cfg.feedAds) return '';
-  const img = cfg.feedImageUrl||cfg.imageUrl||'';
-  const url = cfg.feedAdUrl||'#';
-  const target = url==='#'?'':'target="_blank" rel="noopener"';
+  const img   = cfg.feedImageUrl||cfg.imageUrl||'';
+  const url   = cfg.feedAdUrl||cfg.clickUrl||'#';
+  const title = cfg.overlayTitle||'Advertisement';
+  const target= url==='#'?'':'target="_blank" rel="noopener"';
   return`<a class="sugg-item sugg-ad" href="${url}" ${target}>
-    <div class="sugg-thumb" style="position:relative;">
-      ${img?`<img src="${img}" alt="Ad" loading="lazy">`:
-        `<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
-        </div>`}
+    <div class="sugg-thumb" style="position:relative;overflow:hidden;">
+      ${img
+        ?`<img src="${img}" alt="Ad" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`
+        :`<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+          </div>`}
       <div class="vcard-ad-badge">Ad</div>
     </div>
     <div class="sugg-info">
-      <div class="sugg-title-text" style="color:#888;">Advertisement</div>
-      <div class="sugg-meta">Sponsored</div>
+      <div class="sugg-title-text" style="color:#ccc;">${title}</div>
+      <div class="sugg-meta" style="color:#f27d26;">Sponsored</div>
     </div>
   </a>`;
 }
