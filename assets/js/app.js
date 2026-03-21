@@ -1587,4 +1587,59 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape') goBack();
 });
 
+
+// ── PULL TO REFRESH ──────────────────────────────────────
+(()=>{
+  let startY=0, pulling=false;
+  const threshold=80;
+  const ind=()=>$('ptr-indicator');
+  const txt=()=>ind()?.querySelector('.ptr-text');
+  const ico=()=>ind()?.querySelector('.ptr-icon');
+
+  function getScrollEl(){
+    const wb=document.querySelector('.watch-scroll-body');
+    if(wb&&wb.scrollTop===0) return wb;
+    if(window.scrollY===0) return document.documentElement;
+    return null;
+  }
+
+  document.addEventListener('touchstart',e=>{
+    if(!getScrollEl()) return;
+    startY=e.touches[0].clientY; pulling=true;
+  },{passive:true});
+
+  document.addEventListener('touchmove',e=>{
+    if(!pulling) return;
+    if(!getScrollEl()) return;
+    const dist=e.touches[0].clientY-startY;
+    if(dist<=0) return;
+    const i=ind(); if(!i) return;
+    i.classList.add('visible');
+    if(dist>threshold){
+      i.classList.add('releasing');
+      if(txt()) txt().textContent='Release to refresh';
+      if(ico()) ico().textContent='↑';
+    } else {
+      i.classList.remove('releasing');
+      if(txt()) txt().textContent='Pull to refresh';
+      if(ico()) ico().textContent='↓';
+    }
+  },{passive:true});
+
+  document.addEventListener('touchend',e=>{
+    if(!pulling) return;
+    pulling=false;
+    const dist=e.changedTouches[0].clientY-startY;
+    const i=ind(); if(!i) return;
+    if(dist>threshold){
+      i.classList.add('loading');
+      if(txt()) txt().textContent='Refreshing...';
+      if(ico()) ico().textContent='↻';
+      setTimeout(()=>location.reload(),500);
+    } else {
+      i.classList.remove('visible','releasing');
+    }
+  },{passive:true});
+})();
+
 loadAll();
