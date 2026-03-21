@@ -16,6 +16,7 @@ let AD_CONFIG = window.AD_CONFIG = {
   adSlot       : '', // set from Admin → Ads Settings
   imageUrl     : '', // set from Admin → Ads Settings
   clickUrl     : '', // where user goes when clicking the ad
+  videoUrl     : '', // MP4 video URL for video ads
 };
 
 // ── LOAD CONFIG FROM FIRESTORE ───────────────────────
@@ -103,10 +104,21 @@ window.showPreroll = function(onDone, label){
   // Update label
   if(adLabel) adLabel.textContent = label || 'Advertisement';
 
-  // Update ad image from config
-  if(adImg && AD_CONFIG.imageUrl){
+  // Video ad or image ad
+  const adVideo = document.getElementById('preroll-ad-video');
+  if(AD_CONFIG.videoUrl && adVideo){
+    // Video ad — hide image, show video
+    if(adImg) adImg.style.display = 'none';
+    adVideo.style.display = 'block';
+    adVideo.src = AD_CONFIG.videoUrl;
+    adVideo.poster = AD_CONFIG.imageUrl || '';
+    adVideo.muted = true;
+    adVideo.play().catch(()=>{});
+  } else if(AD_CONFIG.imageUrl && adImg){
+    // Image ad
+    if(adVideo) adVideo.style.display = 'none';
     adImg.src = AD_CONFIG.imageUrl;
-    adImg.style.display = '';
+    adImg.style.display = 'block';
   }
 
   // Make ad image clickable
@@ -165,6 +177,9 @@ window.hidePreroll = function(){
   const overlay = document.getElementById('preroll-overlay');
   if(overlay) overlay.classList.remove('active');
   clearInterval(_prerollTimer);
+  // Stop video if playing
+  const adVideo = document.getElementById('preroll-ad-video');
+  if(adVideo){ adVideo.pause(); adVideo.src=''; }
 };
 
 window.skipPreroll = function(){
