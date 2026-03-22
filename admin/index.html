@@ -39,6 +39,7 @@
 
       <div class="sidebar-section">System</div>
       <button class="nav-item" onclick="showPanel('settings',this)"><span class="ico">⚙️</span>Settings</button>
+      <button class="nav-item" onclick="showPanel('sitemap',this)"><span class="ico">🗺️</span>Sitemap</button>
       <button class="nav-item" onclick="showPanel('ads',this)"><span class="ico">📢</span>Ads Settings</button>
     </div>
 
@@ -666,6 +667,70 @@
           <div class="form-card-title">📦 All Products <span id="prod-count" style="font-size:.75rem;color:var(--text2);font-weight:500"></span></div>
           <div id="prod-empty" style="display:none;padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;">No products yet</div>
           <div id="prod-list" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;"></div>
+        </div>
+      </div>
+
+            <!-- ═══ SITEMAP PANEL ═══ -->
+      <div class="panel" id="panel-sitemap">
+        <div class="panel-title">🗺️ Sitemap Generator</div>
+
+        <div class="form-card" style="margin-bottom:1.5rem;">
+          <div class="form-card-title">ℹ️ How it works</div>
+          <p style="font-size:.85rem;color:var(--text2);line-height:1.7;margin-bottom:0;">
+            Click <strong style="color:var(--text)">Generate Sitemap</strong> → it reads all your videos from Firestore → creates a complete sitemap.xml file → you download it → upload to GitHub root folder. Do this every time you add new videos.
+          </p>
+        </div>
+
+        <div class="form-card" style="margin-bottom:1.5rem;">
+          <div class="form-card-title">⚙️ Settings</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label class="flabel">Site URL</label>
+              <input type="text" class="finput" id="smSiteUrl" value="https://www.rongkunkmeanmnus.com">
+              <div class="fhint">Your domain name</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Include Videos</label>
+              <select class="fselect" id="smIncludeVideos">
+                <option value="1">✅ Yes</option>
+                <option value="0">❌ No — static pages only</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">Include Playlists</label>
+              <select class="fselect" id="smIncludePlaylists">
+                <option value="1">✅ Yes</option>
+                <option value="0">❌ No</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">Video Priority</label>
+              <select class="fselect" id="smVideoPriority">
+                <option value="0.8">0.8 — High</option>
+                <option value="0.6">0.6 — Medium</option>
+                <option value="0.5">0.5 — Normal</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap;">
+          <button class="submit-btn" onclick="generateSitemap()" id="smGenBtn">🗺️ Generate Sitemap</button>
+          <button class="submit-btn" id="smDownloadBtn" style="display:none;background:var(--green);" onclick="downloadSitemap()">⬇️ Download sitemap.xml</button>
+        </div>
+
+        <!-- Stats -->
+        <div id="smStats" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;">
+          <div style="font-size:.78rem;color:var(--text2);" id="smStatsText"></div>
+        </div>
+
+        <!-- Preview -->
+        <div class="form-card" id="smPreviewWrap" style="display:none;">
+          <div class="form-card-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>📄 Preview</span>
+            <span style="font-size:.7rem;color:var(--text2);font-weight:400;">First 5 URLs shown</span>
+          </div>
+          <pre id="smPreview" style="font-size:.7rem;color:#888;line-height:1.6;overflow-x:auto;white-space:pre-wrap;background:var(--bg);padding:1rem;border-radius:8px;border:1px solid var(--border);margin-top:.75rem;max-height:300px;overflow-y:auto;"></pre>
         </div>
       </div>
 
