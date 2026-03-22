@@ -206,6 +206,22 @@
               <div id="epBadgePreview" style="display:none;position:absolute;top:8px;right:8px;width:40px;height:40px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.2);"></div>
             </div>
           </div>
+          <div class="form-grid" style="margin-bottom:1rem;">
+            <div class="fg">
+              <label class="flabel">Status</label>
+              <select class="fselect" id="fStatus">
+                <option value="public">✅ Public — visible to users</option>
+                <option value="draft">📝 Draft — hidden from users</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">Featured</label>
+              <select class="fselect" id="fFeatured">
+                <option value="no">No</option>
+                <option value="yes">⭐ Yes — show in hero</option>
+              </select>
+            </div>
+          </div>
           <button class="submit-btn" id="addVidBtn" onclick="addVideo()">➕ Add Video</button>
         </div>
       </div>
@@ -751,6 +767,22 @@
           <a href="/thumbnail" target="_blank" style="font-size:.7rem;font-weight:700;color:var(--accent);background:rgba(242,125,38,.1);padding:3px 10px;border-radius:9999px;border:1px solid rgba(242,125,38,.2);">🎨 Open Preview Tool ↗</a>
         </label>
         <div class="thumb-preview" id="editThumbPreview" style="position:relative;"><span>Loading...</span></div>
+      </div>
+      <div class="form-grid" style="margin-bottom:1rem;">
+        <div class="fg">
+          <label class="flabel">Status</label>
+          <select class="fselect" id="editStatus">
+            <option value="public">✅ Public</option>
+            <option value="draft">📝 Draft</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Featured</label>
+          <select class="fselect" id="editFeatured">
+            <option value="no">No</option>
+            <option value="yes">⭐ Yes</option>
+          </select>
+        </div>
       </div>
       <button class="submit-btn blue" onclick="saveEdit()">💾 Save Changes</button>
     </div>
