@@ -40,6 +40,10 @@
       <div class="sidebar-section">System</div>
       <button class="nav-item" onclick="showPanel('settings',this)"><span class="ico">⚙️</span>Settings</button>
       <button class="nav-item" onclick="showPanel('ads',this)"><span class="ico">📢</span>Ads Settings</button>
+      <button class="nav-item" onclick="showPanel('products',this)"><span class="ico">🛍️</span>Products</button>
+      <div style="margin-top:auto;padding:1rem;">
+        <button onclick="doLogout()" style="width:100%;padding:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:#555;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#555'">⏻ Logout</button>
+      </div>
     </div>
 
     <!-- MAIN PANELS -->
@@ -778,6 +782,39 @@
   100% { background-position:  200% 0; }
 }
 </style>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#111;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,.8);">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="width:52px;height:52px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+        <svg viewBox="0 0 24 24" fill="#fff" width="22" height="22"><polygon points="5,3 19,12 5,21"/></svg>
+      </div>
+      <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:-.02em;">RKMN <span style="color:#f27d26">ADMIN</span></div>
+      <div style="font-size:.78rem;color:#555;margin-top:4px;">Enter password to continue</div>
+    </div>
+    <div id="loginError" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#ef4444;border-radius:10px;padding:10px 14px;font-size:.8rem;font-weight:600;margin-bottom:1rem;text-align:center;">
+      ❌ Incorrect password. Try again.
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#555;display:block;margin-bottom:6px;">Password</label>
+      <div style="position:relative;">
+        <input type="password" id="loginPwInput" placeholder="Enter admin password"
+          style="width:100%;background:#181818;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 44px 12px 14px;color:#fff;font-size:.9rem;outline:none;transition:border-color .2s;font-family:inherit;"
+          onkeydown="if(event.key==='Enter')doLogin()"
+          onfocus="this.style.borderColor='#f27d26'" onblur="this.style.borderColor='rgba(255,255,255,.12)'">
+        <button onclick="togglePwVis()" id="pwVisBtn" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:.85rem;padding:0;">👁</button>
+      </div>
+    </div>
+    <button onclick="doLogin()" id="loginBtn"
+      style="width:100%;padding:12px;background:#f27d26;color:#000;font-weight:900;font-size:.9rem;border:none;border-radius:10px;cursor:pointer;transition:all .2s;font-family:inherit;">
+      Login →
+    </button>
+    <p style="text-align:center;font-size:.68rem;color:#333;margin-top:1.25rem;">
+      Forgot password? Check Admin → Settings
+    </p>
+  </div>
+</div>
 
 <!-- TOAST CONTAINER -->
 <div class="toast-wrap" id="toastWrap"></div>
