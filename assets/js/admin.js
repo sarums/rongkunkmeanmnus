@@ -16,7 +16,69 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ── AUTH ──────────────────────────────────────────────
+const SESSION_KEY = 'rkmn_admin_auth';
 
+function isLoggedIn(){
+  return sessionStorage.getItem(SESSION_KEY) === '1';
+}
+
+function showLoginScreen(){ 
+  const s = document.getElementById('loginScreen');
+  if(s) s.style.display = 'flex';
+}
+
+function hideLoginScreen(){
+  const s = document.getElementById('loginScreen');
+  if(s) s.style.display = 'none';
+}
+
+window.togglePwVis = ()=>{
+  const inp = document.getElementById('loginPwInput');
+  const btn = document.getElementById('pwVisBtn');
+  if(!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+};
+
+window.doLogin = async ()=>{
+  const inp = document.getElementById('loginPwInput');
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  const pw  = inp?.value.trim();
+  if(!pw) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  err.style.display = 'none';
+
+  try {
+    const snap = await getDoc(doc(db,'settings','main'));
+    const correctPw = snap.exists() ? (snap.data().password || 'streamhub2024') : 'streamhub2024';
+    if(pw === correctPw){
+      sessionStorage.setItem(SESSION_KEY, '1');
+      hideLoginScreen();
+      loadAll();
+    } else {
+      err.style.display = 'block';
+      inp.value = '';
+      inp.focus();
+    }
+  } catch(e){
+    if(pw === 'streamhub2024'){
+      sessionStorage.setItem(SESSION_KEY, '1');
+      hideLoginScreen();
+      loadAll();
+    } else {
+      err.style.display = 'block';
+      inp.value = '';
+      inp.focus();
+    }
+  }
+  btn.disabled = false;
+  btn.textContent = 'Login →';
+};
+
+window.doLogout = ()=>{ sessionStorage.removeItem(SESSION_KEY); location.reload(); };
 
 // ── STATE ─────────────────────────────────────────────
 let allVideos=[], allPlaylists=[], allCategories=[];
@@ -1597,4 +1659,10 @@ window.showPanel=(id,btn)=>{
 };
 
 // ── INIT ──────────────────────────────────────────────
-loadAll();
+if(isLoggedIn()){
+  hideLoginScreen();
+  loadAll();
+} else {
+  showLoginScreen();
+  setTimeout(()=>{ document.getElementById('loginPwInput')?.focus(); }, 100);
+}
