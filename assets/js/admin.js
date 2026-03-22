@@ -77,9 +77,13 @@ window.doLogin = async ()=>{
     if(pw === correctPw){ grantAccess(); }
     else { showError(); }
   } catch(e){
-    // Firestore failed — use hardcoded default
+    console.warn('Firestore login check failed:', e.message);
+    // Firestore failed — fallback to hardcoded default
     if(pw === 'streamhub2024'){ grantAccess(); }
     else { showError(); }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Unlock Dashboard →';
   }
 };
 
