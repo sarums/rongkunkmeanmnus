@@ -1596,7 +1596,7 @@ window.generateSitemap = async ()=>{
     // Video pages
     if(inclVideos){
       vids.forEach(v=>{
-        const slug = (v.title||v.id).toLowerCase().replace(/[^a-z0-9ក-៿]+/gi,'-').replace(/^-|-$/g,'');
+        const slug = (v.title||v.id).toLowerCase().replace(/[^a-z0-9\u1780-\u17FF]+/gi,'-').replace(/^-|-$/g,'');
         const lastmod = v.createdAt?.toDate ? v.createdAt.toDate().toISOString().split('T')[0] : today;
         const thumb = v.customThumb || (v.platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${v.videoId}`:'');
         urls.push({
