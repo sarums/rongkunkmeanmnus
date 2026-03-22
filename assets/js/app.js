@@ -366,7 +366,7 @@ async function silentRefresh(){
       getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
       getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
     ]);
-    const newVideos=vidSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const newVideos=vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
     const newSections=secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
     // Only rebuild if data changed
     const changed=JSON.stringify(newVideos.map(v=>v.id))!==JSON.stringify(videos.map(v=>v.id))
@@ -481,7 +481,7 @@ async function loadAll(){
     ]);
     categories=catSnap.docs.map(d=>({id:d.id,...d.data()}));
     playlists=plSnap.docs.map(d=>({id:d.id,...d.data()}));
-    videos=vidSnap.docs.map(d=>({id:d.id,...d.data()}));
+    videos=vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
     sections=secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
 
     const stDoc=await getDoc(doc(db,"settings","main")).catch(()=>null);
