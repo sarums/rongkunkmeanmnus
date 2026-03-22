@@ -318,9 +318,10 @@ window.addVideo = async ()=>{
   if(!videoId||!title){ showToast('Missing Fields','Video ID and Title are required','err'); return; }
   const btn=qs('addVidBtn'); btn.disabled=true; btn.textContent='Adding...';
   try {
+    const status=qs('fStatus')?.value||'public';
     const data={ platform,videoId,title,description,category,featured:section==='featured'?'yes':'no',
       section:section||'', duration:duration||'', customThumb:customThumb||'',
-      viewsDisplay:viewsDisplay||'', views:0, episodeNum:epNum||0, badgePos:badgePos, createdAt:serverTimestamp() };
+      viewsDisplay:viewsDisplay||'', views:0, episodeNum:epNum||0, badgePos:badgePos, status:status, createdAt:serverTimestamp() };
     const ref=await addDoc(collection(db,'videos'),data);
     const newV={id:ref.id,...data};
     allVideos.unshift(newV);
@@ -366,7 +367,10 @@ function renderVideosTable(vids){
     <td><span class="td-plat ${v.platform==='dailymotion'?'dm':'rb'}">${v.platform==='dailymotion'?'DM':'Rumble'}</span></td>
     <td><span class="td-cat">${v.category||'—'}</span></td>
     <td class="td-views">${fmtViews(v.views)}</td>
-    <td>${v.featured==='yes'?'<span class="badge badge-feat">⭐ Hero</span>':v.section?`<span class="badge" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:var(--purple)">${v.section}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+    <td>
+      ${v.status==='draft'?'<span class="badge" style="background:rgba(255,165,0,.1);border:1px solid rgba(255,165,0,.3);color:orange">📝 Draft</span>':''}
+      ${v.featured==='yes'?'<span class="badge badge-feat">⭐ Hero</span>':v.section?`<span class="badge" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:var(--purple)">${v.section}</span>`:'<span style="color:var(--muted)">—</span>'}
+    </td>
     <td><div class="td-actions">
       <button class="act-btn act-edit" onclick="openEdit('${v.id}')">✏️ Edit</button>
       <button class="act-btn act-feat" onclick="toggleFeatured('${v.id}')" title="${v.featured==='yes'?'Remove from hero':'Set as hero'}">⭐</button>
@@ -390,6 +394,7 @@ window.openEdit = (id)=>{
   qs('editEpNum').value=v.episodeNum||'';
   setTimeout(()=>{ if(qs('editBadgePos')) qs('editBadgePos').value=v.badgePos||'top-left'; },50);
   qs('editSection').value=v.featured==='yes'?'featured':(v.section||'');
+  if(qs('editStatus')) qs('editStatus').value=v.status||'public';
   populateSelects();
   setTimeout(()=>{
     qs('editCat').value=v.category||'';
@@ -414,6 +419,7 @@ window.saveEdit = async ()=>{
   try {
     const data={ platform,videoId,title,description,category,
       featured:section==='featured'?'yes':'no', section:section||'',
+      status:qs('editStatus')?.value||'public',
       duration, customThumb, episodeNum:epNum||0, badgePos:badgePos };
     await updateDoc(doc(db,'videos',id),data);
     const v=allVideos.find(x=>x.id===id);
