@@ -18,8 +18,8 @@
   <link rel="apple-touch-icon" href="/assets/img/icon-192.png">
 
   <meta name="google-site-verification" content="aGa40iTcNKkOUzNSEK-MY1AuqdWM7eHNOxmvKYWKudU">
-  <meta name="description" id="meta-desc" content="RongKunKmeanMnus - Watch Khmer drama, series and entertainment videos online. Your ultimate destination for curated video content.">
-  <meta name="keywords" content="khmer drama, khmer series, khmer video, rongkunkmeanmnus, khmer movies, watch online, entertainment">
+  <meta name="description" id="meta-desc" content="រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus) - Watch Chinese Drama, Thai Drama and Khmer dubbed series online for free. មើលរឿងភាគចិន រឿងភាគថៃ និងភាពយន្តល្អៗដោយឥតគិតថ្លៃ។">
+  <meta name="keywords" content="រោងកុនគ្មានមនុស្ស, rongkunkmeanmnus, khmer drama, khmer series, khmer video, khmer movies, រឿងភាគ, រឿងចិន, រឿងថៃ, watch online, entertainment, chinese drama khmer, thai drama khmer">
   <meta name="author" content="RongKunKmeanMnus">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="googlebot" content="index, follow">
@@ -33,7 +33,7 @@
   <meta property="og:locale"      content="en_US">
   <meta property="og:locale:alternate" content="en_US">
   <meta property="og:title"       id="og-title" content="RongKunKmeanMnus - Watch Videos Online">
-  <meta property="og:description" id="og-desc"  content="Watch Khmer drama, series and entertainment videos online. Your ultimate destination for curated video content.">
+  <meta property="og:description" id="og-desc"  content="រោងកុនគ្មានមនុស្ស - Watch Chinese Drama, Thai Drama and Khmer dubbed series online for free.">
   <meta property="og:image"       id="og-image" content="https://www.rongkunkmeanmnus.com/assets/img/og-default.png">
   <meta property="og:image:width"  content="1200">
   <meta property="og:image:height" content="630">
@@ -44,7 +44,7 @@
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:site"        content="@rongkunkmeanmnus">
   <meta name="twitter:title"       id="tw-title" content="RongKunKmeanMnus - Watch Videos Online">
-  <meta name="twitter:description" id="tw-desc"  content="Watch Khmer drama, series and entertainment videos online.">
+  <meta name="twitter:description" id="tw-desc"  content="រោងកុនគ្មានមនុស្ស - Watch Chinese Drama, Thai Drama and Khmer dubbed series online for free.">
   <meta name="twitter:image"       id="tw-image" content="https://www.rongkunkmeanmnus.com/assets/img/og-default.png">
 
   <!-- ═══ CANONICAL + ALTERNATE LANGUAGES ═══ -->
@@ -58,7 +58,7 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "RongKunKmeanMnus",
+    "name": "រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus)",
     "alternateName": "រ៉ុងគ្នាមានអ្នស",
     "url": "https://www.rongkunkmeanmnus.com",
     "description": "Watch Khmer drama, series and entertainment videos online.",
@@ -283,6 +283,7 @@
         <a href="/about">About</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>        <a href="/contact">Contact</a>
+        <a href="/donate" onclick="openDonateModal(event)" style="color:#f27d26;font-weight:800;">☕ Donate</a>
       </div>
     </div>
   </div>
@@ -472,6 +473,7 @@
             <a href="/about">About</a>
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>        <a href="/contact">Contact</a>
+        <a href="/donate" onclick="openDonateModal(event)" style="color:#f27d26;font-weight:800;">☕ Donate</a>
           </div>
         </div>
 
@@ -515,6 +517,7 @@
         <a href="/about">About</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>        <a href="/contact">Contact</a>
+        <a href="/donate" onclick="openDonateModal(event)" style="color:#f27d26;font-weight:800;">☕ Donate</a>
       </div>
     </div>
   </div>
@@ -546,6 +549,7 @@
         <a href="/about">About</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>        <a href="/contact">Contact</a>
+        <a href="/donate" onclick="openDonateModal(event)" style="color:#f27d26;font-weight:800;">☕ Donate</a>
       </div>
     </div>
   </div>
@@ -616,6 +620,58 @@
     <span class="ptr-icon">↓</span>
     <span class="ptr-text">Pull to refresh</span>
   </div>
+
+  <!-- ═══ DONATE MODAL ═══ -->
+  <div id="donate-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#111;border:1px solid rgba(255,255,255,.1);border-radius:20px;width:100%;max-width:400px;overflow:hidden;max-height:90vh;overflow-y:auto;">
+      <!-- Header -->
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.3rem;">☕</span>
+          <div>
+            <div style="font-size:.95rem;font-weight:800;color:#fff;">Support Us</div>
+            <div style="font-size:.68rem;color:#555;">SOK SARUM · ACELEDA</div>
+          </div>
+        </div>
+        <button onclick="closeDonateModal()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#888;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <!-- Amount selector -->
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.07);">
+        <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#333;margin-bottom:.75rem;">Choose amount</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:.75rem;">
+          <button class="dm-amt active" onclick="dmSelect(0.50,this)">$0.50</button>
+          <button class="dm-amt" onclick="dmSelect(1,this)">$1.00</button>
+          <button class="dm-amt" onclick="dmSelect(2,this)">$2.00</button>
+          <button class="dm-amt" onclick="dmSelect(5,this)">$5.00</button>
+          <button class="dm-amt" onclick="dmSelect(10,this)">$10.00</button>
+          <button class="dm-amt" onclick="dmSelect(20,this)">$20.00</button>
+          <button class="dm-amt" onclick="dmSelect(50,this)">$50.00</button>
+          <button class="dm-amt dm-surprise" onclick="dmSurprise()">🎲</button>
+        </div>
+        <div style="text-align:center;padding:.5rem;background:rgba(242,125,38,.05);border:1px solid rgba(242,125,38,.15);border-radius:8px;">
+          <div style="font-size:.6rem;color:#555;text-transform:uppercase;letter-spacing:.08em;">Donating</div>
+          <div id="dm-amount-display" style="font-size:1.4rem;font-weight:900;color:#f27d26;">$0.50</div>
+        </div>
+      </div>
+      <!-- QR -->
+      <div style="padding:1.25rem 1.5rem;text-align:center;">
+        <div style="font-size:.68rem;color:#555;margin-bottom:.75rem;">Scan with ACELEDA app</div>
+        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhOY9FjCNH86OFgF1lhv0e88Pd6ig6RdiAOCfZXd4GzYEh5hiQnBT-763sNp1oZbxaqgkc6gjh9ZG8fl-EMStdBSl97ibqAG0k2m87RefZwopqACp3kBc3pI7XyLyKY6wdgHnrAxhHegVAK4RemqLqaaJncWrH29QVSirrHakKt1xlbe2dnmYE_SnCKdIc/s2160/SARUM.jpg"
+          style="width:180px;height:180px;object-fit:cover;border-radius:14px;border:1.5px solid rgba(255,255,255,.08);"
+          alt="ACELEDA QR Code">
+        <p style="font-size:.72rem;color:#444;margin-top:.75rem;line-height:1.6;">Enter <strong id="dm-qr-amount" style="color:#f27d26;">$0.50</strong> after scanning · Thank you! 🙏</p>
+        <a href="/donate" style="display:inline-flex;align-items:center;gap:5px;margin-top:.75rem;font-size:.72rem;color:#555;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#f27d26'" onmouseout="this.style.color='#555'">
+          View full donation page →
+        </a>
+      </div>
+    </div>
+  </div>
+  <style>
+    #donate-modal.active{display:flex!important;}
+    .dm-amt{padding:8px 4px;background:#181818;border:1.5px solid rgba(255,255,255,.08);border-radius:8px;color:#666;font-size:.76rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;}
+    .dm-amt:hover,.dm-amt.active{border-color:#f27d26;color:#f27d26;background:rgba(242,125,38,.08);}
+    .dm-surprise{font-size:.9rem;}
+  </style>
 
   <!-- ═══ SCRIPTS ═══ -->
   <script src="/assets/js/ads.js"></script>
