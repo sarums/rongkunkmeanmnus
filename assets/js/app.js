@@ -1097,12 +1097,24 @@ window.openVideo=async (id,push=true)=>{
   $("watch-cat").textContent=v.category||"";
   $("watch-views").textContent=fmtViews((v.views||0)+1);
   $("watch-date").textContent=v.createdAt?.toDate?v.createdAt.toDate().toLocaleDateString():"—";
-  // Description with expand toggle
-  const descText=v.description||`${v.category||""} content from ${v.platform||v.source||""}.`;
+  // Description with expand toggle — rich fallback for SEO
+  const platform = v.platform||v.source||'';
+  const platformName = platform==='youtube'?'YouTube':platform==='dailymotion'?'Dailymotion':
+    platform==='rumble'?'Rumble':platform==='vimeo'?'Vimeo':platform==='facebook'?'Facebook':
+    platform==='odysee'?'Odysee':platform;
+  const cat = v.category||'';
+  const epText = v.episodeNum ? `Episode ${v.episodeNum}` : '';
+  const fallbackDesc = [
+    v.title ? `Watch "${v.title}"${epText?' - '+epText:''} online for free on រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus).` : '',
+    cat ? `This is a ${cat} video${platformName?' available on '+platformName:''}.` : '',
+    `Stream high quality ${cat||'drama'} content for free. No subscription needed. Enjoy the best ${cat||'entertainment'} videos online.`,
+    `រោងកុនគ្មានមនុស្ស brings you the best ${cat||'video'} content curated from top streaming platforms.`
+  ].filter(Boolean).join(' ');
+  const descText = v.description && v.description.trim().length > 20 ? v.description : fallbackDesc;
   $("watch-desc").textContent=descText;
   const toggle=$("watch-desc-toggle");
   if(toggle){
-    toggle.style.display=descText.length>120?'':'none';
+    toggle.style.display=descText.length>150?'':'none';
     toggle.textContent='Show more ▾';
     $("watch-desc").style.webkitLineClamp='3';
     $("watch-desc").style.overflow='hidden';
@@ -1119,7 +1131,9 @@ window.openVideo=async (id,push=true)=>{
   addToHistory(id);
   updateMeta({
     title : v.title,
-    desc  : v.description || `Watch ${v.title} on ${siteName}.`,
+    desc  : v.description && v.description.trim().length>20
+      ? v.description
+      : `Watch "${v.title}"${v.episodeNum?' Episode '+v.episodeNum:''} online free on រោងកុនគ្មានមនុស្ស. Stream ${v.category||'drama'} videos for free — no subscription needed.`,
     image : getThumb(v),
     url   : location.href,
     type  : 'video.other'
@@ -1601,6 +1615,43 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape') goBack();
 });
 
+
+// ── DONATE MODAL ─────────────────────────────────────────
+window.openDonateModal = (e)=>{
+  if(e) e.preventDefault();
+  const m = document.getElementById('donate-modal');
+  if(m){ m.classList.add('active'); document.body.style.overflow='hidden'; }
+};
+window.closeDonateModal = ()=>{
+  const m = document.getElementById('donate-modal');
+  if(m){ m.classList.remove('active'); document.body.style.overflow=''; }
+};
+window.dmSelect = (amount, btn)=>{
+  document.querySelectorAll('.dm-amt').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const fmt = '$'+amount.toFixed(2);
+  const d = document.getElementById('dm-amount-display');
+  const q = document.getElementById('dm-qr-amount');
+  if(d) d.textContent = fmt;
+  if(q) q.textContent = fmt;
+};
+window.dmSurprise = ()=>{
+  const amounts=[0.50,1,2,5,10,20,50];
+  const r = amounts[Math.floor(Math.random()*amounts.length)];
+  document.querySelectorAll('.dm-amt:not(.dm-surprise)').forEach(b=>{
+    b.classList.toggle('active', parseFloat(b.textContent.replace('$',''))===r);
+  });
+  const fmt='$'+r.toFixed(2);
+  const d=document.getElementById('dm-amount-display');
+  const q=document.getElementById('dm-qr-amount');
+  if(d) d.textContent=fmt;
+  if(q) q.textContent=fmt;
+};
+// Close modal on backdrop click
+document.addEventListener('click', e=>{
+  const m=document.getElementById('donate-modal');
+  if(m && e.target===m) closeDonateModal();
+});
 
 // ── PULL TO REFRESH ──────────────────────────────────────
 (()=>{
