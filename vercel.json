@@ -61,6 +61,10 @@
       "destination": "/pages/store.html"
     },
     {
+      "source": "/donate",
+      "destination": "/pages/donate.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
