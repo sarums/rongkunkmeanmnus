@@ -6,7 +6,7 @@
   <title>Support Us | RongKunKmeanMnus</title>
   <meta name="description" content="Support RongKunKmeanMnus — buy us a coffee and help keep free streaming alive.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Hanuman:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -15,7 +15,7 @@
   --text:#e4e4e7;--text2:#71717a;
   --brand:#f27d26;--brand2:#ff9340;
 }
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Outfit','Hanuman',sans-serif;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;}
 a{text-decoration:none;color:inherit}
 
 /* Navbar */
@@ -122,13 +122,12 @@ a{text-decoration:none;color:inherit}
   <div class="card">
     <div class="card-title">Choose an amount</div>
     <div class="amount-grid">
-      <button class="amount-btn active" onclick="selectAmount(0.50, this)">$0.10</button>
-      <button class="amount-btn" onclick="selectAmount(1, this)">$0.20</button>
-      <button class="amount-btn" onclick="selectAmount(2, this)">$0.50</button>
-      <button class="amount-btn" onclick="selectAmount(5, this)">$1.00</button>
-      <button class="amount-btn" onclick="selectAmount(10, this)">$2.00</button>
-      <button class="amount-btn" onclick="selectAmount(10, this)">$3.00</button>
-      <button class="amount-btn" onclick="selectAmount(20, this)">$5.00</button>
+      <button class="amount-btn active" onclick="selectAmount(0.50, this)">$0.50</button>
+      <button class="amount-btn" onclick="selectAmount(1, this)">$1.00</button>
+      <button class="amount-btn" onclick="selectAmount(2, this)">$2.00</button>
+      <button class="amount-btn" onclick="selectAmount(5, this)">$5.00</button>
+      <button class="amount-btn" onclick="selectAmount(10, this)">$10.00</button>
+      <button class="amount-btn" onclick="selectAmount(20, this)">$20.00</button>
       <button class="amount-btn" onclick="selectAmount(50, this)">$50.00</button>
       <button class="amount-btn surprise" onclick="surpriseMe()">
         🎲 Surprise Me!
@@ -215,8 +214,8 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script>
-const amounts = [0.10, 0.20, 0.50, 1, 2, 3, 5, 50];
-let currentAmount = 0.10;
+const amounts = [0.50, 1, 2, 5, 10, 20, 50];
+let currentAmount = 0.50;
 
 function selectAmount(amount, btn) {
   currentAmount = amount;
