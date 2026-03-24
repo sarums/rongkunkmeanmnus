@@ -583,7 +583,8 @@ function buildNav(activeId){
 
   $("nav-cats").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
-    +desktopCats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("");
+    +desktopCats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("")
+    +`<a href="/donate" style="color:#f27d26;font-weight:800;display:flex;align-items:center;gap:5px;" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">☕ Donate</a>`;
 
   // Populate More dropdown with overflow categories
   const moreCats = sorted.slice(8);
@@ -616,13 +617,21 @@ function buildNav(activeId){
       </div>
       Home
     </a>`
-    +cats.map(c=>navLink(c,true)).join("");
+    +cats.map(c=>navLink(c,true)).join("")
+    +`<a href="/donate"
+      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:700;color:#f27d26;text-decoration:none;background:rgba(242,125,38,.06);border:1px solid rgba(242,125,38,.15);margin-top:8px;"
+      onmouseover="this.style.background='rgba(242,125,38,.12)'"
+      onmouseout="this.style.background='rgba(242,125,38,.06)'">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(242,125,38,.15);border:1px solid rgba(242,125,38,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;">☕</div>
+      Donate
+    </a>`;
   $("footer-links").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
     +`<a href="/about">About</a>`
     +`<a href="/privacy">Privacy</a>`
     +`<a href="/terms">Terms</a>`
-    +`<a href="/contact">Contact</a>`;
+    +`<a href="/contact">Contact</a>`
+    +`<a href="/donate" style="color:#f27d26;font-weight:800;">☕ Donate</a>`;
 }
 
 // Set active nav link
