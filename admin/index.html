@@ -39,6 +39,7 @@
 
       <div class="sidebar-section">System</div>
       <button class="nav-item" onclick="showPanel('settings',this)"><span class="ico">⚙️</span>Settings</button>
+      <button class="nav-item" onclick="showPanel('sitemap',this)"><span class="ico">🗺️</span>Sitemap</button>
       <button class="nav-item" onclick="showPanel('ads',this)"><span class="ico">📢</span>Ads Settings</button>
       <button class="nav-item" onclick="showPanel('products',this)"><span class="ico">🛍️</span>Products</button>
       <div style="margin-top:auto;padding:1rem;">
@@ -689,7 +690,34 @@
         </div>
       </div>
 
-            <div class="emodal-overlay" id="editModal">
+            <!-- ═══ SITEMAP PANEL ═══ -->
+      <div class="panel" id="panel-sitemap">
+        <div class="panel-title">🗺️ Sitemap Generator</div>
+        <div class="form-card" style="margin-bottom:1.5rem;">
+          <div class="form-card-title">ℹ️ How it works</div>
+          <p style="font-size:.85rem;color:var(--text2);line-height:1.7;">Click <strong style="color:var(--text)">Generate</strong> → reads all videos + playlists → creates sitemap.xml with titles, descriptions and thumbnails → download → upload to GitHub root. Do this every time you add new videos.</p>
+        </div>
+        <div class="form-card" style="margin-bottom:1.5rem;">
+          <div class="form-card-title">⚙️ Settings</div>
+          <div class="fg" style="margin-bottom:1rem;">
+            <label class="flabel">Site URL</label>
+            <input type="text" class="finput" id="smSiteUrl" value="https://www.rongkunkmeanmnus.com">
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap;">
+          <button class="submit-btn" onclick="generateSitemap()" id="smGenBtn">🗺️ Generate Sitemap</button>
+          <button class="submit-btn" id="smDownloadBtn" style="display:none;background:#22c55e;color:#000;" onclick="downloadSitemap()">⬇️ Download sitemap.xml</button>
+        </div>
+        <div id="smStats" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;">
+          <div style="font-size:.82rem;color:var(--text2);" id="smStatsText"></div>
+        </div>
+        <div class="form-card" id="smPreviewWrap" style="display:none;">
+          <div class="form-card-title">📄 Preview</div>
+          <pre id="smPreview" style="font-size:.68rem;color:#666;line-height:1.6;overflow-x:auto;white-space:pre-wrap;background:var(--bg);padding:1rem;border-radius:8px;border:1px solid var(--border);margin-top:.75rem;max-height:250px;overflow-y:auto;"></pre>
+        </div>
+      </div>
+
+      <div class="emodal-overlay" id="editModal">
   <div class="emodal">
     <div class="emodal-head">
       <div class="emodal-title">Edit Video</div>
