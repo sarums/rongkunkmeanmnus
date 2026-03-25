@@ -129,6 +129,7 @@ window.showPanel = (id, btn) => {
   if(id==='settings') loadSettings();
   if(id==='ads') loadAdsSettings();
   if(id==='products') loadProducts();
+  if(id==='sitemap') {}; // sitemap panel ready
   if(id==='addvideo'){ populateSelects(); }
 };
 
@@ -1606,6 +1607,135 @@ window.saveProduct = async id=>{
     renderProducts();
   } catch(e){ showToast('Error',e.message,'err'); }
 };
+
+// ══════════════════════════════════════════
+//  SITEMAP GENERATOR
+// ══════════════════════════════════════════
+let _sitemapXml = '';
+
+window.generateSitemap = async ()=>{
+  const btn    = qs('smGenBtn');
+  const dlBtn  = qs('smDownloadBtn');
+  const stats  = qs('smStats');
+  const statsT = qs('smStatsText');
+  const preview= qs('smPreview');
+  const preWrap= qs('smPreviewWrap');
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  if(dlBtn) dlBtn.style.display='none';
+  if(stats) stats.style.display='none';
+  if(preWrap) preWrap.style.display='none';
+
+  const siteUrl = (qs('smSiteUrl')?.value||'https://www.rongkunkmeanmnus.com').replace(/\/+$/,'');
+  const today   = new Date().toISOString().split('T')[0];
+
+  try {
+    const[vSnap,plSnap] = await Promise.all([
+      getDocs(query(collection(db,'videos'),orderBy('createdAt','desc'))),
+      getDocs(collection(db,'playlists'))
+    ]);
+    const vids = vSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const pls  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
+    xml += '        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n\n';
+
+    // Static pages
+    const statics = [
+      {loc:'',        priority:'1.0', freq:'daily'},
+      {loc:'/about',  priority:'0.5', freq:'monthly'},
+      {loc:'/privacy',priority:'0.3', freq:'monthly'},
+      {loc:'/terms',  priority:'0.3', freq:'monthly'},
+      {loc:'/contact',priority:'0.4', freq:'monthly'},
+    ];
+    statics.forEach(s=>{
+      xml += '  <url>\n';
+      xml += '    <loc>' + siteUrl + s.loc + '</loc>\n';
+      xml += '    <changefreq>' + s.freq + '</changefreq>\n';
+      xml += '    <priority>' + s.priority + '</priority>\n';
+      xml += '    <lastmod>' + today + '</lastmod>\n';
+      xml += '  </url>\n\n';
+    });
+
+    // Videos
+    vids.forEach(v=>{
+      const lastmod = v.createdAt?.toDate ? v.createdAt.toDate().toISOString().split('T')[0] : today;
+      const title   = (v.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const desc    = (v.description||v.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const thumb   = v.customThumb||(v.platform==='dailymotion'?'https://www.dailymotion.com/thumbnail/video/'+(v.videoId||''):'');
+      const dur     = durToSec(v.duration||'');
+
+      xml += '  <url>\n';
+      xml += '    <loc>' + siteUrl + '/watch/' + v.id + '</loc>\n';
+      xml += '    <lastmod>' + lastmod + '</lastmod>\n';
+      xml += '    <changefreq>weekly</changefreq>\n';
+      xml += '    <priority>0.8</priority>\n';
+      if(title){
+        xml += '    <video:video>\n';
+        xml += '      <video:title>' + title + '</video:title>\n';
+        if(desc) xml += '      <video:description>' + desc + '</video:description>\n';
+        if(thumb) xml += '      <video:thumbnail_loc>' + thumb + '</video:thumbnail_loc>\n';
+        if(dur)  xml += '      <video:duration>' + dur + '</video:duration>\n';
+        xml += '    </video:video>\n';
+      }
+      xml += '  </url>\n\n';
+    });
+
+    // Playlists
+    pls.forEach(pl=>{
+      const lastmod = pl.createdAt?.toDate ? pl.createdAt.toDate().toISOString().split('T')[0] : today;
+      xml += '  <url>\n';
+      xml += '    <loc>' + siteUrl + '/watch/' + pl.id + '/ep-1</loc>\n';
+      xml += '    <lastmod>' + lastmod + '</lastmod>\n';
+      xml += '    <changefreq>weekly</changefreq>\n';
+      xml += '    <priority>0.7</priority>\n';
+      xml += '  </url>\n\n';
+    });
+
+    xml += '</urlset>';
+    _sitemapXml = xml;
+
+    const total = statics.length + vids.length + pls.length;
+    if(stats && statsT){
+      stats.style.display='block';
+      statsT.innerHTML = 'Generated <strong style="color:var(--text)">' + total + ' URLs</strong> — ' + statics.length + ' pages · ' + vids.length + ' videos · ' + pls.length + ' playlists';
+    }
+
+    // Preview first 3 video entries
+    if(preWrap && preview){
+      const lines = xml.split('\n');
+      preview.textContent = lines.slice(0,40).join('\n') + '\n...';
+      preWrap.style.display='block';
+    }
+
+    if(dlBtn) dlBtn.style.display='inline-flex';
+    showToast('Done!', 'Sitemap ready — click Download', 'ok');
+  } catch(e){
+    showToast('Error', e.message, 'err');
+  }
+  btn.disabled=false;
+  btn.textContent='Generate Sitemap';
+};
+
+window.downloadSitemap = ()=>{
+  if(!_sitemapXml) return;
+  const blob = new Blob([_sitemapXml],{type:'application/xml'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='sitemap.xml'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Downloaded!','Upload sitemap.xml to GitHub root','ok');
+};
+
+function durToSec(str){
+  if(!str) return '';
+  const p=str.trim().split(':').map(Number);
+  if(p.length===2) return String(p[0]*60+p[1]);
+  if(p.length===3) return String(p[0]*3600+p[1]*60+p[2]);
+  return '';
+}
 
 // ── AUTO START ──
 // ── COMMENTS PANEL ──────────────────────────────────
