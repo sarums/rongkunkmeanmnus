@@ -2,7 +2,7 @@
    RongKunKmeanMnus — Main Stylesheet
    ═══════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+/* Fonts loaded via preload in HTML for better performance */
 
 /* ── RESET & BASE ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -320,8 +320,10 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .watch-divider { width: 1px; height: 30px; background: var(--border); flex-shrink:0; }
 .share-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 9999px; font-size: .74rem; font-weight: 700; color: #aaa; cursor: pointer; transition: all .2s; }
 .share-btn:hover { background: rgba(255,255,255,.12); color: #fff; border-color:#555; }
-.watch-desc { font-size: .82rem; color: #555; line-height: 1.7; font-weight: 500; margin-top:12px; }
-.watch-desc-expand { font-size:.75rem; font-weight:700; color:var(--brand); cursor:pointer; margin-top:4px; display:inline-block; }
+.watch-desc-wrap { background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:12px 14px; margin-top:14px; }
+.watch-desc { font-size: .84rem; color: #666; line-height: 1.75; font-weight: 400; }
+.watch-desc-expand { font-size:.75rem; font-weight:700; color:var(--brand); cursor:pointer; margin-top:6px; display:inline-block; transition:opacity .2s; }
+.watch-desc-expand:hover { opacity:.8; }
 .watch-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
 .watch-tag { font-size:.7rem; font-weight:700; color:#555; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:9999px; padding:3px 10px; transition:all .2s; cursor:pointer; }
 .watch-tag:hover { color:var(--brand); border-color:var(--brand); }
