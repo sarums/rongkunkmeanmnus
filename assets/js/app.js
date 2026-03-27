@@ -247,7 +247,7 @@ window.doSearch=(q2)=>{
   history.pushState({page:'search',q},"",`/search?q=${encodeURIComponent(q)}`);
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-search"));
   window.scrollTo(0,0);
-  updateMeta({title:`Search: ${q}`, desc:`Search results for "${q}"`});
+  updateMeta({title:`Search: ${q} | រោងកុនគ្មានមនុស្ស`, desc:`Search results for "${q}" — Watch free drama and entertainment videos on រោងកុនគ្មានមនុស្ស.`});
   const results=videos.filter(v=>matchSearch(v,q));
   $("search-info").textContent=`${results.length} results for "${q}"`;
   renderGrid($("search-grid"),results);
@@ -346,7 +346,7 @@ function showPage(id,push=true){
   const bnMap={home:'bn-home',search:'bn-search',history:'bn-history'};
   if(bnMap[id]) $(bnMap[id])?.classList.add('active');
   // Reset meta for non-video pages
-  if(id==='home') updateMeta({title:null, desc:'Watch Khmer drama, series and entertainment videos online.', url:'https://www.rongkunkmeanmnus.com'});
+  if(id==='home') updateMeta({title:'រោងកុនគ្មានមនុស្ស | Watch Chinese Drama, Khmer Drama Free Online', desc:'Watch Chinese Drama, Khmer Drama and Khmer dubbed series online for free. រោងកុនគ្មានមនុស្ស — your free streaming destination. No subscription needed.', url:'https://www.rongkunkmeanmnus.com'});
 }
 window.goHome=e=>{
   e?.preventDefault();
@@ -1040,7 +1040,7 @@ window.seeAll=sid=>{
   const saBg=$("cat-banner-bg");
   const saFirst=(sec.video_ids||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean)[0];
   if(saBg) saBg.style.backgroundImage=saFirst?`url('${getThumb(saFirst)}')`:'none';
-  updateMeta({title:sec.title, desc:`Browse all ${sec.title} content`, url:location.href});
+  updateMeta({title:`${sec.title} | រោងកុនគ្មានមនុស្ស`, desc:`Watch the best ${sec.title} videos online for free. Stream ${sec.title} content on រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus) — no subscription needed.`, url:location.href});
 
   let list=[];
   if(sec.target_type==="multi_playlist"||sec.target_type==="playlist"){
@@ -1283,7 +1283,7 @@ function showCatPage(cat){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
   window.scrollTo(0,0);
   $("cat-title").textContent=cat.name;
-  updateMeta({ title:cat.name, desc:`Discover the best ${cat.name} content`, url:location.href });
+  updateMeta({ title:`${cat.name} | រោងកុនគ្មានមនុស្ស`, desc:`Watch free ${cat.name} videos online. Stream the best ${cat.name} content on រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus). No subscription needed.`, url:location.href });
 
   const ids=cat.target_ids||(cat.target_id?[cat.target_id]:[]);
 
