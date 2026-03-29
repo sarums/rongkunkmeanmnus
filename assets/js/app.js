@@ -335,8 +335,13 @@ const NP = {
 function showPage(id,push=true){
   if(id!=="watch"){
     previousPage=id;
-
-    // Tear down mini player when leaving watch
+    // Stop video when leaving watch page
+    const iframe = document.getElementById('player-iframe');
+    if(iframe) iframe.src='';
+    // Clear overlay banner if any
+    if(window.clearOverlayBanner) clearOverlayBanner();
+    // Clear pull-to-refresh timer
+    if(window._overlayTimer) clearTimeout(window._overlayTimer);
   }
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push)history.pushState({page:id},"",id==="home"?"/":"/"+id);
@@ -526,24 +531,47 @@ async function loadAll(){
 }
 
 function startVideoListener(){
-  onSnapshot(query(collection(db,"videos"),orderBy("createdAt","desc")), snap=>{
-    const updated = snap.docs.map(d=>({id:d.id,...d.data()}));
-    // Check if any episodeNum changed
-    let changed = false;
-    updated.forEach(uv=>{
-      const old = videos.find(v=>v.id===uv.id);
-      if(old && old.episodeNum !== uv.episodeNum){ changed=true; Object.assign(old,{episodeNum:uv.episodeNum}); }
-      if(!old){ changed=true; videos.unshift(uv); }
-    });
-    if(changed){
-      // Rebuild all visible card grids
-      document.querySelectorAll('.vid-grid').forEach(grid=>{
-        const ids = [...grid.querySelectorAll('.vcard')].map(c=>c.dataset.id).filter(Boolean);
-        if(!ids.length) return;
-        grid.innerHTML = videos.filter(v=>ids.includes(v.id)).map(v=>buildCard(v)).join('');
-      });
+  let isFirst = true;
+  onSnapshot(query(collection(db,'videos'),orderBy('createdAt','desc')), snap=>{
+    // Skip first snapshot — already loaded in loadAll()
+    if(isFirst){ isFirst=false; return; }
+
+    const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+
+    // Check what changed
+    const addedIds   = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
+    const removedIds = videos.filter(v=>!updated.find(uv=>uv.id===v.id)).map(v=>v.id);
+    const hasChanges = addedIds.length > 0 || removedIds.length > 0 ||
+      updated.some(uv=>{ const old=videos.find(v=>v.id===uv.id); return old && JSON.stringify(old)!==JSON.stringify(uv); });
+
+    if(!hasChanges) return;
+
+    // Update videos array
+    videos = updated;
+
+    // Rebuild home feed sections
+    buildSections();
+    buildHero();
+
+    // Show toast for new videos
+    if(addedIds.length > 0){
+      showUpdateToast(addedIds.length);
     }
   });
+}
+
+// Show a subtle "new content" toast
+function showUpdateToast(count){
+  const existing = document.getElementById('update-toast');
+  if(existing) existing.remove();
+
+  const t = document.createElement('div');
+  t.id = 'update-toast';
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid rgba(242,125,38,.3);color:#f27d26;font-size:.78rem;font-weight:700;padding:10px 20px;border-radius:9999px;z-index:500;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:fadeUp .3s ease;cursor:pointer;white-space:nowrap;';
+  t.innerHTML = `<span>🎬</span> ${count} new video${count>1?'s':''} added!`;
+  t.onclick = ()=>{ window.scrollTo({top:0,behavior:'smooth'}); t.remove(); };
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 5000);
 }
 
 function setupLazyLoad(){
@@ -648,6 +676,9 @@ function setNavActive(matchId){
 // Single entry point for all nav category clicks
 window.navGo=(id)=>{
   const c=categories.find(x=>x.id===id); if(!c)return;
+  // Stop video when navigating away
+  const iframe=document.getElementById('player-iframe');
+  if(iframe) iframe.src='';
   NP.start();
   const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
   const slug='/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
