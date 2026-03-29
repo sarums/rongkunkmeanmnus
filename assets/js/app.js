@@ -458,10 +458,7 @@ function show404(){
 window.addEventListener("popstate",e=>{
   if(!e.state) return routeFromUrl(false);
   if(e.state.page==="watch"&&e.state.videoId){
-    // Stop any currently playing video first
-    const iframe=$('player-iframe');
-    if(iframe) iframe.src='about:blank';
-    setTimeout(()=>openVideo(e.state.videoId,false), 50);
+    openVideo(e.state.videoId,false);
   } else if(e.state.page==="cat"){
     const cat=categories.find(c=>c.id===e.state.catId);
     if(cat) showCatPage(cat);
@@ -1129,9 +1126,8 @@ window.openVideo=async (id,push=true)=>{
   const loadVideo=()=>{
     const iframe=$("player-iframe");
     const embedUrl=getEmbedUrl(v);
-    // Clear first then set with small delay for reliable reload
-    iframe.src='about:blank';
-    setTimeout(()=>{ iframe.src=embedUrl; }, 100);
+    // Set new src directly - browser handles reload
+    iframe.setAttribute('src', embedUrl);
     scheduleMidrolls(v.duration||'');
   };
   // Show pre-roll (config already loaded at startup)
@@ -1189,9 +1185,14 @@ window.openVideo=async (id,push=true)=>{
 
   // Update episode active state immediately (fast visual feedback)
   document.querySelectorAll('.pl-item').forEach(el=>{
-    const isActive = (el.getAttribute('onclick')||'').includes("'"+id+"'");
-    el.classList.toggle('current', isActive);
-    el.classList.toggle('watched', !isActive && el.classList.contains('watched'));
+    const onclick = el.getAttribute('onclick')||'';
+    const isActive = onclick.includes(id);
+    if(isActive){
+      el.classList.add('current');
+      el.classList.remove('watched');
+    } else {
+      el.classList.remove('current');
+    }
   });
 
   // Playlist
@@ -1206,7 +1207,7 @@ window.openVideo=async (id,push=true)=>{
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
         href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
-        onclick="event.preventDefault();openVideo('${pv.id}')">
+        onclick="event.preventDefault();openVideo('${pv.id}',true)">
         <div class="pl-thumb" style="position:relative;">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
           ${isCurrent?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:''}
