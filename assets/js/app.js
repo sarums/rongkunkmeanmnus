@@ -458,6 +458,8 @@ function show404(){
 window.addEventListener("popstate",e=>{
   if(!e.state) return routeFromUrl(false);
   if(e.state.page==="watch"&&e.state.videoId){
+    // Clear current video immediately for visual feedback
+    $('player-iframe').src='';
     openVideo(e.state.videoId,false);
   } else if(e.state.page==="cat"){
     const cat=categories.find(c=>c.id===e.state.catId);
@@ -1086,9 +1088,11 @@ window.seeAll=sid=>{
 };
 
 // ── Watch ──
+let _openVideoId = null;
 window.openVideo=async (id,push=true)=>{
+  if(!id) return;
+  _openVideoId = id; // track latest requested video
   NP.start();
-
 
   // Save current URL as previous page before navigating (for back button)
   if(push) previousPage=location.pathname;
@@ -1124,9 +1128,9 @@ window.openVideo=async (id,push=true)=>{
 
   // Show pre-roll ad, then load video with mid-roll schedule
   const loadVideo=()=>{
+    if(_openVideoId !== id) return; // newer video requested - abort
     const iframe=$("player-iframe");
     const embedUrl=getEmbedUrl(v);
-    // Set new src directly - browser handles reload
     iframe.setAttribute('src', embedUrl);
     scheduleMidrolls(v.duration||'');
   };
@@ -1224,8 +1228,8 @@ window.openVideo=async (id,push=true)=>{
     // Scroll active episode into view
     setTimeout(()=>{
       const active=document.querySelector('.pl-item.current');
-      if(active) active.scrollIntoView({behavior:'smooth',block:'nearest'});
-    },200);
+      if(active) active.scrollIntoView({behavior:'smooth',block:'center'});
+    },150);
     // Show playlist chip on mobile
     const chipPl=$("chip-playlist");
     if(chipPl){ chipPl.style.display=''; chipPl.textContent=`📋 ${pl.name}`; }
