@@ -392,11 +392,7 @@ async function silentRefresh(){
   }catch(e){}
 }
 window.goBack=()=>{
-  if(previousPage&&previousPage!==location.pathname){
-    history.back();
-  } else {
-    showPage('home');
-  }
+  history.back();
 };
 
 function routeFromUrl(push=false){
