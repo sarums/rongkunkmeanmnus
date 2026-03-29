@@ -1125,9 +1125,11 @@ window.openVideo=async (id,push=true)=>{
 
   // Show pre-roll ad, then load video with mid-roll schedule
   const loadVideo=()=>{
-    $("player-iframe").src=getEmbedUrl(v);
+    const iframe=$("player-iframe");
+    // Force reload — clear src first to ensure video restarts
+    iframe.src='';
+    requestAnimationFrame(()=>{ iframe.src=getEmbedUrl(v); });
     scheduleMidrolls(v.duration||'');
-
   };
   // Show pre-roll (config already loaded at startup)
   if(window.showPreroll) showPreroll(loadVideo);
@@ -1182,6 +1184,13 @@ window.openVideo=async (id,push=true)=>{
   updateDoc(doc(db,"videos",id),{views:increment(1)}).catch(()=>{});
   const lv=videos.find(x=>x.id===id);if(lv)lv.views=(lv.views||0)+1;
 
+  // Update episode active state immediately (fast visual feedback)
+  document.querySelectorAll('.pl-item').forEach(el=>{
+    const href = el.getAttribute('href')||'';
+    const isActive = el.getAttribute('onclick')?.includes(id);
+    el.classList.toggle('current', !!isActive);
+  });
+
   // Playlist
   const pl=playlists.find(p=>(p.videos||[]).includes(id));
   if(pl&&(pl.videos||[]).length>1){
@@ -1208,6 +1217,11 @@ window.openVideo=async (id,push=true)=>{
       </a>`;
     }).join("");
     $("playlist-panel").style.display="";
+    // Scroll active episode into view
+    setTimeout(()=>{
+      const active=$('.pl-item.current');
+      if(active) active.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },100);
     // Show playlist chip on mobile
     const chipPl=$("chip-playlist");
     if(chipPl){ chipPl.style.display=''; chipPl.textContent=`📋 ${pl.name}`; }
