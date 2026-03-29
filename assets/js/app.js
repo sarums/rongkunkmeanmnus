@@ -346,7 +346,8 @@ function showPage(id,push=true){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push){
     if(id==='home'){
-      history.replaceState({page:'home'},"","/"); // replace instead of push for home
+      // Use pushState for home if it's a navigation, so we can go back to it
+      history.pushState({page:'home'},"","/");
     } else {
       history.pushState({page:id},"","/"+id);
     }
@@ -458,21 +459,35 @@ function show404(){
 
 
 window.addEventListener("popstate",e=>{
-  if(!e.state) return routeFromUrl(false);
-  if(e.state.page==="watch"&&e.state.videoId){
-    // Clear current video immediately for visual feedback
-    $('player-iframe').src='';
-    openVideo(e.state.videoId,false);
+  // If no state, try to route from URL (handles initial page or direct URL entry)
+  if(!e.state) {
+    routeFromUrl(false);
+    return;
+  }
+  
+  // Handle different page types from state
+  if(e.state.page==="watch" && e.state.videoId){
+    // Re-open video without pushing to history
+    openVideo(e.state.videoId, false);
   } else if(e.state.page==="cat"){
-    const cat=categories.find(c=>c.id===e.state.catId);
+    const cat = categories.find(c => c.id === e.state.catId);
     if(cat) showCatPage(cat);
     else routeFromUrl(false);
-  } else if(e.state.page==='search'&&e.state.q){
-    doSearch(e.state.q);
+  } else if(e.state.page==='search' && e.state.q){
+    // Re-run search without pushing to history
+    const q = e.state.q;
+    document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-search"));
+    window.scrollTo(0,0);
+    const results = videos.filter(v => matchSearch(v, q));
+    if($("search-info")) $("search-info").textContent = `${results.length} results for "${q}"`;
+    renderGrid($("search-grid"), results);
   } else if(e.state.page==='history'){
     showHistoryPage();
+  } else if(e.state.page==='home'){
+    showPage('home', false);
+    buildNav('home');
   } else if(e.state.page){
-    showPage(e.state.page,false);
+    showPage(e.state.page, false);
   }
 });
 
