@@ -458,7 +458,10 @@ function show404(){
 window.addEventListener("popstate",e=>{
   if(!e.state) return routeFromUrl(false);
   if(e.state.page==="watch"&&e.state.videoId){
-    openVideo(e.state.videoId,false);
+    // Stop any currently playing video first
+    const iframe=$('player-iframe');
+    if(iframe) iframe.src='about:blank';
+    setTimeout(()=>openVideo(e.state.videoId,false), 50);
   } else if(e.state.page==="cat"){
     const cat=categories.find(c=>c.id===e.state.catId);
     if(cat) showCatPage(cat);
@@ -1095,7 +1098,6 @@ window.openVideo=async (id,push=true)=>{
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
   window.scrollTo(0,0);
   playlistQueue=[];plQueueIdx=0;
-  $("player-iframe").src="";
   $("playlist-panel").style.display="none";
   $("suggested-list").style.display="";
   if($("suggested-list-mobile")) $("suggested-list-mobile").style.display="";
@@ -1126,9 +1128,10 @@ window.openVideo=async (id,push=true)=>{
   // Show pre-roll ad, then load video with mid-roll schedule
   const loadVideo=()=>{
     const iframe=$("player-iframe");
-    // Force reload — clear src first to ensure video restarts
-    iframe.src='';
-    requestAnimationFrame(()=>{ iframe.src=getEmbedUrl(v); });
+    const embedUrl=getEmbedUrl(v);
+    // Clear first then set with small delay for reliable reload
+    iframe.src='about:blank';
+    setTimeout(()=>{ iframe.src=embedUrl; }, 100);
     scheduleMidrolls(v.duration||'');
   };
   // Show pre-roll (config already loaded at startup)
@@ -1186,9 +1189,9 @@ window.openVideo=async (id,push=true)=>{
 
   // Update episode active state immediately (fast visual feedback)
   document.querySelectorAll('.pl-item').forEach(el=>{
-    const href = el.getAttribute('href')||'';
-    const isActive = el.getAttribute('onclick')?.includes(id);
-    el.classList.toggle('current', !!isActive);
+    const isActive = (el.getAttribute('onclick')||'').includes("'"+id+"'");
+    el.classList.toggle('current', isActive);
+    el.classList.toggle('watched', !isActive && el.classList.contains('watched'));
   });
 
   // Playlist
@@ -1219,9 +1222,9 @@ window.openVideo=async (id,push=true)=>{
     $("playlist-panel").style.display="";
     // Scroll active episode into view
     setTimeout(()=>{
-      const active=$('.pl-item.current');
+      const active=document.querySelector('.pl-item.current');
       if(active) active.scrollIntoView({behavior:'smooth',block:'nearest'});
-    },100);
+    },200);
     // Show playlist chip on mobile
     const chipPl=$("chip-playlist");
     if(chipPl){ chipPl.style.display=''; chipPl.textContent=`📋 ${pl.name}`; }
