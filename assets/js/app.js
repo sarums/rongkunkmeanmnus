@@ -36,8 +36,7 @@ const db=getFirestore(app);
 let videos=[],playlists=[],categories=[],sections=[];
 let heroVideos=[],heroIndex=0,heroTimer=null;
 let playlistQueue=[],plQueueIdx=0;
-// ✅ FIX: replaced single `previousPage` string with a proper URL stack
-let navStack=[],lastScrollY=0,searchOpen=false,mobileMenuOpen=false;
+let lastScrollY=0,searchOpen=false,mobileMenuOpen=false;
 let siteName="RongKunKmeanMnus";
 
 // ── Watch History (localStorage) ──
@@ -241,9 +240,6 @@ window.doSearch=(q2)=>{
   NP.start();
   if(mobileMenuOpen){ mobileMenuOpen=false; document.body.style.overflow=''; document.body.style.position=''; document.body.style.width=''; const s=$("mobile-menu"),b=$("sheet-backdrop"); if(s)s.style.transform='translateY(100%)'; if(b){b.style.background='rgba(0,0,0,0)';setTimeout(()=>b.style.display='none',350);} }
 
-  // ✅ FIX: push current URL to navStack before searching
-  navStack.push(location.href);
-
   history.pushState({page:'search',q},"",`/search?q=${encodeURIComponent(q)}`);
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-search"));
   window.scrollTo(0,0);
@@ -330,44 +326,30 @@ const NP = {
   }
 };
 
-// ✅ FIX: showPage now pushes the CURRENT url to navStack before navigating,
-//         and always uses pushState (never replaceState) so every page is
-//         a real browser history entry that history.back() can reach.
 function showPage(id, push=true){
   if(id !== "watch"){
-    // Save where we are RIGHT NOW before we leave
-    navStack.push(location.href);
-
     // Stop video when leaving watch page
     const iframe = document.getElementById('player-iframe');
     if(iframe) iframe.src='';
-    // Clear overlay banner if any
     if(window.clearOverlayBanner) clearOverlayBanner();
-    // Clear pull-to-refresh timer
     if(window._overlayTimer) clearTimeout(window._overlayTimer);
   }
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push){
-    // ✅ Always pushState — never replaceState — so every page is in browser history
+    // Always pushState so every page is a real browser history entry
     history.pushState({page:id},"", id==='home' ? '/' : '/'+id);
   }
   window.scrollTo(0,0);
-  // Update bottom nav
   document.querySelectorAll('#bottom-nav a').forEach(a=>a.classList.remove('active'));
   const bnMap={home:'bn-home',search:'bn-search',history:'bn-history'};
   if(bnMap[id]) $(bnMap[id])?.classList.add('active');
-  // Reset meta for non-video pages
   if(id==='home') updateMeta({title:'រោងកុនគ្មានមនុស្ស | Watch Chinese Drama, Khmer Drama Free Online', desc:'Watch Chinese Drama, Khmer Drama and Khmer dubbed series online for free. រោងកុនគ្មានមនុស្ស — your free streaming destination. No subscription needed.', url:'https://www.rongkunkmeanmnus.com'});
 }
 
-// ✅ FIX: goHome clears the navStack (intentional root navigation) and always pushState
 window.goHome=e=>{
   e?.preventDefault();
-  // Stop any playing video
   const iframe=document.getElementById('player-iframe');
   if(iframe) iframe.src='';
-  // Clear stack — user deliberately went home
-  navStack=[];
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-home"));
   history.pushState({page:'home'},"","/");
   window.scrollTo(0,0);
@@ -401,17 +383,13 @@ async function silentRefresh(){
   }catch(e){}
 }
 
-// ✅ FIX: goBack pops navStack and uses browser history.back() so it works
-//         unlimited times, one real page per back press.
+// Simple and correct: trust the browser's native history stack entirely.
+// Every navigation already calls history.pushState(), so history.back()
+// will always go back exactly one real page, unlimited times.
 window.goBack=()=>{
-  if(navStack.length > 0){
-    navStack.pop(); // discard — browser history.back() handles the actual URL
-    history.back();
-  } else if(window.history.length > 1){
-    // navStack is empty but browser still has history (e.g. direct URL load)
+  if(window.history.length > 1){
     history.back();
   } else {
-    // Absolute fallback — nowhere left to go
     goHome();
   }
 };
@@ -473,16 +451,13 @@ function show404(){
   updateMeta({title:'404 — Page Not Found', desc:'The page you are looking for does not exist.'});
 }
 
-// ✅ FIX: popstate handler now also manages navStack so back/forward stays consistent
 window.addEventListener("popstate",e=>{
-  // When user presses browser back/forward, sync navStack
-  // We can't know the exact previous URL here so we just trim the stack
-  // to avoid it growing indefinitely on forward navigation
-  if(navStack.length > 0) navStack.pop();
+  // Stop any playing video when navigating back/forward
+  const iframe=document.getElementById('player-iframe');
+  if(iframe) iframe.src='';
 
   if(!e.state) return routeFromUrl(false);
   if(e.state.page==="watch"&&e.state.videoId){
-    $('player-iframe').src='';
     openVideo(e.state.videoId,false);
   } else if(e.state.page==="cat"){
     const cat=categories.find(c=>c.id===e.state.catId);
@@ -684,14 +659,12 @@ function setNavActive(matchId){
   });
 }
 
-// ✅ FIX: navGo pushes current URL to navStack before navigating
 window.navGo=(id)=>{
   const c=categories.find(x=>x.id===id); if(!c)return;
   const iframe=document.getElementById('player-iframe');
   if(iframe) iframe.src='';
   NP.start();
   // Save current URL before navigating
-  navStack.push(location.href);
   const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
   const slug='/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   history.pushState({page:'cat',catId:id},"",slug);
@@ -1059,7 +1032,6 @@ window.seeAll=sid=>{
 
   const slug='/'+toSlug(sec.title||'all');
   // ✅ FIX: push current URL before navigating
-  navStack.push(location.href);
   history.pushState({page:'cat',secId:sid},"",slug);
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-cat"));
   window.scrollTo(0,0);
@@ -1090,8 +1062,6 @@ window.openVideo=async (id,push=true)=>{
   _openVideoId = id;
   NP.start();
 
-  // ✅ FIX: push current URL to navStack before opening watch page
-  if(push) navStack.push(location.href);
 
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
   window.scrollTo(0,0);
@@ -1351,12 +1321,10 @@ window.openCategoryById=(id)=>{
   showCatPage(cat);
 };
 
-// ✅ FIX: openCategory pushes to navStack when push=true
 window.openCategory=(id,name,push=true)=>{
   const decodedName=decodeURIComponent(name||id);
   const cat=categories.find(c=>c.id===id||c.name===decodedName)||{id,name:decodedName,target_type:'category'};
   if(push){
-    navStack.push(location.href);
     const slug='/'+cat.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
     history.pushState({page:'cat',catId:id},"",slug);
   }
