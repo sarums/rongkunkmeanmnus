@@ -344,7 +344,13 @@ function showPage(id,push=true){
     if(window._overlayTimer) clearTimeout(window._overlayTimer);
   }
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
-  if(push)history.pushState({page:id},"",id==="home"?"/":"/"+id);
+  if(push){
+    if(id==='home'){
+      history.replaceState({page:'home'},"","/"); // replace instead of push for home
+    } else {
+      history.pushState({page:id},"","/"+id);
+    }
+  }
   window.scrollTo(0,0);
   // Update bottom nav
   document.querySelectorAll('#bottom-nav a').forEach(a=>a.classList.remove('active'));
@@ -1225,11 +1231,7 @@ window.openVideo=async (id,push=true)=>{
       </a>`;
     }).join("");
     $("playlist-panel").style.display="";
-    // Scroll active episode into view
-    setTimeout(()=>{
-      const active=document.querySelector('.pl-item.current');
-      if(active) active.scrollIntoView({behavior:'smooth',block:'center'});
-    },150);
+
     // Show playlist chip on mobile
     const chipPl=$("chip-playlist");
     if(chipPl){ chipPl.style.display=''; chipPl.textContent=`📋 ${pl.name}`; }
