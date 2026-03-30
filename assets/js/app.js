@@ -332,43 +332,32 @@ const NP = {
   }
 };
 
-function showPage(id, push = true){
-  if(id !== "watch"){
-    previousPage = id;
-
+function showPage(id,push=true){
+  if(id!=="watch"){
+    previousPage=id;
+    // Stop video when leaving watch page
     const iframe = document.getElementById('player-iframe');
-    if(iframe) iframe.src = '';
-
+    if(iframe) iframe.src='';
+    // Clear overlay banner if any
     if(window.clearOverlayBanner) clearOverlayBanner();
+    // Clear pull-to-refresh timer
     if(window._overlayTimer) clearTimeout(window._overlayTimer);
   }
-
-  document.querySelectorAll(".page").forEach(p =>
-    p.classList.toggle("active", p.id === `page-${id}`)
-  );
-
-  // ✅ ALWAYS push history when user navigates
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push){
-    const urlMap = {
-      home: "/",
-      search: "/search",
-      history: "/history"
-    };
-
-    const url = urlMap[id] || "/" + id;
-
-    history.pushState(
-  { page: 'watch', videoId: id },
-  "",
-  url + "#" + Date.now()
-);
+    if(id==='home'){
+      history.replaceState({page:'home'},"","/"); // replace instead of push for home
+    } else {
+      history.pushState({page:id},"","/"+id);
+    }
   }
-
   window.scrollTo(0,0);
-
+  // Update bottom nav
   document.querySelectorAll('#bottom-nav a').forEach(a=>a.classList.remove('active'));
   const bnMap={home:'bn-home',search:'bn-search',history:'bn-history'};
-  if(bnMap[id]) document.getElementById(bnMap[id])?.classList.add('active');
+  if(bnMap[id]) $(bnMap[id])?.classList.add('active');
+  // Reset meta for non-video pages
+  if(id==='home') updateMeta({title:'រោងកុនគ្មានមនុស្ស | Watch Chinese Drama, Khmer Drama Free Online', desc:'Watch Chinese Drama, Khmer Drama and Khmer dubbed series online for free. រោងកុនគ្មានមនុស្ស — your free streaming destination. No subscription needed.', url:'https://www.rongkunkmeanmnus.com'});
 }
 window.goHome=e=>{
   e?.preventDefault();
@@ -403,7 +392,11 @@ async function silentRefresh(){
   }catch(e){}
 }
 window.goBack=()=>{
-  history.back();
+  if(previousPage&&previousPage!==location.pathname){
+    history.back();
+  } else {
+    showPage('home');
+  }
 };
 
 function routeFromUrl(push=false){
@@ -468,35 +461,22 @@ function show404(){
 }
 
 
-window.addEventListener("popstate", (e) => {
-  if(!e.state){
-    routeFromUrl(false);
-    return;
-  }
-
-  const state = e.state;
-
-  // ❌ DO NOT push history here
-
-  if(state.page === "watch"){
-    openVideo(state.videoId, false);
-  }
-
-  else if(state.page === "cat"){
-    const cat = categories.find(c => c.id === state.catId);
+window.addEventListener("popstate",e=>{
+  if(!e.state) return routeFromUrl(false);
+  if(e.state.page==="watch"&&e.state.videoId){
+    // Clear current video immediately for visual feedback
+    $('player-iframe').src='';
+    openVideo(e.state.videoId,false);
+  } else if(e.state.page==="cat"){
+    const cat=categories.find(c=>c.id===e.state.catId);
     if(cat) showCatPage(cat);
-  }
-
-  else if(state.page === "search"){
-    showPage("search", false);
-  }
-
-  else if(state.page === "history"){
+    else routeFromUrl(false);
+  } else if(e.state.page==='search'&&e.state.q){
+    doSearch(e.state.q);
+  } else if(e.state.page==='history'){
     showHistoryPage();
-  }
-
-  else {
-    showPage("home", false);
+  } else if(e.state.page){
+    showPage(e.state.page,false);
   }
 });
 
@@ -1141,23 +1121,16 @@ window.openVideo=async (id,push=true)=>{
   const v=videos.find(x=>x.id===id);if(!v)return;
 
   // Build watch URL
-if(push){
-  const pl = playlists.find(p => (p.videos || []).includes(id));
-
-  let url;
-  if(pl){
-    const ep = pl.videos.indexOf(id) + 1;
-    url = `/watch/${playlistSlug(pl)}/ep-${ep}`;
-  } else {
-    url = `/watch/${videoSlug(v)}`;
+  if(push){
+    const pl2=playlists.find(p=>(p.videos||[]).includes(id));
+    if(pl2){
+      const epNum=(pl2.videos||[]).indexOf(id)+1;
+      const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
+      history.pushState({page:'watch',videoId:id},"",watchUrl);
+    } else {
+      history.pushState({page:'watch',videoId:id},"",`/watch/${videoSlug(v)}`);
+    }
   }
-
-history.pushState(
-  { page: 'watch', videoId: id },
-  "",
-  url + "?t=" + Date.now()
-);
-}
 
   // Show pre-roll ad, then load video with mid-roll schedule
   const loadVideo=()=>{
