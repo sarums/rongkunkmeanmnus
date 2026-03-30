@@ -346,9 +346,9 @@ function showPage(id,push=true){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push){
     if(id==='home'){
-      history.replaceState({page:'home'},"","/"); // replace instead of push for home
+      history.replaceState({page:'home'},'','/');
     } else {
-      history.pushState({page:id},"","/"+id);
+      history.pushState({page:id},'','/'+id);
     }
   }
   window.scrollTo(0,0);
@@ -361,6 +361,8 @@ function showPage(id,push=true){
 }
 window.goHome=e=>{
   e?.preventDefault();
+  // Stop video
+  $('player-iframe').src='';
   showPage("home");
   buildNav('home');
   // Footer home active
@@ -462,21 +464,24 @@ function show404(){
 
 
 window.addEventListener("popstate",e=>{
-  if(!e.state) return routeFromUrl(false);
-  if(e.state.page==="watch"&&e.state.videoId){
-    // Clear current video immediately for visual feedback
+  const state = e.state;
+  if(!state){ showPage('home',false); return; }
+
+  if(state.page==='watch' && state.videoId){
     $('player-iframe').src='';
-    openVideo(e.state.videoId,false);
-  } else if(e.state.page==="cat"){
-    const cat=categories.find(c=>c.id===e.state.catId);
+    openVideo(state.videoId, false);
+  } else if(state.page==='cat'){
+    const cat = categories.find(c=>c.id===state.catId);
     if(cat) showCatPage(cat);
-    else routeFromUrl(false);
-  } else if(e.state.page==='search'&&e.state.q){
-    doSearch(e.state.q);
-  } else if(e.state.page==='history'){
+    else showPage('home',false);
+  } else if(state.page==='search' && state.q){
+    doSearch(state.q);
+  } else if(state.page==='history'){
     showHistoryPage();
-  } else if(e.state.page){
-    showPage(e.state.page,false);
+  } else if(state.page==='home'){
+    showPage('home',false);
+  } else {
+    showPage('home',false);
   }
 });
 
@@ -522,6 +527,10 @@ async function loadAll(){
     buildNav();buildHero();buildSections();
     initRecommended();
     setupRecObserver();
+    // Set initial history state so popstate always works
+    if(!history.state){
+      history.replaceState({page:'home'},'',location.pathname+location.search);
+    }
     routeFromUrl(false);
     // Hide loader
     const loader=$('page-loader');
