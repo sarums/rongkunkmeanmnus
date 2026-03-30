@@ -357,7 +357,11 @@ function showPage(id, push = true){
 
     const url = urlMap[id] || "/" + id;
 
-    history.pushState({page:'watch',videoId:id},"",watchUrl + "#" + Date.now());
+    history.pushState(
+  { page: 'watch', videoId: id },
+  "",
+  url + "#" + Date.now()
+);
   }
 
   window.scrollTo(0,0);
