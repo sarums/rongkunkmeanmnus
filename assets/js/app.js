@@ -332,7 +332,7 @@ const NP = {
   }
 };
 
-function showPage(id, push=true){
+function showPage(id,push=true){
   if(id!=="watch"){
     previousPage=id;
     // Stop video when leaving watch page
@@ -346,19 +346,7 @@ function showPage(id, push=true){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push){
     if(id==='home'){
-      history.pushState({page:'home'},"","/");
-    } else if(id==='history'){
-      history.pushState({page:'history'},"","/history");
-    } else if(id==='about'){
-      history.pushState({page:'about'},"","/about");
-    } else if(id==='privacy'){
-      history.pushState({page:'privacy'},"","/privacy");
-    } else if(id==='terms'){
-      history.pushState({page:'terms'},"","/terms");
-    } else if(id==='contact'){
-      history.pushState({page:'contact'},"","/contact");
-    } else if(id==='search'){
-      // Don't push state here - doSearch handles it
+      history.replaceState({page:'home'},"","/"); // replace instead of push for home
     } else {
       history.pushState({page:id},"","/"+id);
     }
@@ -370,15 +358,10 @@ function showPage(id, push=true){
   if(bnMap[id]) $(bnMap[id])?.classList.add('active');
   // Reset meta for non-video pages
   if(id==='home') updateMeta({title:'រោងកុនគ្មានមនុស្ស | Watch Chinese Drama, Khmer Drama Free Online', desc:'Watch Chinese Drama, Khmer Drama and Khmer dubbed series online for free. រោងកុនគ្មានមនុស្ស — your free streaming destination. No subscription needed.', url:'https://www.rongkunkmeanmnus.com'});
-  if(id==='about') updateMeta({title:'About Us | រោងកុនគ្មានមនុស្ស', desc:'Learn more about RongKunKmeanMnus - your free streaming destination for Chinese and Khmer dramas.'});
-  if(id==='privacy') updateMeta({title:'Privacy Policy | រោងកុនគ្មានមនុស្ស', desc:'Read our privacy policy to understand how we protect your data.'});
-  if(id==='terms') updateMeta({title:'Terms of Service | រោងកុនគ្មានមនុស្ស', desc:'Terms and conditions for using RongKunKmeanMnus streaming service.'});
-  if(id==='contact') updateMeta({title:'Contact Us | រោងកុនគ្មានមនុស្ស', desc:'Get in touch with RongKunKmeanMnus support team.'});
 }
 window.goHome=e=>{
   e?.preventDefault();
-  history.pushState({page:'home'},"","/");
-  showPage("home", false);
+  showPage("home");
   buildNav('home');
   // Footer home active
   document.querySelectorAll('#footer-links a').forEach(a=>{
@@ -408,10 +391,12 @@ async function silentRefresh(){
     }
   }catch(e){}
 }
-
-// FIXED: Back button now uses browser's native history
-window.goBack = () => {
-  history.back();
+window.goBack=()=>{
+  if(previousPage&&previousPage!==location.pathname){
+    history.back();
+  } else {
+    showPage('home');
+  }
 };
 
 function routeFromUrl(push=false){
@@ -451,13 +436,6 @@ function routeFromUrl(push=false){
   const cat=categories.find(c=>toSlug(c.name)===slug);
   if(cat){ showCatPage(cat); return; }
 
-  // About pages
-  if(path==='/about'){ showPage('about',false); return; }
-  if(path==='/privacy'){ showPage('privacy',false); return; }
-  if(path==='/terms'){ showPage('terms',false); return; }
-  if(path==='/contact'){ showPage('contact',false); return; }
-  if(path==='/donate'){ openDonateModal(); showPage('home',false); return; }
-
   // Search: /search?q=...
   if(path==='/search'){
     const q=new URLSearchParams(location.search).get('q')||'';
@@ -482,102 +460,24 @@ function show404(){
   updateMeta({title:'404 — Page Not Found', desc:'The page you are looking for does not exist.'});
 }
 
-// FIXED: Enhanced popstate handler for complete history navigation
-window.addEventListener("popstate", e => {
-  const path = location.pathname;
-  
-  // Handle home
-  if (path === "/" || path === "") {
-    showPage("home", false);
-    updateMeta({
-      title: 'រោងកុនគ្មានមនុស្ស | Watch Chinese Drama, Khmer Drama Free Online',
-      desc: 'Watch Chinese Drama, Khmer Drama and Khmer dubbed series online for free.',
-      url: 'https://www.rongkunkmeanmnus.com'
-    });
-    buildNav('home');
-    return;
-  }
-  
-  // Handle watch page
-  if (path.startsWith("/watch/")) {
-    const parts = path.slice(7).split("/");
-    if (parts.length >= 2) {
-      const plSlug = parts[0];
-      const epRaw = parts[1] || '';
-      if (/^ep-\d+$/.test(epRaw)) {
-        const epNum = parseInt(epRaw.replace('ep-', '')) || 1;
-        const pl = playlists.find(p => playlistSlug(p) === plSlug || toSlug(p.name) === plSlug);
-        if (pl && (pl.videos || []).length) {
-          const vidId = pl.videos[epNum - 1];
-          if (vidId) {
-            const vid = videos.find(v => v.id === vidId);
-            if (vid) {
-              openVideo(vid.id, false);
-              return;
-            }
-          }
-        }
-      }
-    }
-    if (parts.length === 1) {
-      const vSlug = parts[0];
-      const vid = videos.find(v => videoSlug(v) === vSlug || toSlug(v.title) === vSlug || v.id === vSlug);
-      if (vid) {
-        openVideo(vid.id, false);
-        return;
-      }
-    }
-    show404();
-    return;
-  }
-  
-  // Handle search
-  if (path === '/search') {
-    const q = new URLSearchParams(location.search).get('q') || '';
-    if (q) doSearch(q);
-    else showPage('home', false);
-    return;
-  }
-  
-  // Handle history
-  if (path === '/history') {
+
+window.addEventListener("popstate",e=>{
+  if(!e.state) return routeFromUrl(false);
+  if(e.state.page==="watch"&&e.state.videoId){
+    // Clear current video immediately for visual feedback
+    $('player-iframe').src='';
+    openVideo(e.state.videoId,false);
+  } else if(e.state.page==="cat"){
+    const cat=categories.find(c=>c.id===e.state.catId);
+    if(cat) showCatPage(cat);
+    else routeFromUrl(false);
+  } else if(e.state.page==='search'&&e.state.q){
+    doSearch(e.state.q);
+  } else if(e.state.page==='history'){
     showHistoryPage();
-    return;
+  } else if(e.state.page){
+    showPage(e.state.page,false);
   }
-  
-  // Handle category
-  const slug = path.replace(/^\//, '');
-  const cat = categories.find(c => toSlug(c.name) === slug);
-  if (cat) {
-    showCatPage(cat);
-    return;
-  }
-  
-  // Handle about pages
-  if (path === '/about') {
-    showPage('about', false);
-    return;
-  }
-  if (path === '/privacy') {
-    showPage('privacy', false);
-    return;
-  }
-  if (path === '/terms') {
-    showPage('terms', false);
-    return;
-  }
-  if (path === '/contact') {
-    showPage('contact', false);
-    return;
-  }
-  if (path === '/donate') {
-    openDonateModal();
-    showPage('home', false);
-    return;
-  }
-  
-  // Default to home if nothing matches
-  showPage('home', false);
 });
 
 // ── Load Data ──
@@ -1074,6 +974,8 @@ function buildPlaylistCard(pl){
     <div class="vcard-sub">${pl.description||`${count} episode${count!==1?"s":""}`}</div>
   </a>`;
 }
+
+
 
 function fillSection(sec,rowId){
   const isTrending=sec.target_type==="trending"||sec.title?.toLowerCase().includes("trend");
@@ -1759,6 +1661,7 @@ window.closeMiniPlayer = () => {
   $('player-iframe').src = '';
 };
 
+
 // ── KEYBOARD SHORTCUTS ──
 document.addEventListener('keydown',e=>{
   // Don't fire if typing in an input
@@ -1775,6 +1678,7 @@ document.addEventListener('keydown',e=>{
   }
   if(e.key==='Escape') goBack();
 });
+
 
 // ── DONATE MODAL ─────────────────────────────────────────
 window.openDonateModal = (e)=>{
