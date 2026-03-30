@@ -1135,7 +1135,7 @@ window.openVideo=async (id,push=true)=>{
       const epNum=(pl2.videos||[]).indexOf(id)+1;
       const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
       history.pushState({page:'watch',videoId:id},'',watchUrl);
-      console.log('▶ pushState:', watchUrl, '| history length:', history.length);
+      console.log('▶ pushState:', watchUrl, '| length:', history.length, '| caller:', new Error().stack.split('\n')[2]);
     } else {
       history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
       console.log('▶ pushState:', `/watch/${videoSlug(v)}`, '| history length:', history.length);
