@@ -465,7 +465,6 @@ function show404(){
 
 window.addEventListener("popstate",e=>{
   const state = e.state;
-  console.log('◀ popstate:', state, '| history length:', history.length);
   if(!state){ showPage('home',false); return; }
 
   if(state.page==='watch' && state.videoId){
@@ -559,19 +558,30 @@ function startVideoListener(){
     // Check what changed
     const addedIds   = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
     const removedIds = videos.filter(v=>!updated.find(uv=>uv.id===v.id)).map(v=>v.id);
+    // Only trigger on structural changes (new/deleted videos, title/status changes)
+    // NOT on view count changes to avoid interfering with playback history
     const hasChanges = addedIds.length > 0 || removedIds.length > 0 ||
-      updated.some(uv=>{ const old=videos.find(v=>v.id===uv.id); return old && JSON.stringify(old)!==JSON.stringify(uv); });
+      updated.some(uv=>{
+        const old=videos.find(v=>v.id===uv.id);
+        if(!old) return false;
+        // Only care about title, status, category changes — NOT views
+        return old.title!==uv.title || old.status!==uv.status || 
+               old.category!==uv.category || old.platform!==uv.platform;
+      });
 
     if(!hasChanges) return;
 
     // Update videos array
     videos = updated;
 
-    // Rebuild home feed sections
-    buildSections();
-    buildHero();
+    // Only rebuild if NOT on watch page - avoid interfering with playback
+    const onWatchPage = document.getElementById('page-watch')?.classList.contains('active');
+    if(!onWatchPage){
+      buildSections();
+      buildHero();
+    }
 
-    // Show toast for new videos
+    // Show toast for new videos (always)
     if(addedIds.length > 0){
       showUpdateToast(addedIds.length);
     }
@@ -1135,7 +1145,7 @@ window.openVideo=async (id,push=true)=>{
       const epNum=(pl2.videos||[]).indexOf(id)+1;
       const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
       history.pushState({page:'watch',videoId:id},'',watchUrl);
-      console.log('▶ pushState:', watchUrl, '| length:', history.length, '| caller:', new Error().stack.split('\n')[2]);
+      console.log('▶ pushState:', watchUrl, '| length:', history.length);
     } else {
       history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
       console.log('▶ pushState:', `/watch/${videoSlug(v)}`, '| history length:', history.length);
