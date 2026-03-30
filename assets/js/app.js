@@ -465,6 +465,7 @@ function show404(){
 
 window.addEventListener("popstate",e=>{
   const state = e.state;
+  console.log('◀ popstate:', state, '| history length:', history.length);
   if(!state){ showPage('home',false); return; }
 
   if(state.page==='watch' && state.videoId){
@@ -1103,10 +1104,8 @@ window.seeAll=sid=>{
 };
 
 // ── Watch ──
-let _openVideoId = null;
 window.openVideo=async (id,push=true)=>{
   if(!id) return;
-  _openVideoId = id; // track latest requested video
   NP.start();
 
   // Save current URL as previous page before navigating (for back button)
@@ -1135,18 +1134,18 @@ window.openVideo=async (id,push=true)=>{
     if(pl2){
       const epNum=(pl2.videos||[]).indexOf(id)+1;
       const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
-      history.pushState({page:'watch',videoId:id},"",watchUrl);
+      history.pushState({page:'watch',videoId:id},'',watchUrl);
+      console.log('▶ pushState:', watchUrl, '| history length:', history.length);
     } else {
-      history.pushState({page:'watch',videoId:id},"",`/watch/${videoSlug(v)}`);
+      history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
+      console.log('▶ pushState:', `/watch/${videoSlug(v)}`, '| history length:', history.length);
     }
   }
 
   // Show pre-roll ad, then load video with mid-roll schedule
   const loadVideo=()=>{
-    if(_openVideoId !== id) return; // newer video requested - abort
     const iframe=$("player-iframe");
-    const embedUrl=getEmbedUrl(v);
-    iframe.setAttribute('src', embedUrl);
+    iframe.setAttribute('src', getEmbedUrl(v));
     scheduleMidrolls(v.duration||'');
   };
   // Show pre-roll (config already loaded at startup)
