@@ -357,7 +357,7 @@ function showPage(id, push = true){
 
     const url = urlMap[id] || "/" + id;
 
-    history.pushState({ page: id }, "", url);
+    history.pushState({ page: id }, "", url + "?t=" + Date.now());
   }
 
   window.scrollTo(0,0);
@@ -1148,11 +1148,11 @@ if(push){
     url = `/watch/${videoSlug(v)}`;
   }
 
-  history.pushState(
-    { page: 'watch', videoId: id },
-    "",
-    url
-  );
+history.pushState(
+  { page: 'watch', videoId: id },
+  "",
+  url + "?t=" + Date.now()
+);
 }
 
   // Show pre-roll ad, then load video with mid-roll schedule
