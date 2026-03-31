@@ -1127,6 +1127,7 @@ window.openVideo=async (id,push=true)=>{
   $("suggested-list").style.display="";
   if($("suggested-list-mobile")) $("suggested-list-mobile").style.display="";
   $("watch-next-btn").style.display="none";
+  $("watch-prev-btn").style.display="none";
   clearCountdown();
   // Reset filter chips
   document.querySelectorAll('.watch-filter-chip').forEach(c=>c.classList.remove('active'));
@@ -1255,6 +1256,13 @@ window.openVideo=async (id,push=true)=>{
     if(chipPl){ chipPl.style.display=''; chipPl.textContent=`📋 ${pl.name}`; }
     if(playlistQueue[plQueueIdx+1]){
       $("watch-next-btn").style.display="";
+    } else {
+      $("watch-next-btn").style.display="none";
+    }
+    if(playlistQueue[plQueueIdx-1]){
+      $("watch-prev-btn").style.display="";
+    } else {
+      $("watch-prev-btn").style.display="none";
     }
   }
 
@@ -1327,6 +1335,12 @@ window.playNext=()=>{
   clearCountdown();
   const n=playlistQueue[plQueueIdx+1];
   if(n) openVideo(n.id);
+};
+
+window.playPrev=()=>{
+  clearCountdown();
+  const p=playlistQueue[plQueueIdx-1];
+  if(p) openVideo(p.id);
 };
 
 // ── Watch filter chips ──
