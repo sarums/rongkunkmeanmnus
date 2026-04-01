@@ -310,8 +310,11 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .watch-source-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 6px; }
 .watch-source-badge { padding: 3px 10px; background: #4338ca; border-radius: 6px; font-size: .65rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing:.04em; }
 .watch-cat-label { font-size: .75rem; color: #555; font-weight: 700; background: rgba(255,255,255,.05); padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); }
-.watch-next-btn { margin-left: auto; padding: 6px 14px; background: var(--brand); color: #000; font-size: .75rem; font-weight: 800; border-radius: 9999px; border: none; cursor: pointer; transition: all .2s; display:flex; align-items:center; gap:6px; }
-.watch-next-btn:hover { background: #fff; transform: translateX(2px); }
+.watch-next-btn { padding: 6px 14px; background: var(--brand); color: #000; font-size: .75rem; font-weight: 800; border-radius: 9999px; border: none; cursor: pointer; transition: all .2s; display:flex; align-items:center; gap:6px; }
+.watch-next-btn:hover { background: #ff9340; transform: scale(1.04); }
+.watch-next-btn:active { background: #e06d1e; transform: scale(.97); }
+#watch-prev-btn { background: var(--brand); color: #000; }
+#watch-prev-btn:hover { background: #ff9340; }
 .countdown-ring { flex-shrink:0; }
 .watch-title { font-size: 1.3rem; font-weight: 900; color: #fff; line-height: 1.25; margin: 10px 0 14px; letter-spacing:-.01em; }
 .watch-meta { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 14px; flex-wrap: wrap; }
