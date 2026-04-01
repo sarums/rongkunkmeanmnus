@@ -537,6 +537,7 @@ async function loadAll(){
     if(loader){ loader.classList.add('hidden'); setTimeout(()=>loader.remove(),500); }
     // Lazy load images with IntersectionObserver
     setupLazyLoad();
+    initCookieBanner();
     // Real-time listener — auto-update cards when videos change in Firestore
     startVideoListener();
   }catch(err){
@@ -1748,6 +1749,36 @@ document.addEventListener('click', e=>{
   const m=document.getElementById('donate-modal');
   if(m && e.target===m) closeDonateModal();
 });
+
+// ── COOKIE CONSENT ───────────────────────────────────────
+function initCookieBanner(){
+  const consent = localStorage.getItem('rkmn_cookie_consent');
+  if(!consent){
+    // Show banner after 1.5s delay
+    setTimeout(()=>{
+      const b = document.getElementById('cookie-banner');
+      if(b) b.style.display='block';
+    }, 1500);
+  }
+}
+
+window.acceptCookies = ()=>{
+  localStorage.setItem('rkmn_cookie_consent','accepted');
+  hideCookieBanner();
+};
+
+window.declineCookies = ()=>{
+  localStorage.setItem('rkmn_cookie_consent','declined');
+  hideCookieBanner();
+};
+
+function hideCookieBanner(){
+  const b = document.getElementById('cookie-banner');
+  if(!b) return;
+  b.style.opacity='0';
+  b.style.transition='opacity .3s';
+  setTimeout(()=>{ b.style.display='none'; }, 300);
+}
 
 // ── PULL TO REFRESH ──────────────────────────────────────
 (()=>{
