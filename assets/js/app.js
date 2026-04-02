@@ -1879,15 +1879,19 @@ function hideCookieBanner(){
 
 loadAll();
 
-// 🚀 STOP PAGE REFRESH (simple version)
 document.addEventListener('click', function(e){
-  const link = e.target.closest('a');
-  if(!link) return;
+  const a = e.target.closest('a');
+  if(!a) return;
 
-  const href = link.getAttribute('href');
+  const href = a.getAttribute('href');
 
-  // If user clicks watch link
+  // 🎯 ONLY block watch links
   if(href && href.includes('/watch/')){
-    e.preventDefault(); // ❗ stop reload
+    e.preventDefault();
+
+    // 🚀 Try to trigger your existing onclick
+    if(a.onclick){
+      a.onclick(e);
+    }
   }
 });
