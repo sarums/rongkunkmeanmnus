@@ -549,38 +549,24 @@ async function loadAll(){
 }
 
 function startVideoListener(){
-  let isFirst = true;
-  onSnapshot(query(collection(db,'videos'),orderBy('createdAt','desc')), snap=>{
-    // Skip first snapshot — already loaded in loadAll()
-    if(isFirst){ isFirst=false; return; }
-
-    const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
-
-    // Check what changed
-    const addedIds   = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
-    const removedIds = videos.filter(v=>!updated.find(uv=>uv.id===v.id)).map(v=>v.id);
-    // Only trigger on structural changes (new/deleted videos, title/status changes)
-    // NOT on view count changes to avoid interfering with playback history
-    const hasChanges = addedIds.length > 0 || removedIds.length > 0 ||
-      updated.some(uv=>{
-        const old=videos.find(v=>v.id===uv.id);
-        if(!old) return false;
-        // Only care about title, status, category changes — NOT views
-        return old.title!==uv.title || old.status!==uv.status || 
-               old.category!==uv.category || old.platform!==uv.platform;
-      });
-
-    if(!hasChanges) return;
-
-    // Update videos array
-    videos = updated;
-
-    // Only rebuild if NOT on watch page - avoid interfering with playback
-    const onWatchPage = document.getElementById('page-watch')?.classList.contains('active');
-    if(!onWatchPage){
-      buildSections();
-      buildHero();
-    }
+  // Poll every 60s instead of onSnapshot to avoid corrupting browser history
+  // onSnapshot fires on view count updates causing extra pushState entries
+  setInterval(async ()=>{
+    const onWatch = document.getElementById('page-watch')?.classList.contains('active');
+    if(onWatch) return;
+    try {
+      const snap = await getDocs(query(collection(db,'videos'),orderBy('createdAt','desc')));
+      const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+      const addedIds = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
+      if(addedIds.length > 0){
+        videos = updated;
+        buildSections();
+        buildHero();
+        showUpdateToast(addedIds.length);
+      }
+    } catch(e){}
+  }, 60000);
+}
 
     // Show toast for new videos (always)
     if(addedIds.length > 0){
@@ -728,7 +714,7 @@ function buildCard(v){
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
   const watchUrl=pl?`/watch/${playlistSlug(pl)}/ep-${epNum}`:`/watch/${videoSlug(v)}`;
-  const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='/watch/${videoSlug(v)}'`;
+  const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
   return`<a class="vcard" data-id="${v.id}" href="${watchUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
       <img src="${getThumb(v)}" alt="${(v.title||"").replace(/"/g,"")}" loading="lazy"
@@ -892,10 +878,7 @@ window.heroClick=()=>{
   if(!v)return;
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   if(pl) openPlaylist(pl.id,v.id);
-  else {
-    const vv=videos.find(x=>x.id===window._currentHeroId);
-    if(vv) window.location.href=`/watch/${videoSlug(vv)}`;
-  }
+  else openVideo(v.id);
 };
 
 function resetHeroTimer(){
@@ -924,7 +907,7 @@ function buildContinueWatching(container){
       ${cwVids.map(v=>{
         const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
         const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
-        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='/watch/${videoSlug(v)}'`;
+        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
         return`<div class="cw-card" onclick="${click}">
           <div class="cw-thumb" style="position:relative;">
             <img src="${getThumb(v)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
@@ -1240,7 +1223,7 @@ window.openVideo=async (id,push=true)=>{
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
         href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
-        onclick="event.preventDefault();navigateToEp('${pv.id}')">
+        onclick="event.preventDefault();openVideo('${pv.id}')">
         <div class="pl-thumb" style="position:relative;">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
           ${isCurrent?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:''}
@@ -1288,16 +1271,9 @@ window.openVideo=async (id,push=true)=>{
 
 window.openPlaylist=(plId,startId)=>{
   const pl=playlists.find(p=>p.id===plId);
-  if(!pl||!(pl.videos||[]).length){
-    // Single video - use real navigation
-    const v=videos.find(x=>x.id===startId);
-    if(v) window.location.href=`/watch/${videoSlug(v)}`;
-    return;
-  }
+  if(!pl||!(pl.videos||[]).length){openVideo(startId);return;}
   const i=pl.videos.indexOf(startId);
-  const targetId=pl.videos[i>=0?i:0];
-  const epNum=(pl.videos||[]).indexOf(targetId)+1;
-  window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
+  openVideo(pl.videos[i>=0?i:0]);
 };
 let _countdownTimer=null;
 const COUNTDOWN_SEC=5;
@@ -1345,25 +1321,13 @@ window.toggleDesc=()=>{
 window.playNext=()=>{
   clearCountdown();
   const n=playlistQueue[plQueueIdx+1];
-  if(n) navigateToEp(n.id);
+  if(n) openVideo(n.id);
 };
 
 window.playPrev=()=>{
   clearCountdown();
   const p=playlistQueue[plQueueIdx-1];
-  if(p) navigateToEp(p.id);
-};
-
-// Navigate to episode URL — lets browser handle history natively
-window.navigateToEp=(id)=>{
-  const v=videos.find(x=>x.id===id); if(!v) return;
-  const pl=playlists.find(p=>(p.videos||[]).includes(id));
-  if(pl){
-    const epNum=(pl.videos||[]).indexOf(id)+1;
-    window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
-  } else {
-    window.location.href=`/watch/${videoSlug(v)}`;
-  }
+  if(p) openVideo(p.id);
 };
 
 // ── Watch filter chips ──
@@ -1383,7 +1347,7 @@ window.setWatchFilter=(type,btn)=>{
 window.openPlaylistById=id=>{
   const pl=playlists.find(p=>p.id===id);
   if(!pl||(pl.videos||[]).length===0) return;
-  window.location.href=`/watch/${playlistSlug(pl)}/ep-1`;
+  openVideo(pl.videos[0]);
 };
 
 // ── Category ──
@@ -1725,11 +1689,11 @@ document.addEventListener('keydown',e=>{
   if(!watchActive) return;
   if(e.key==='ArrowRight'||e.key==='n'){
     const next=playlistQueue[plQueueIdx+1];
-    if(next){ clearCountdown(); navigateToEp(next.id); }
+    if(next){ clearCountdown(); openVideo(next.id); }
   }
   if(e.key==='ArrowLeft'||e.key==='p'){
     const prev=playlistQueue[plQueueIdx-1];
-    if(prev){ clearCountdown(); navigateToEp(prev.id); }
+    if(prev){ clearCountdown(); openVideo(prev.id); }
   }
   if(e.key==='Escape') goBack();
 });
