@@ -728,7 +728,7 @@ function buildCard(v){
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
   const watchUrl=pl?`/watch/${playlistSlug(pl)}/ep-${epNum}`:`/watch/${videoSlug(v)}`;
-  const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
+  const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='/watch/${videoSlug(v)}'`;
   return`<a class="vcard" data-id="${v.id}" href="${watchUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
       <img src="${getThumb(v)}" alt="${(v.title||"").replace(/"/g,"")}" loading="lazy"
@@ -892,7 +892,10 @@ window.heroClick=()=>{
   if(!v)return;
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   if(pl) openPlaylist(pl.id,v.id);
-  else openVideo(v.id);
+  else {
+    const vv=videos.find(x=>x.id===window._currentHeroId);
+    if(vv) window.location.href=`/watch/${videoSlug(vv)}`;
+  }
 };
 
 function resetHeroTimer(){
@@ -921,7 +924,7 @@ function buildContinueWatching(container){
       ${cwVids.map(v=>{
         const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
         const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
-        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
+        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='/watch/${videoSlug(v)}'`;
         return`<div class="cw-card" onclick="${click}">
           <div class="cw-thumb" style="position:relative;">
             <img src="${getThumb(v)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
@@ -1237,7 +1240,7 @@ window.openVideo=async (id,push=true)=>{
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
         href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
-        onclick="event.preventDefault();openVideo('${pv.id}',true)">
+        onclick="event.preventDefault();navigateToEp('${pv.id}')">
         <div class="pl-thumb" style="position:relative;">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
           ${isCurrent?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:''}
@@ -1285,9 +1288,16 @@ window.openVideo=async (id,push=true)=>{
 
 window.openPlaylist=(plId,startId)=>{
   const pl=playlists.find(p=>p.id===plId);
-  if(!pl||!(pl.videos||[]).length){openVideo(startId);return;}
+  if(!pl||!(pl.videos||[]).length){
+    // Single video - use real navigation
+    const v=videos.find(x=>x.id===startId);
+    if(v) window.location.href=`/watch/${videoSlug(v)}`;
+    return;
+  }
   const i=pl.videos.indexOf(startId);
-  openVideo(pl.videos[i>=0?i:0]);
+  const targetId=pl.videos[i>=0?i:0];
+  const epNum=(pl.videos||[]).indexOf(targetId)+1;
+  window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
 };
 let _countdownTimer=null;
 const COUNTDOWN_SEC=5;
@@ -1335,13 +1345,25 @@ window.toggleDesc=()=>{
 window.playNext=()=>{
   clearCountdown();
   const n=playlistQueue[plQueueIdx+1];
-  if(n) openVideo(n.id);
+  if(n) navigateToEp(n.id);
 };
 
 window.playPrev=()=>{
   clearCountdown();
   const p=playlistQueue[plQueueIdx-1];
-  if(p) openVideo(p.id);
+  if(p) navigateToEp(p.id);
+};
+
+// Navigate to episode URL — lets browser handle history natively
+window.navigateToEp=(id)=>{
+  const v=videos.find(x=>x.id===id); if(!v) return;
+  const pl=playlists.find(p=>(p.videos||[]).includes(id));
+  if(pl){
+    const epNum=(pl.videos||[]).indexOf(id)+1;
+    window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
+  } else {
+    window.location.href=`/watch/${videoSlug(v)}`;
+  }
 };
 
 // ── Watch filter chips ──
@@ -1361,7 +1383,7 @@ window.setWatchFilter=(type,btn)=>{
 window.openPlaylistById=id=>{
   const pl=playlists.find(p=>p.id===id);
   if(!pl||(pl.videos||[]).length===0) return;
-  openVideo(pl.videos[0]);
+  window.location.href=`/watch/${playlistSlug(pl)}/ep-1`;
 };
 
 // ── Category ──
@@ -1703,11 +1725,11 @@ document.addEventListener('keydown',e=>{
   if(!watchActive) return;
   if(e.key==='ArrowRight'||e.key==='n'){
     const next=playlistQueue[plQueueIdx+1];
-    if(next){ clearCountdown(); openVideo(next.id); showToast('Next episode','info'); }
+    if(next){ clearCountdown(); navigateToEp(next.id); }
   }
   if(e.key==='ArrowLeft'||e.key==='p'){
     const prev=playlistQueue[plQueueIdx-1];
-    if(prev){ clearCountdown(); openVideo(prev.id); showToast('Previous episode','info'); }
+    if(prev){ clearCountdown(); navigateToEp(prev.id); }
   }
   if(e.key==='Escape') goBack();
 });
