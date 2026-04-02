@@ -1149,11 +1149,7 @@ window.openVideo=async (id,push=true)=>{
     if(pl2){
       const epNum=(pl2.videos||[]).indexOf(id)+1;
       const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
-      const current = history.state;
-
-if (!current || current.videoId !== id) {
-  history.pushState({ page: 'watch', videoId: id }, '', watchUrl);
-}
+      history.pushState({page:'watch',videoId:id},'',watchUrl);
       console.log('▶ pushState:', watchUrl, '| length:', history.length);
     } else {
       history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
@@ -1878,31 +1874,3 @@ function hideCookieBanner(){
 })();
 
 loadAll();
-
-// 🚀 FINAL FIX — HANDLE WATCH LINKS MANUALLY
-document.body.addEventListener('click', function(e){
-  const a = e.target.closest('a');
-  if(!a) return;
-
-  const href = a.getAttribute('href');
-  if(!href) return;
-
-  // Only for watch links
-  if(href.includes('/watch/')){
-    e.preventDefault();
-    e.stopPropagation();
-
-    // ❗ IMPORTANT: stop browser completely
-    e.stopImmediatePropagation();
-
-    // 👉 Try get video id from onclick (your current system)
-    const onclick = a.getAttribute('onclick');
-
-    if(onclick && onclick.includes('openVideo')){
-      // run your existing onclick
-      eval(onclick);
-    }
-
-    return false;
-  }
-}, true); // 👈 VERY IMPORTANT (capture mode)
