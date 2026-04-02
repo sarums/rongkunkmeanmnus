@@ -1879,19 +1879,30 @@ function hideCookieBanner(){
 
 loadAll();
 
-document.addEventListener('click', function(e){
+// 🚀 FINAL FIX — HANDLE WATCH LINKS MANUALLY
+document.body.addEventListener('click', function(e){
   const a = e.target.closest('a');
   if(!a) return;
 
   const href = a.getAttribute('href');
+  if(!href) return;
 
-  // 🎯 ONLY block watch links
-  if(href && href.includes('/watch/')){
+  // Only for watch links
+  if(href.includes('/watch/')){
     e.preventDefault();
+    e.stopPropagation();
 
-    // 🚀 Try to trigger your existing onclick
-    if(a.onclick){
-      a.onclick(e);
+    // ❗ IMPORTANT: stop browser completely
+    e.stopImmediatePropagation();
+
+    // 👉 Try get video id from onclick (your current system)
+    const onclick = a.getAttribute('onclick');
+
+    if(onclick && onclick.includes('openVideo')){
+      // run your existing onclick
+      eval(onclick);
     }
+
+    return false;
   }
-});
+}, true); // 👈 VERY IMPORTANT (capture mode)
