@@ -1878,3 +1878,16 @@ function hideCookieBanner(){
 })();
 
 loadAll();
+
+// 🚀 STOP PAGE REFRESH (simple version)
+document.addEventListener('click', function(e){
+  const link = e.target.closest('a');
+  if(!link) return;
+
+  const href = link.getAttribute('href');
+
+  // If user clicks watch link
+  if(href && href.includes('/watch/')){
+    e.preventDefault(); // ❗ stop reload
+  }
+});
