@@ -346,7 +346,7 @@ function showPage(id,push=true){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push){
     if(id==='home'){
-      history.pushState({page:'home'},'','/');
+      history.replaceState({page:'home'},'','/');
     } else {
       history.pushState({page:id},'','/'+id);
     }
@@ -394,7 +394,11 @@ async function silentRefresh(){
   }catch(e){}
 }
 window.goBack=()=>{
-  history.back();
+  if(previousPage&&previousPage!==location.pathname){
+    history.back();
+  } else {
+    showPage('home');
+  }
 };
 
 function routeFromUrl(push=false){
@@ -464,8 +468,9 @@ window.addEventListener("popstate",e=>{
   if(!state){ showPage('home',false); return; }
 
   if(state.page==='watch' && state.videoId){
-    $('player-iframe').src='';
-    openVideo(state.videoId, false);
+    // Watch page uses replaceState so back goes to previous page
+    showPage('home', false);
+    buildNav('home');
   } else if(state.page==='cat'){
     const cat = categories.find(c=>c.id===state.catId);
     if(cat) showCatPage(cat);
@@ -1116,15 +1121,14 @@ window.openVideo=async (id,push=true)=>{
   const v=videos.find(x=>x.id===id);if(!v)return;
 
   // Build watch URL
-  if(push){
-    const pl2=playlists.find(p=>(p.videos||[]).includes(id));
-    if(pl2){
-      const epNum=(pl2.videos||[]).indexOf(id)+1;
-      const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
-      history.pushState({page:'watch',videoId:id},'',watchUrl);
-    } else {
-      history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
-    }
+  // Update URL without adding to history - use replaceState
+  const pl2=playlists.find(p=>(p.videos||[]).includes(id));
+  if(pl2){
+    const epNum=(pl2.videos||[]).indexOf(id)+1;
+    const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
+    history.replaceState({page:'watch',videoId:id},'',watchUrl);
+  } else {
+    history.replaceState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
   }
 
   // Show pre-roll ad, then load video with mid-roll schedule
