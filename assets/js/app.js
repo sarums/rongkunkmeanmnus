@@ -346,7 +346,7 @@ function showPage(id,push=true){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${id}`));
   if(push){
     if(id==='home'){
-      history.replaceState({page:'home'},'','/');
+      history.pushState({page:'home'},'','/');
     } else {
       history.pushState({page:id},'','/'+id);
     }
@@ -394,11 +394,7 @@ async function silentRefresh(){
   }catch(e){}
 }
 window.goBack=()=>{
-  if(previousPage&&previousPage!==location.pathname){
-    history.back();
-  } else {
-    showPage('home');
-  }
+  history.back();
 };
 
 function routeFromUrl(push=false){
