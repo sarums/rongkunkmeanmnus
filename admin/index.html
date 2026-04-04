@@ -166,7 +166,20 @@
           </div>
           <div class="fg full" style="margin-bottom:1rem;">
             <label class="flabel">Description</label>
-            <textarea class="ftextarea" id="fDesc" placeholder="Brief description..."></textarea>
+            <div class="rich-editor-wrap" id="fDescWrap">
+              <div class="rich-toolbar">
+                <button type="button" onclick="richCmd('fDescEditor','bold')" title="Bold"><b>B</b></button>
+                <button type="button" onclick="richCmd('fDescEditor','italic')" title="Italic"><i>I</i></button>
+                <button type="button" onclick="richCmd('fDescEditor','underline')" title="Underline"><u>U</u></button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="richLink('fDescEditor')" title="Insert Link">🔗</button>
+                <button type="button" onclick="richCmd('fDescEditor','insertUnorderedList')" title="List">• List</button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="richClear('fDescEditor')" title="Clear">✕ Clear</button>
+              </div>
+              <div class="rich-content" id="fDescEditor" contenteditable="true" 
+                data-placeholder="Write a description... (supports bold, italic, links)"></div>
+            </div>
           </div>
           <div class="form-grid-3" style="margin-bottom:1rem;">
             <div class="fg">
@@ -767,7 +780,20 @@
       </div>
       <div class="fg full" style="margin-bottom:1rem;">
         <label class="flabel">Description</label>
-        <textarea class="ftextarea" id="editDesc"></textarea>
+        <div class="rich-editor-wrap">
+          <div class="rich-toolbar">
+            <button type="button" onclick="richCmd('editDescEditor','bold')" title="Bold"><b>B</b></button>
+            <button type="button" onclick="richCmd('editDescEditor','italic')" title="Italic"><i>I</i></button>
+            <button type="button" onclick="richCmd('editDescEditor','underline')" title="Underline"><u>U</u></button>
+            <span class="rich-sep"></span>
+            <button type="button" onclick="richLink('editDescEditor')" title="Insert Link">🔗</button>
+            <button type="button" onclick="richCmd('editDescEditor','insertUnorderedList')" title="List">• List</button>
+            <span class="rich-sep"></span>
+            <button type="button" onclick="richClear('editDescEditor')" title="Clear">✕ Clear</button>
+          </div>
+          <div class="rich-content" id="editDescEditor" contenteditable="true"
+            data-placeholder="Write a description..."></div>
+        </div>
       </div>
       <div class="form-grid-3" style="margin-bottom:1rem;">
         <div class="fg">
