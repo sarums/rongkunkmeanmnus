@@ -310,7 +310,7 @@ window.previewEditThumb = ()=>{
 // ── ADD VIDEO ─────────────────────────────────────────
 window.addVideo = async ()=>{
   const platform=qs('fPlatform').value, videoId=qs('fVidId').value.trim();
-  const title=qs('fTitle').value.trim(), description=qs('fDesc').value.trim();
+  const title=qs('fTitle').value.trim(), description=getRichContent('fDescEditor');
   const category=qs('fCat').value, section=qs('fSection').value;
   const plId=qs('fPlaylist').value, duration=qs('fDuration').value.trim();
   const customThumb=qs('fThumb').value.trim(), viewsDisplay=qs('fViews').value.trim();
@@ -332,7 +332,8 @@ window.addVideo = async ()=>{
     }
     showToast('Video Added!',`"${title}" has been added successfully`,'ok');
     // reset form
-    ['fVidId','fTitle','fDesc','fDuration','fThumb','fViews','fEpNum'].forEach(id=>qs(id).value='');
+    ['fVidId','fTitle','fDuration','fThumb','fViews','fEpNum'].forEach(id=>{ if(qs(id)) qs(id).value=''; });
+    richClear('fDescEditor');
     qs('fSection').value=''; qs('fPlaylist').value='';
     qs('thumbPreview').innerHTML='<span>Enter Video ID to preview thumbnail</span>';
     setPlatform('dailymotion');
@@ -389,7 +390,7 @@ window.openEdit = (id)=>{
   setEditPlatform(v.platform);
   qs('editVidId').value=v.videoId||'';
   qs('editTitle').value=v.title||'';
-  qs('editDesc').value=v.description||'';
+  setRichContent('editDescEditor', v.description||'');
   qs('editDuration').value=v.duration||'';
   qs('editThumb').value=v.customThumb||'';
   qs('editEpNum').value=v.episodeNum||'';
@@ -410,7 +411,7 @@ window.closeEditModal = ()=>{ qs('editModal').classList.remove('open'); };
 window.saveEdit = async ()=>{
   const id=qs('editId').value;
   const platform=qs('editPlatform').value, videoId=qs('editVidId').value.trim();
-  const title=qs('editTitle').value.trim(), description=qs('editDesc').value.trim();
+  const title=qs('editTitle').value.trim(), description=getRichContent('editDescEditor');
   const category=qs('editCat').value, section=qs('editSection').value;
   const duration=qs('editDuration').value.trim(), customThumb=qs('editThumb').value.trim();
   const epNum=parseInt(qs('editEpNum')?.value)||0;
@@ -1735,6 +1736,41 @@ function durToSec(str){
   if(p.length===2) return String(p[0]*60+p[1]);
   if(p.length===3) return String(p[0]*3600+p[1]*60+p[2]);
   return '';
+}
+
+// ── RICH TEXT EDITOR ─────────────────────────────────
+window.richCmd = (editorId, cmd) => {
+  const el = document.getElementById(editorId);
+  if(!el) return;
+  el.focus();
+  document.execCommand(cmd, false, null);
+};
+
+window.richLink = (editorId) => {
+  const el = document.getElementById(editorId);
+  if(!el) return;
+  const url = prompt('Enter URL:', 'https://');
+  if(!url) return;
+  el.focus();
+  document.execCommand('createLink', false, url);
+  // Make link open in new tab
+  const links = el.querySelectorAll('a:not([target])');
+  links.forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+};
+
+window.richClear = (editorId) => {
+  const el = document.getElementById(editorId);
+  if(el) el.innerHTML = '';
+};
+
+function getRichContent(editorId) {
+  const el = document.getElementById(editorId);
+  return el ? el.innerHTML.trim() : '';
+}
+
+function setRichContent(editorId, html) {
+  const el = document.getElementById(editorId);
+  if(el) el.innerHTML = html || '';
 }
 
 // ── AUTO START ──
