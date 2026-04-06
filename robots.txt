@@ -1,16 +1,19 @@
 User-agent: *
 Allow: /
 Allow: /watch/
-Allow: /search
-Allow: /history
 Allow: /about
 Allow: /privacy
 Allow: /terms
 Allow: /contact
+
+# Block private/unnecessary pages
 Disallow: /admin
 Disallow: /admin/
+Disallow: /store
+Disallow: /donate
+Disallow: /search
+Disallow: /history
 
 Sitemap: https://www.rongkunkmeanmnus.com/sitemap.xml
 
-# Crawl-delay for respectful crawling
 Crawl-delay: 1
