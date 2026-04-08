@@ -119,7 +119,7 @@ window.showToast=(msg,type="ok")=>{
 };
 
 // ── SEO Meta Updater ──
-function updateMeta({title, desc, image, url, type='website', videoId='', vid=null}){
+function updateMeta({title, desc, image, url, type='website', videoId=''}){
   const sn = siteName||'RongKunKmeanMnus';
   const fullTitle = title ? `${title} | ${sn}` : `${sn} - Watch Videos Online`;
   const fullDesc  = desc  || 'Watch Khmer drama, series and entertainment videos online.';
@@ -151,33 +151,18 @@ function updateMeta({title, desc, image, url, type='website', videoId='', vid=nu
 
   // JSON-LD — update dynamically for video pages
   const jsonld = document.getElementById('jsonld-main');
-  if(jsonld && type === 'video.other' && title && videoId){
-    // Find video data for accurate schema
-    const schemaVid = videos.find(x=>x.id===videoId);
-    const uploadDate = schemaVid?.createdAt?.toDate
-      ? schemaVid.createdAt.toDate().toISOString()
-      : new Date().toISOString();
-    const embedUrl = schemaVid ? getEmbedUrl(schemaVid) : fullUrl;
-    const duration = schemaVid?.duration ? 'PT' + schemaVid.duration.replace(':','M') + 'S' : undefined;
-
-    const schema = {
+  if(jsonld && type === 'video.other' && title){
+    jsonld.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "VideoObject",
       "name": title,
-      "description": fullDesc.replace(/<[^>]*>/g,''), // strip HTML tags
-      "thumbnailUrl": [fullImg],
-      "uploadDate": uploadDate,
+      "description": fullDesc,
+      "thumbnailUrl": fullImg,
       "url": fullUrl,
-      "embedUrl": embedUrl,
-      "inLanguage": "km",
-      "publisher": {
-        "@type": "Organization",
-        "name": "រោងកុនគ្មានមនុស្ស",
-        "url": "https://www.rongkunkmeanmnus.com"
-      }
-    };
-    if(duration) schema.duration = duration;
-    jsonld.textContent = JSON.stringify(schema);
+      "embedUrl": fullUrl,
+      "uploadDate": new Date().toISOString(),
+      "inLanguage": "en"
+    });
   } else if(jsonld && type === 'website'){
     jsonld.textContent = JSON.stringify({
       "@context": "https://schema.org",
@@ -483,9 +468,8 @@ window.addEventListener("popstate",e=>{
   if(!state){ showPage('home',false); return; }
 
   if(state.page==='watch' && state.videoId){
-    // Watch page uses replaceState so back goes to previous page
-    showPage('home', false);
-    buildNav('home');
+    $('player-iframe').src='';
+    openVideo(state.videoId, false);
   } else if(state.page==='cat'){
     const cat = categories.find(c=>c.id===state.catId);
     if(cat) showCatPage(cat);
@@ -565,23 +549,44 @@ async function loadAll(){
 }
 
 function startVideoListener(){
-  // Poll every 60s instead of onSnapshot to avoid corrupting browser history
-  // onSnapshot fires on view count updates causing extra pushState entries
-  setInterval(async ()=>{
-    const onWatch = document.getElementById('page-watch')?.classList.contains('active');
-    if(onWatch) return;
-    try {
-      const snap = await getDocs(query(collection(db,'videos'),orderBy('createdAt','desc')));
-      const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
-      const addedIds = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
-      if(addedIds.length > 0){
-        videos = updated;
-        buildSections();
-        buildHero();
-        showUpdateToast(addedIds.length);
-      }
-    } catch(e){}
-  }, 60000);
+  let isFirst = true;
+  onSnapshot(query(collection(db,'videos'),orderBy('createdAt','desc')), snap=>{
+    // Skip first snapshot — already loaded in loadAll()
+    if(isFirst){ isFirst=false; return; }
+
+    const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+
+    // Check what changed
+    const addedIds   = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
+    const removedIds = videos.filter(v=>!updated.find(uv=>uv.id===v.id)).map(v=>v.id);
+    // Only trigger on structural changes (new/deleted videos, title/status changes)
+    // NOT on view count changes to avoid interfering with playback history
+    const hasChanges = addedIds.length > 0 || removedIds.length > 0 ||
+      updated.some(uv=>{
+        const old=videos.find(v=>v.id===uv.id);
+        if(!old) return false;
+        // Only care about title, status, category changes — NOT views
+        return old.title!==uv.title || old.status!==uv.status || 
+               old.category!==uv.category || old.platform!==uv.platform;
+      });
+
+    if(!hasChanges) return;
+
+    // Update videos array
+    videos = updated;
+
+    // Only rebuild if NOT on watch page - avoid interfering with playback
+    const onWatchPage = document.getElementById('page-watch')?.classList.contains('active');
+    if(!onWatchPage){
+      buildSections();
+      buildHero();
+    }
+
+    // Show toast for new videos (always)
+    if(addedIds.length > 0){
+      showUpdateToast(addedIds.length);
+    }
+  });
 }
 
 // Show a subtle "new content" toast
@@ -723,7 +728,7 @@ function buildCard(v){
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
   const watchUrl=pl?`/watch/${playlistSlug(pl)}/ep-${epNum}`:`/watch/${videoSlug(v)}`;
-  const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
+  const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='/watch/${videoSlug(v)}'`;
   return`<a class="vcard" data-id="${v.id}" href="${watchUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
       <img src="${getThumb(v)}" alt="${(v.title||"").replace(/"/g,"")}" loading="lazy"
@@ -887,7 +892,10 @@ window.heroClick=()=>{
   if(!v)return;
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   if(pl) openPlaylist(pl.id,v.id);
-  else openVideo(v.id);
+  else {
+    const vv=videos.find(x=>x.id===window._currentHeroId);
+    if(vv) window.location.href=`/watch/${videoSlug(vv)}`;
+  }
 };
 
 function resetHeroTimer(){
@@ -916,7 +924,7 @@ function buildContinueWatching(container){
       ${cwVids.map(v=>{
         const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
         const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
-        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
+        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='/watch/${videoSlug(v)}'`;
         return`<div class="cw-card" onclick="${click}">
           <div class="cw-thumb" style="position:relative;">
             <img src="${getThumb(v)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
@@ -1132,21 +1140,21 @@ window.openVideo=async (id,push=true)=>{
   if(chipPl)chipPl.style.display='none';
   $("suggested-list").innerHTML=skelRow(3);
   if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=skelRow(3);
-  // Reset infinite scroll state
-  _suggPage=0; _suggList=[];
-  if(_suggObserver){ _suggObserver.disconnect(); _suggObserver=null; }
 
   const v=videos.find(x=>x.id===id);if(!v)return;
 
   // Build watch URL
-  // Update URL without adding to history - use replaceState
-  const pl2=playlists.find(p=>(p.videos||[]).includes(id));
-  if(pl2){
-    const epNum=(pl2.videos||[]).indexOf(id)+1;
-    const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
-    history.replaceState({page:'watch',videoId:id},'',watchUrl);
-  } else {
-    history.replaceState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
+  if(push){
+    const pl2=playlists.find(p=>(p.videos||[]).includes(id));
+    if(pl2){
+      const epNum=(pl2.videos||[]).indexOf(id)+1;
+      const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
+      history.pushState({page:'watch',videoId:id},'',watchUrl);
+      console.log('▶ pushState:', watchUrl, '| length:', history.length);
+    } else {
+      history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
+      console.log('▶ pushState:', `/watch/${videoSlug(v)}`, '| history length:', history.length);
+    }
   }
 
   // Show pre-roll ad, then load video with mid-roll schedule
@@ -1177,12 +1185,7 @@ window.openVideo=async (id,push=true)=>{
     `រោងកុនគ្មានមនុស្ស brings you the best ${cat||'video'} content curated from top streaming platforms.`
   ].filter(Boolean).join(' ');
   const descText = v.description && v.description.trim().length > 20 ? v.description : fallbackDesc;
-  // Render as HTML to support rich text formatting
-  if(v.description && v.description.trim().length > 20){
-    $("watch-desc").innerHTML = v.description;
-  } else {
-    $("watch-desc").textContent = fallbackDesc;
-  }
+  $("watch-desc").textContent=descText;
   const toggle=$("watch-desc-toggle");
   if(toggle){
     toggle.style.display=descText.length>150?'':'none';
@@ -1201,14 +1204,13 @@ window.openVideo=async (id,push=true)=>{
   // SEO + History
   addToHistory(id);
   updateMeta({
-    title   : v.title,
-    desc    : v.description && v.description.trim().length>20
+    title : v.title,
+    desc  : v.description && v.description.trim().length>20
       ? v.description
       : `Watch "${v.title}"${v.episodeNum?' Episode '+v.episodeNum:''} online free on រោងកុនគ្មានមនុស្ស. Stream ${v.category||'drama'} videos for free — no subscription needed.`,
-    image   : getThumb(v),
-    url     : location.href,
-    type    : 'video.other',
-    videoId : v.id
+    image : getThumb(v),
+    url   : location.href,
+    type  : 'video.other'
   });
 
   updateDoc(doc(db,"videos",id),{views:increment(1)}).catch(()=>{});
@@ -1238,7 +1240,7 @@ window.openVideo=async (id,push=true)=>{
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
         href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
-        onclick="event.preventDefault();openVideo('${pv.id}')">
+        onclick="event.preventDefault();navigateToEp('${pv.id}')">
         <div class="pl-thumb" style="position:relative;">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
           ${isCurrent?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:''}
@@ -1271,9 +1273,11 @@ window.openVideo=async (id,push=true)=>{
   // Smarter related videos — same category first, then others
   const sameCat=videos.filter(x=>x.id!==id&&x.category===v.category);
   const others=videos.filter(x=>x.id!==id&&x.category!==v.category);
-  const allRelated=[...sameCat,...others]; // ALL videos, not limited
-  // Init infinite scroll for suggested
-  initSuggInfiniteScroll(allRelated);
+  const related=[...sameCat,...others].slice(0,10);
+  const watched=getHistory();
+  const suggHtml=buildSuggWithAds(related,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
+  $("suggested-list").innerHTML=suggHtml;
+  if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=suggHtml;
 
   // Load likes/dislikes + comments for this video
   loadReactions(id);
@@ -1284,9 +1288,16 @@ window.openVideo=async (id,push=true)=>{
 
 window.openPlaylist=(plId,startId)=>{
   const pl=playlists.find(p=>p.id===plId);
-  if(!pl||!(pl.videos||[]).length){openVideo(startId);return;}
+  if(!pl||!(pl.videos||[]).length){
+    // Single video - use real navigation
+    const v=videos.find(x=>x.id===startId);
+    if(v) window.location.href=`/watch/${videoSlug(v)}`;
+    return;
+  }
   const i=pl.videos.indexOf(startId);
-  openVideo(pl.videos[i>=0?i:0]);
+  const targetId=pl.videos[i>=0?i:0];
+  const epNum=(pl.videos||[]).indexOf(targetId)+1;
+  window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
 };
 let _countdownTimer=null;
 const COUNTDOWN_SEC=5;
@@ -1334,13 +1345,25 @@ window.toggleDesc=()=>{
 window.playNext=()=>{
   clearCountdown();
   const n=playlistQueue[plQueueIdx+1];
-  if(n) openVideo(n.id);
+  if(n) navigateToEp(n.id);
 };
 
 window.playPrev=()=>{
   clearCountdown();
   const p=playlistQueue[plQueueIdx-1];
-  if(p) openVideo(p.id);
+  if(p) navigateToEp(p.id);
+};
+
+// Navigate to episode URL — lets browser handle history natively
+window.navigateToEp=(id)=>{
+  const v=videos.find(x=>x.id===id); if(!v) return;
+  const pl=playlists.find(p=>(p.videos||[]).includes(id));
+  if(pl){
+    const epNum=(pl.videos||[]).indexOf(id)+1;
+    window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
+  } else {
+    window.location.href=`/watch/${videoSlug(v)}`;
+  }
 };
 
 // ── Watch filter chips ──
@@ -1360,7 +1383,7 @@ window.setWatchFilter=(type,btn)=>{
 window.openPlaylistById=id=>{
   const pl=playlists.find(p=>p.id===id);
   if(!pl||(pl.videos||[]).length===0) return;
-  openVideo(pl.videos[0]);
+  window.location.href=`/watch/${playlistSlug(pl)}/ep-1`;
 };
 
 // ── Category ──
@@ -1702,11 +1725,11 @@ document.addEventListener('keydown',e=>{
   if(!watchActive) return;
   if(e.key==='ArrowRight'||e.key==='n'){
     const next=playlistQueue[plQueueIdx+1];
-    if(next){ clearCountdown(); openVideo(next.id); }
+    if(next){ clearCountdown(); navigateToEp(next.id); }
   }
   if(e.key==='ArrowLeft'||e.key==='p'){
     const prev=playlistQueue[plQueueIdx-1];
-    if(prev){ clearCountdown(); openVideo(prev.id); }
+    if(prev){ clearCountdown(); navigateToEp(prev.id); }
   }
   if(e.key==='Escape') goBack();
 });
@@ -1748,84 +1771,6 @@ document.addEventListener('click', e=>{
   const m=document.getElementById('donate-modal');
   if(m && e.target===m) closeDonateModal();
 });
-
-// ── SUGGESTED INFINITE SCROLL ────────────────────────────
-let _suggList = [];
-let _suggPage = 0;
-const SUGG_PER_PAGE = 10;
-let _suggObserver = null;
-
-function initSuggInfiniteScroll(allVideos){
-  // Reset state
-  _suggList = allVideos;
-  _suggPage = 0;
-
-  // Clear both lists
-  const el  = $('suggested-list');
-  const elm = $('suggested-list-mobile');
-  if(el)  el.innerHTML  = '';
-  if(elm) elm.innerHTML = '';
-
-  // Remove old observer
-  if(_suggObserver) _suggObserver.disconnect();
-
-  // Load first batch
-  loadMoreSugg();
-
-  // Setup IntersectionObserver on sentinel element
-  setupSuggObserver();
-}
-
-function loadMoreSugg(){
-  const start = _suggPage * SUGG_PER_PAGE;
-  const end   = start + SUGG_PER_PAGE;
-  const batch = _suggList.slice(start, end);
-  if(!batch.length) return;
-
-  _suggPage++;
-
-  const html = buildSuggWithAds(batch,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
-
-  const el  = $('suggested-list');
-  const elm = $('suggested-list-mobile');
-
-  // Remove old sentinel before appending
-  el?.querySelector('.sugg-sentinel')?.remove();
-  elm?.querySelector('.sugg-sentinel')?.remove();
-
-  if(el)  el.insertAdjacentHTML('beforeend', html);
-  if(elm) elm.insertAdjacentHTML('beforeend', html);
-
-  // Add sentinel if more videos available
-  if(_suggPage * SUGG_PER_PAGE < _suggList.length){
-    const sentinel = `<div class="sugg-sentinel" style="height:20px;"></div>`;
-    if(el)  el.insertAdjacentHTML('beforeend', sentinel);
-    if(elm) elm.insertAdjacentHTML('beforeend', sentinel);
-    setupSuggObserver();
-  }
-}
-
-function setupSuggObserver(){
-  if(_suggObserver) _suggObserver.disconnect();
-
-  // Observe sentinel in mobile scroll body (watch page)
-  const sentinel = document.querySelector('.watch-scroll-body .sugg-sentinel')
-    || document.querySelector('#suggested-list .sugg-sentinel')
-    || document.querySelector('#suggested-list-mobile .sugg-sentinel');
-
-  if(!sentinel) return;
-
-  _suggObserver = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){
-        _suggObserver.disconnect();
-        loadMoreSugg();
-      }
-    });
-  }, { rootMargin: '200px' });
-
-  _suggObserver.observe(sentinel);
-}
 
 // ── COOKIE CONSENT ───────────────────────────────────────
 function initCookieBanner(){
