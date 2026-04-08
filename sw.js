@@ -1,15 +1,7 @@
 // ═══════════════════════════════════════════
 //  Service Worker — RongKunKmeanMnus PWA
 // ═══════════════════════════════════════════
-//Ads
-self.options = {
-    "domain": "5gvci.com",
-    "zoneId": 10850063
-}
-self.lary = ""
-importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw')
 
-//Ads
 const CACHE_NAME = 'rkmn-v1';
 const STATIC_ASSETS = [
   '/',
