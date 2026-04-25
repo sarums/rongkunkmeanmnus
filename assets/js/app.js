@@ -483,7 +483,7 @@ window.addEventListener("popstate",e=>{
   if(!state){ showPage('home',false); return; }
 
   if(state.page==='watch' && state.videoId){
-    $('player-iframe').src='';
+    // Real page - just re-render from URL
     openVideo(state.videoId, false);
   } else if(state.page==='cat'){
     const cat = categories.find(c=>c.id===state.catId);
@@ -1111,10 +1111,22 @@ window.seeAll=sid=>{
 // ── Watch ──
 window.openVideo=async (id,push=true)=>{
   if(!id) return;
+  // Always navigate to real URL when push=true
+  if(push){
+    const v=videos.find(x=>x.id===id); if(!v) return;
+    const pl2=playlists.find(p=>(p.videos||[]).includes(id));
+    if(pl2){
+      const epNum=(pl2.videos||[]).indexOf(id)+1;
+      window.location.href=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
+    } else {
+      window.location.href=`/watch/${videoSlug(v)}`;
+    }
+    return;
+  }
+  // push=false means called from routeFromUrl (page just loaded) — render directly
+  // When push=false: render watch page directly (called from routeFromUrl after page load)
   NP.start();
-
-  // Save current URL as previous page before navigating (for back button)
-  if(push) previousPage=location.pathname;
+  previousPage=location.pathname;
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
   window.scrollTo(0,0);
   playlistQueue=[];plQueueIdx=0;
@@ -1124,30 +1136,24 @@ window.openVideo=async (id,push=true)=>{
   $("watch-next-btn").style.display="none";
   $("watch-prev-btn").style.display="none";
   clearCountdown();
-  // Reset filter chips
   document.querySelectorAll('.watch-filter-chip').forEach(c=>c.classList.remove('active'));
   document.querySelector('.watch-filter-chip')?.classList.add('active');
   const chipPl=$("chip-playlist");
   if(chipPl)chipPl.style.display='none';
   $("suggested-list").innerHTML=skelRow(3);
   if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=skelRow(3);
-  // Reset infinite scroll state
   _suggPage=0; _suggList=[];
   if(_suggObserver){ _suggObserver.disconnect(); _suggObserver=null; }
 
   const v=videos.find(x=>x.id===id);if(!v)return;
 
-  // Build watch URL — pushState for new navigation, replaceState for back/forward
+  // Update URL to reflect current episode
   const pl2=playlists.find(p=>(p.videos||[]).includes(id));
   if(pl2){
     const epNum=(pl2.videos||[]).indexOf(id)+1;
-    const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
-    if(push) history.pushState({page:'watch',videoId:id},'',watchUrl);
-    else history.replaceState({page:'watch',videoId:id},'',watchUrl);
+    history.replaceState({page:'watch',videoId:id},'',`/watch/${playlistSlug(pl2)}/ep-${epNum}`);
   } else {
-    const watchUrl=`/watch/${videoSlug(v)}`;
-    if(push) history.pushState({page:'watch',videoId:id},'',watchUrl);
-    else history.replaceState({page:'watch',videoId:id},'',watchUrl);
+    history.replaceState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
   }
 
   // Show pre-roll ad, then load video with mid-roll schedule
@@ -1239,7 +1245,7 @@ window.openVideo=async (id,push=true)=>{
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
         href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
-        onclick="event.preventDefault();openVideo('${pv.id}')">
+        onclick="event.preventDefault();window.location.href='/watch/${playlistSlug(pl)}/ep-${pi+1}'">
         <div class="pl-thumb" style="position:relative;">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
           ${isCurrent?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:''}
@@ -1283,11 +1289,18 @@ window.openVideo=async (id,push=true)=>{
   // Setup mini player observer
 };
 
+
 window.openPlaylist=(plId,startId)=>{
   const pl=playlists.find(p=>p.id===plId);
-  if(!pl||!(pl.videos||[]).length){openVideo(startId);return;}
+  if(!pl||!(pl.videos||[]).length){
+    const v=videos.find(x=>x.id===startId);
+    if(v) window.location.href=`/watch/${videoSlug(v)}`;
+    return;
+  }
   const i=pl.videos.indexOf(startId);
-  openVideo(pl.videos[i>=0?i:0]);
+  const vid=pl.videos[i>=0?i:0];
+  const epNum=(pl.videos||[]).indexOf(vid)+1;
+  window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
 };
 let _countdownTimer=null;
 const COUNTDOWN_SEC=5;
@@ -1314,7 +1327,7 @@ function startCountdown(){
     if(lbl) lbl.textContent=`Next in ${remaining}s`;
     if(remaining<=0){
       clearCountdown();
-      openVideo(next.id);
+      playNext();
       return;
     }
     remaining--;
@@ -1335,13 +1348,19 @@ window.toggleDesc=()=>{
 window.playNext=()=>{
   clearCountdown();
   const n=playlistQueue[plQueueIdx+1];
-  if(n) openVideo(n.id);
+  if(!n) return;
+  const pl=playlists.find(p=>(p.videos||[]).includes(n.id));
+  if(pl){ const ep=(pl.videos||[]).indexOf(n.id)+1; window.location.href=`/watch/${playlistSlug(pl)}/ep-${ep}`; }
+  else { const v=videos.find(x=>x.id===n.id); if(v) window.location.href=`/watch/${videoSlug(v)}`; }
 };
 
 window.playPrev=()=>{
   clearCountdown();
   const p=playlistQueue[plQueueIdx-1];
-  if(p) openVideo(p.id);
+  if(!p) return;
+  const pl=playlists.find(pl=>(pl.videos||[]).includes(p.id));
+  if(pl){ const ep=(pl.videos||[]).indexOf(p.id)+1; window.location.href=`/watch/${playlistSlug(pl)}/ep-${ep}`; }
+  else { const v=videos.find(x=>x.id===p.id); if(v) window.location.href=`/watch/${videoSlug(v)}`; }
 };
 
 // ── Watch filter chips ──
@@ -1361,7 +1380,7 @@ window.setWatchFilter=(type,btn)=>{
 window.openPlaylistById=id=>{
   const pl=playlists.find(p=>p.id===id);
   if(!pl||(pl.videos||[]).length===0) return;
-  openVideo(pl.videos[0]);
+  window.location.href=`/watch/${playlistSlug(pl)}/ep-1`;
 };
 
 // ── Category ──
