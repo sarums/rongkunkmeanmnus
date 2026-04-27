@@ -501,86 +501,42 @@ window.addEventListener("popstate",e=>{
 });
 
 // ── Load Data ──
-// ── SESSION CACHE ─────────────────────────────────────────
-const CACHE_KEY = 'rkmn_cache';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-function saveCache(data){
-  try{
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-      ts: Date.now(),
-      data
-    }));
-  } catch(e){}
-}
-
-function loadCache(){
-  try{
-    const raw = sessionStorage.getItem(CACHE_KEY);
-    if(!raw) return null;
-    const {ts, data} = JSON.parse(raw);
-    // Expire after 5 minutes
-    if(Date.now() - ts > CACHE_TTL) return null;
-    return data;
-  } catch(e){ return null; }
-}
-
-function applySettings(s){
-  if(s?.name){
-    siteName = s.name;
-    ["site-name","footer-name"].forEach(id=>{ if($(id)) $(id).textContent=s.name; });
-    document.title = s.name;
-    document.getElementById('og-site')?.setAttribute('content', s.name);
-    const yr = new Date().getFullYear();
-    const copy = `© ${yr} ${s.name}. All rights reserved.`;
-    ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{ if($(id)) $(id).textContent=copy; });
-  }
-  if(s?.footer && $("footer-desc")) $("footer-desc").textContent = s.footer;
-}
-
 async function loadAll(){
   try{
-    // Load ads config first
+    // Load ads config first so feed cards render correctly
     if(window.loadAdsConfig) await window.loadAdsConfig();
 
-    // Try cache first — instant load
-    const cached = loadCache();
-    if(cached){
-      categories = cached.categories||[];
-      playlists  = cached.playlists||[];
-      videos     = cached.videos||[];
-      sections   = cached.sections||[];
-      applySettings(cached.settings);
-    } else {
-      // No cache — fetch from Firebase
-      const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
-        getDocs(collection(db,"categories")),
-        getDocs(collection(db,"playlists")),
-        getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
-        getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
-      ]);
-      categories = catSnap.docs.map(d=>({id:d.id,...d.data()}));
-      playlists  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
-      videos     = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
-      sections   = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+    const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
+      getDocs(collection(db,"categories")),
+      getDocs(collection(db,"playlists")),
+      getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
+      getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
+    ]);
+    categories=catSnap.docs.map(d=>({id:d.id,...d.data()}));
+    playlists=plSnap.docs.map(d=>({id:d.id,...d.data()}));
+    videos=vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+    sections=secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
 
-      const stDoc = await getDoc(doc(db,"settings","main")).catch(()=>null);
-      const settings = stDoc?.exists() ? stDoc.data() : null;
-
-      // Apply settings
-      if(settings){
-        applySettings(settings);
-      } else {
-        ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=siteDefaults.name;});
+    const stDoc=await getDoc(doc(db,"settings","main")).catch(()=>null);
+    if(stDoc?.exists()){
+      const s=stDoc.data();
+      if(s.name){
+        siteName=s.name;
+        ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=s.name;});
+        document.title=s.name;
+        document.getElementById('og-site')?.setAttribute('content',s.name);
         const yr=new Date().getFullYear();
-        const copy=`© ${yr} ${siteDefaults.name}. All rights reserved.`;
+        const copy=`© ${yr} ${s.name}. All rights reserved.`;
         ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{if($(id))$(id).textContent=copy;});
-        document.title=siteDefaults.name;
-        if($("footer-desc"))$("footer-desc").textContent=siteDefaults.footer;
       }
-
-      // Save to cache for next page load
-      saveCache({ categories, playlists, videos, sections, settings });
+      if(s.footer&&$("footer-desc"))$("footer-desc").textContent=s.footer;
+    }else{
+      ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=siteDefaults.name;});
+      const yr=new Date().getFullYear();
+      const copy=`© ${yr} ${siteDefaults.name}. All rights reserved.`;
+      ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{if($(id))$(id).textContent=copy;});
+      document.title=siteDefaults.name;
+      if($("footer-desc"))$("footer-desc").textContent=siteDefaults.footer;
     }
 
     buildNav();buildHero();buildSections();
@@ -599,51 +555,12 @@ async function loadAll(){
     initCookieBanner();
     // Real-time listener — auto-update cards when videos change in Firestore
     startVideoListener();
-    // Background refresh cache silently after 10s (keeps data fresh)
-    setTimeout(refreshCacheBackground, 10000);
   }catch(err){
     console.error(err);
     showToast("Failed to load data","err");
     const loader=$('page-loader');
     if(loader){ loader.classList.add('hidden'); setTimeout(()=>loader.remove(),500); }
   }
-}
-
-// Refresh cache in background without blocking UI
-async function refreshCacheBackground(){
-  try{
-    const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
-      getDocs(collection(db,"categories")),
-      getDocs(collection(db,"playlists")),
-      getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
-      getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
-    ]);
-    const newCats = catSnap.docs.map(d=>({id:d.id,...d.data()}));
-    const newPls  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
-    const newVids = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
-    const newSecs = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
-    const stDoc   = await getDoc(doc(db,"settings","main")).catch(()=>null);
-    const settings = stDoc?.exists() ? stDoc.data() : null;
-
-    // Check if new videos added
-    const newCount = newVids.filter(nv=>!videos.find(v=>v.id===nv.id)).length;
-
-    // Update state
-    categories = newCats;
-    playlists  = newPls;
-    videos     = newVids;
-    sections   = newSecs;
-
-    // Save fresh cache
-    saveCache({ categories, playlists, videos, sections, settings });
-
-    // Show toast if new videos found
-    if(newCount > 0){
-      showUpdateToast(newCount);
-      buildSections();
-      buildHero();
-    }
-  } catch(e){}
 }
 
 function startVideoListener(){
