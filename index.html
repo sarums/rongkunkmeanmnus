@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -67,11 +66,10 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus)",
-    "alternateName": "RKMN",
-    "alternateName": "រោងកុនគ្មានមនុស្ស",
+    "name": "រោងកុនគ្មានមនុស្ស",
+    "alternateName": ["RongKunKmeanMnus", "RKMN"],
     "url": "https://www.rongkunkmeanmnus.com",
-    "description": "Watch Khmer drama, series and entertainment videos online.",
+    "description": "Watch Chinese Drama and Khmer dubbed series online for free. រោងកុនគ្មានមនុស្ស — your free streaming destination.",
     "inLanguage": ["km", "en"],
     "potentialAction": {
       "@type": "SearchAction",
@@ -92,7 +90,6 @@
 
   <link rel="stylesheet" href="/assets/css/main.css">
   <!-- Google AdSense -->
-  <meta name="google-adsense-account" content="ca-pub-6821890542678085">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6821890542678085" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -430,9 +427,30 @@
 
 
 
-        <div id="watch-desc-wrap">
-          <p id="watch-desc" class="watch-desc" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden"></p>
-          <span class="watch-desc-expand" id="watch-desc-toggle" onclick="toggleDesc()" style="display:none">Show more ▾</span>
+        <!-- Description Info Card -->
+        <div id="watch-desc-wrap" style="margin-top:14px;">
+
+          <!-- Synopsis (collapsible) -->
+          <div id="watch-synopsis-wrap" style="display:none;margin-bottom:12px;">
+            <div id="watch-synopsis" class="watch-desc" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div>
+            <span class="watch-desc-expand" id="watch-desc-toggle" onclick="toggleDesc()" style="display:none">Show more ▾</span>
+          </div>
+
+          <!-- Info Card -->
+          <div id="watch-info-card" style="display:none;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden;">
+            <!-- Card header -->
+            <div id="watch-card-title" style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;font-weight:800;color:#e4e4e7;display:flex;align-items:center;justify-content:space-between;">
+              <span id="watch-drama-title"></span>
+              <span id="watch-drama-year" style="font-size:.68rem;color:#555;font-weight:500;"></span>
+            </div>
+            <!-- Info rows -->
+            <div id="watch-info-rows" style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+            </div>
+          </div>
+
+          <!-- Plain text fallback -->
+          <p id="watch-desc" class="watch-desc" style="display:none;"></p>
+
         </div>
         <div class="watch-tags" id="watch-tags"></div>
 
