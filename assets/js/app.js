@@ -501,6 +501,137 @@ window.addEventListener("popstate",e=>{
 });
 
 // ── Load Data ──
+// ── MARKDOWN PARSER (bold, italic, links) ─────────────────
+function parseMd(text){
+  if(!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') // escape HTML
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#e4e4e7;font-weight:700;">$1</strong>') // **bold**
+    .replace(/\*(.+?)\*/g,'<em style="color:#aaa;">$1</em>') // *italic*
+    .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:#f27d26;text-decoration:none;">$1</a>'); // [link](url)
+}
+
+// ── WATCH DESCRIPTION RENDERER ───────────────────────────
+function renderWatchDescription(v){
+  const rawDesc = v.description||'';
+  const parsed  = parseStructuredDesc(rawDesc);
+  const synEl   = $('watch-synopsis');
+  const synWrap = $('watch-synopsis-wrap');
+  const card    = $('watch-info-card');
+  const descEl  = $('watch-desc');
+  const toggle  = $('watch-desc-toggle');
+
+  if(parsed){
+    // Show synopsis
+    if(synEl && parsed.synopsis){
+      synEl.innerHTML = parseMd(parsed.synopsis);
+      if(synWrap) synWrap.style.display='block';
+      if(toggle){
+        toggle.style.display = parsed.synopsis.length>150 ? '' : 'none';
+        toggle.textContent = 'Show more ▾';
+        synEl.style.webkitLineClamp='3';
+        synEl.style.overflow='hidden';
+      }
+    }
+    // Show info card
+    if(card && parsed.fields && parsed.fields.length){
+      $('watch-drama-title').textContent = parsed.dramaTitle||v.title||'';
+      $('watch-drama-year').textContent  = parsed.year||'';
+      const rows = $('watch-info-rows');
+      if(rows){
+        rows.innerHTML = parsed.fields.map(f=>`
+          <div class="watch-info-row${f.full?' full':''}">
+            <span class="watch-info-label">${f.icon} ${f.label}</span>
+            <span class="watch-info-value">${parseMd(f.value)}</span>
+          </div>`).join('');
+      }
+      card.style.display='block';
+    }
+    if(descEl) descEl.style.display='none';
+  } else {
+    // Fallback plain text
+    const platform = v.platform||v.source||'';
+    const cat = v.category||'';
+    const epText = v.episodeNum?`Episode ${v.episodeNum}`:'';
+    const fallback = rawDesc.trim().length>20 ? rawDesc :
+      [v.title?`Watch "${v.title}"${epText?' - '+epText:''} online for free on រោងកុនគ្មានមនុស្ស.`:'',
+       cat?`This is a ${cat} video.`:'',
+       `Stream free ${cat||'drama'} content on រោងកុនគ្មានមនុស្ស. No subscription needed.`
+      ].filter(Boolean).join(' ');
+    if(descEl){ descEl.style.display=''; descEl.innerHTML=parseMd(fallback); }
+    if(synWrap) synWrap.style.display='none';
+    if(card) card.style.display='none';
+    if(toggle){
+      toggle.style.display=fallback.length>150?'':'none';
+      toggle.textContent='Show more ▾';
+      if(descEl){ descEl.style.webkitLineClamp='3'; descEl.style.overflow='hidden'; }
+    }
+  }
+}
+
+// Parse structured description text into fields
+function parseStructuredDesc(text){
+  if(!text||text.trim().length<30) return null;
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+
+  // Detect structured format — look for "Key: Value" lines
+  const fieldLines = lines.filter(l=>/^(Title|Type|Format|Country|Episodes|Aired|Duration|Network|Content Rating|Cast|Genre|Director)\s*:/i.test(l));
+  if(fieldLines.length < 2) return null; // not structured enough
+
+  // Extract synopsis — lines before first field
+  const firstFieldIdx = lines.findIndex(l=>/^(Title|Type|Format|Country|Episodes|Aired|Duration|Network)\s*:/i.test(l));
+  const synopsisLines = firstFieldIdx > 0 ? lines.slice(0, firstFieldIdx) : [];
+  // Remove episode title lines (lines with "|" separators)
+  const synopsis = synopsisLines.filter(l=>!l.includes('|')).join(' ').trim();
+
+  // Extract drama title and year
+  const titleLine = fieldLines.find(l=>/^Title\s*:/i.test(l));
+  const dramaTitle = titleLine ? titleLine.replace(/^Title\s*:/i,'').trim() : '';
+  const airedLine = fieldLines.find(l=>/^Aired\s*:/i.test(l));
+  const yearMatch = airedLine ? airedLine.match(/\d{4}/) : null;
+  const year = yearMatch ? yearMatch[0] : '';
+
+  // Build info fields
+  const fieldMap = [
+    {key:'Type',      icon:'🎭', label:'Type'},
+    {key:'Country',   icon:'🌏', label:'Country'},
+    {key:'Episodes',  icon:'📺', label:'Episodes'},
+    {key:'Aired',     icon:'📅', label:'Aired', full:true},
+    {key:'Duration',  icon:'⏱', label:'Duration'},
+    {key:'Network',   icon:'📡', label:'Network', full:true},
+    {key:'Format',    icon:'🎬', label:'Format'},
+    {key:'Cast',      icon:'⭐', label:'Cast', full:true},
+    {key:'Genre',     icon:'🏷', label:'Genre', full:true},
+  ];
+
+  const fields = [];
+  fieldMap.forEach(({key,icon,label,full})=>{
+    const line = fieldLines.find(l=>new RegExp(`^${key}\s*:`,'i').test(l));
+    if(line){
+      const value = line.replace(new RegExp(`^${key}\s*:`,'i'),'').replace(/\.+$/,'').trim();
+      if(value && value.toLowerCase()!=='not yet rated' && value!=='-'){
+        fields.push({icon,label,value,full:!!full});
+      }
+    }
+  });
+
+  return { synopsis, dramaTitle, year, fields };
+}
+
+// toggleDesc works for both synopsis and plain desc
+window.toggleDesc=()=>{
+  // Try synopsis first
+  const syn = $('watch-synopsis');
+  const desc = $('watch-desc');
+  const btn  = $('watch-desc-toggle');
+  const el   = syn?.style.display!=='none' ? syn : desc;
+  if(!el||!btn) return;
+  const collapsed = el.style.overflow==='hidden';
+  el.style.overflow  = collapsed?'visible':'hidden';
+  el.style.webkitLineClamp = collapsed?'unset':'3';
+  btn.textContent    = collapsed?'Show less ▴':'Show more ▾';
+};
+
 // ── SESSION CACHE ─────────────────────────────────────────
 const CACHE_KEY = 'rkmn_cache';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
