@@ -323,10 +323,18 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .watch-divider { width: 1px; height: 30px; background: var(--border); flex-shrink:0; }
 .share-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 9999px; font-size: .74rem; font-weight: 700; color: #aaa; cursor: pointer; transition: all .2s; }
 .share-btn:hover { background: rgba(255,255,255,.12); color: #fff; border-color:#555; }
-.watch-desc-wrap { background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:12px 14px; margin-top:14px; }
-.watch-desc { font-size: .84rem; color: #666; line-height: 1.75; font-weight: 400; }
+.watch-desc { font-size: .84rem; color: #777; line-height: 1.75; font-weight: 400; }
 .watch-desc-expand { font-size:.75rem; font-weight:700; color:var(--brand); cursor:pointer; margin-top:6px; display:inline-block; transition:opacity .2s; }
 .watch-desc-expand:hover { opacity:.8; }
+
+/* Info card rows */
+.watch-info-row { display:flex; flex-direction:column; gap:2px; }
+.watch-info-label { font-size:.6rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#444; }
+.watch-info-value { font-size:.78rem; color:#ccc; font-weight:500; line-height:1.4; }
+.watch-info-row.full { grid-column: 1 / -1; }
+@media(max-width:640px){
+  #watch-info-rows { grid-template-columns:1fr 1fr !important; gap:10px 12px !important; }
+}
 .watch-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
 .watch-tag { font-size:.7rem; font-weight:700; color:#555; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:9999px; padding:3px 10px; transition:all .2s; cursor:pointer; }
 .watch-tag:hover { color:var(--brand); border-color:var(--brand); }
