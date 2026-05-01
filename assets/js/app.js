@@ -1386,6 +1386,13 @@ window.openVideo=async (id,push=true)=>{
   if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=skelRow(3);
   _suggPage=0; _suggList=[];
   if(_suggObserver){ _suggObserver.disconnect(); _suggObserver=null; }
+  // Reset description card
+  const synWrapR=$('watch-synopsis-wrap');
+  const cardR=$('watch-info-card');
+  const descR=$('watch-desc');
+  if(synWrapR) synWrapR.style.display='none';
+  if(cardR) cardR.style.display='none';
+  if(descR){ descR.style.display='none'; descR.innerHTML=''; }
 
   const v=videos.find(x=>x.id===id);if(!v)return;
 
@@ -1412,33 +1419,8 @@ window.openVideo=async (id,push=true)=>{
   $("watch-cat").textContent=v.category||"";
   $("watch-views").textContent=fmtViews((v.views||0)+1);
   $("watch-date").textContent=v.createdAt?.toDate?v.createdAt.toDate().toLocaleDateString():"—";
-  // Description with expand toggle — rich fallback for SEO
-  const platform = v.platform||v.source||'';
-  const platformName = platform==='youtube'?'YouTube':platform==='dailymotion'?'Dailymotion':
-    platform==='rumble'?'Rumble':platform==='vimeo'?'Vimeo':platform==='facebook'?'Facebook':
-    platform==='odysee'?'Odysee':platform;
-  const cat = v.category||'';
-  const epText = v.episodeNum ? `Episode ${v.episodeNum}` : '';
-  const fallbackDesc = [
-    v.title ? `Watch "${v.title}"${epText?' - '+epText:''} online for free on រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus).` : '',
-    cat ? `This is a ${cat} video${platformName?' available on '+platformName:''}.` : '',
-    `Stream high quality ${cat||'drama'} content for free. No subscription needed. Enjoy the best ${cat||'entertainment'} videos online.`,
-    `រោងកុនគ្មានមនុស្ស brings you the best ${cat||'video'} content curated from top streaming platforms.`
-  ].filter(Boolean).join(' ');
-  const descText = v.description && v.description.trim().length > 20 ? v.description : fallbackDesc;
-  // Render as HTML to support rich text formatting
-  if(v.description && v.description.trim().length > 20){
-    $("watch-desc").innerHTML = v.description;
-  } else {
-    $("watch-desc").textContent = fallbackDesc;
-  }
-  const toggle=$("watch-desc-toggle");
-  if(toggle){
-    toggle.style.display=descText.length>150?'':'none';
-    toggle.textContent='Show more ▾';
-    $("watch-desc").style.webkitLineClamp='3';
-    $("watch-desc").style.overflow='hidden';
-  }
+  // Render description as info card
+  renderWatchDescription(v);
 
   // Tags
   const tagsEl=$("watch-tags");
