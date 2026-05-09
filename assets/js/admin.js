@@ -310,7 +310,7 @@ window.previewEditThumb = ()=>{
 // ── ADD VIDEO ─────────────────────────────────────────
 window.addVideo = async ()=>{
   const platform=qs('fPlatform').value, videoId=qs('fVidId').value.trim();
-  const title=qs('fTitle').value.trim(), description=qs('fDesc').value.trim();
+  const title=qs('fTitle').value.trim(), description=getRichContent('fDescEditor');
   const category=qs('fCat').value, section=qs('fSection').value;
   const plId=qs('fPlaylist').value, duration=qs('fDuration').value.trim();
   const customThumb=qs('fThumb').value.trim(), viewsDisplay=qs('fViews').value.trim();
@@ -332,7 +332,8 @@ window.addVideo = async ()=>{
     }
     showToast('Video Added!',`"${title}" has been added successfully`,'ok');
     // reset form
-    ['fVidId','fTitle','fDesc','fDuration','fThumb','fViews','fEpNum'].forEach(id=>qs(id).value='');
+    ['fVidId','fTitle','fDuration','fThumb','fViews','fEpNum'].forEach(id=>{ if(qs(id)) qs(id).value=''; });
+    richClear('fDescEditor');
     qs('fSection').value=''; qs('fPlaylist').value='';
     qs('thumbPreview').innerHTML='<span>Enter Video ID to preview thumbnail</span>';
     setPlatform('dailymotion');
@@ -389,7 +390,7 @@ window.openEdit = (id)=>{
   setEditPlatform(v.platform);
   qs('editVidId').value=v.videoId||'';
   qs('editTitle').value=v.title||'';
-  qs('editDesc').value=v.description||'';
+  setRichContent('editDescEditor', v.description||'');
   qs('editDuration').value=v.duration||'';
   qs('editThumb').value=v.customThumb||'';
   qs('editEpNum').value=v.episodeNum||'';
@@ -410,7 +411,7 @@ window.closeEditModal = ()=>{ qs('editModal').classList.remove('open'); };
 window.saveEdit = async ()=>{
   const id=qs('editId').value;
   const platform=qs('editPlatform').value, videoId=qs('editVidId').value.trim();
-  const title=qs('editTitle').value.trim(), description=qs('editDesc').value.trim();
+  const title=qs('editTitle').value.trim(), description=getRichContent('editDescEditor');
   const category=qs('editCat').value, section=qs('editSection').value;
   const duration=qs('editDuration').value.trim(), customThumb=qs('editThumb').value.trim();
   const epNum=parseInt(qs('editEpNum')?.value)||0;
@@ -1613,6 +1614,28 @@ window.saveProduct = async id=>{
 // ══════════════════════════════════════════
 let _sitemapXml = '';
 
+// slug helpers — mirrors app.js
+function smToSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,80); }
+function smPlaylistSlug(pl){ const s=smToSlug(pl.name||''); return s.length>=3?s:pl.id; }
+function smVideoSlug(v){ const s=smToSlug(v.title||''); return s.length>=3?s:v.id; }
+function smGetThumb(v){
+  if(v.customThumb||v.thumbnail) return v.customThumb||v.thumbnail;
+  const src=v.platform||v.source||'';
+  const id=v.videoId||'';
+  if(src==='dailymotion') return 'https://www.dailymotion.com/thumbnail/video/'+id;
+  if(src==='youtube')     return 'https://img.youtube.com/vi/'+id+'/hqdefault.jpg';
+  if(src==='vimeo')       return 'https://vumbnail.com/'+id+'.jpg';
+  return '';
+}
+function smEsc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function smDurToSec(str){
+  if(!str) return '';
+  const p=str.trim().split(':').map(Number);
+  if(p.length===2) return String(p[0]*60+p[1]);
+  if(p.length===3) return String(p[0]*3600+p[1]*60+p[2]);
+  return '';
+}
+
 window.generateSitemap = async ()=>{
   const btn    = qs('smGenBtn');
   const dlBtn  = qs('smDownloadBtn');
@@ -1635,7 +1658,7 @@ window.generateSitemap = async ()=>{
       getDocs(query(collection(db,'videos'),orderBy('createdAt','desc'))),
       getDocs(collection(db,'playlists'))
     ]);
-    const vids = vSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const vids = vSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
     const pls  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -1652,71 +1675,98 @@ window.generateSitemap = async ()=>{
     ];
     statics.forEach(s=>{
       xml += '  <url>\n';
-      xml += '    <loc>' + siteUrl + s.loc + '</loc>\n';
-      xml += '    <changefreq>' + s.freq + '</changefreq>\n';
-      xml += '    <priority>' + s.priority + '</priority>\n';
-      xml += '    <lastmod>' + today + '</lastmod>\n';
+      xml += '    <loc>'+siteUrl+s.loc+'</loc>\n';
+      xml += '    <changefreq>'+s.freq+'</changefreq>\n';
+      xml += '    <priority>'+s.priority+'</priority>\n';
+      xml += '    <lastmod>'+today+'</lastmod>\n';
       xml += '  </url>\n\n';
     });
 
-    // Videos
-    vids.forEach(v=>{
-      const lastmod = v.createdAt?.toDate ? v.createdAt.toDate().toISOString().split('T')[0] : today;
-      const title   = (v.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const desc    = (v.description||v.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const thumb   = v.customThumb||(v.platform==='dailymotion'?'https://www.dailymotion.com/thumbnail/video/'+(v.videoId||''):'');
-      const dur     = durToSec(v.duration||'');
-
-      xml += '  <url>\n';
-      xml += '    <loc>' + siteUrl + '/watch/' + v.id + '</loc>\n';
-      xml += '    <lastmod>' + lastmod + '</lastmod>\n';
-      xml += '    <changefreq>weekly</changefreq>\n';
-      xml += '    <priority>0.8</priority>\n';
-      if(title){
-        xml += '    <video:video>\n';
-        xml += '      <video:title>' + title + '</video:title>\n';
-        if(desc) xml += '      <video:description>' + desc + '</video:description>\n';
-        if(thumb) xml += '      <video:thumbnail_loc>' + thumb + '</video:thumbnail_loc>\n';
-        if(dur)  xml += '      <video:duration>' + dur + '</video:duration>\n';
-        xml += '    </video:video>\n';
-      }
-      xml += '  </url>\n\n';
-    });
-
-    // Playlists
+    // Playlist episode URLs — proper /watch/playlist-slug/ep-N format
+    let epCount = 0;
     pls.forEach(pl=>{
-      const lastmod = pl.createdAt?.toDate ? pl.createdAt.toDate().toISOString().split('T')[0] : today;
+      const plSlug = smPlaylistSlug(pl);
+      (pl.videos||[]).forEach((vidId, idx)=>{
+        const v = vids.find(x=>x.id===vidId);
+        if(!v) return;
+        const epNum   = idx+1;
+        const loc     = siteUrl+'/watch/'+plSlug+'/ep-'+epNum;
+        const title   = smEsc(v.title||'');
+        const desc    = smEsc((v.description||v.title||'').replace(/<[^>]*>/g,'').slice(0,2048));
+        const thumb   = smGetThumb(v);
+        const dur     = smDurToSec(v.duration||'');
+        const lastmod = v.createdAt?.toDate ? v.createdAt.toDate().toISOString().split('T')[0] : today;
+        xml += '  <url>\n';
+        xml += '    <loc>'+loc+'</loc>\n';
+        xml += '    <lastmod>'+lastmod+'</lastmod>\n';
+        xml += '    <changefreq>weekly</changefreq>\n';
+        xml += '    <priority>0.8</priority>\n';
+        if(title){
+          xml += '    <video:video>\n';
+          xml += '      <video:title>'+title+'</video:title>\n';
+          if(desc)  xml += '      <video:description>'+desc+'</video:description>\n';
+          if(thumb) xml += '      <video:thumbnail_loc>'+smEsc(thumb)+'</video:thumbnail_loc>\n';
+          if(dur)   xml += '      <video:duration>'+dur+'</video:duration>\n';
+          xml += '      <video:publication_date>'+lastmod+'T00:00:00+00:00</video:publication_date>\n';
+          xml += '    </video:video>\n';
+        }
+        xml += '  </url>\n\n';
+        epCount++;
+      });
+    });
+
+    // Single videos not in any playlist
+    const plVidIds = new Set(pls.flatMap(pl=>pl.videos||[]));
+    const singleVids = vids.filter(v=>!plVidIds.has(v.id));
+    singleVids.forEach(v=>{
+      const loc     = siteUrl+'/watch/'+smVideoSlug(v);
+      const title   = smEsc(v.title||'');
+      const desc    = smEsc((v.description||v.title||'').replace(/<[^>]*>/g,'').slice(0,2048));
+      const thumb   = smGetThumb(v);
+      const dur     = smDurToSec(v.duration||'');
+      const lastmod = v.createdAt?.toDate ? v.createdAt.toDate().toISOString().split('T')[0] : today;
       xml += '  <url>\n';
-      xml += '    <loc>' + siteUrl + '/watch/' + pl.id + '/ep-1</loc>\n';
-      xml += '    <lastmod>' + lastmod + '</lastmod>\n';
+      xml += '    <loc>'+loc+'</loc>\n';
+      xml += '    <lastmod>'+lastmod+'</lastmod>\n';
       xml += '    <changefreq>weekly</changefreq>\n';
       xml += '    <priority>0.7</priority>\n';
+      if(title){
+        xml += '    <video:video>\n';
+        xml += '      <video:title>'+title+'</video:title>\n';
+        if(desc)  xml += '      <video:description>'+desc+'</video:description>\n';
+        if(thumb) xml += '      <video:thumbnail_loc>'+smEsc(thumb)+'</video:thumbnail_loc>\n';
+        if(dur)   xml += '      <video:duration>'+dur+'</video:duration>\n';
+        xml += '      <video:publication_date>'+lastmod+'T00:00:00+00:00</video:publication_date>\n';
+        xml += '    </video:video>\n';
+      }
       xml += '  </url>\n\n';
     });
 
     xml += '</urlset>';
     _sitemapXml = xml;
 
-    const total = statics.length + vids.length + pls.length;
+    const totalVideos = epCount + singleVids.length;
+    const totalUrls   = statics.length + epCount + singleVids.length;
+
     if(stats && statsT){
       stats.style.display='block';
-      statsT.innerHTML = 'Generated <strong style="color:var(--text)">' + total + ' URLs</strong> — ' + statics.length + ' pages · ' + vids.length + ' videos · ' + pls.length + ' playlists';
+      statsT.innerHTML = 'Generated <strong style="color:var(--text)">'+totalUrls+' URLs</strong> — '
+        +statics.length+' pages · '+epCount+' playlist eps · '+singleVids.length+' single videos · '
+        +'<strong style="color:#22c55e">'+totalVideos+' &lt;video:video&gt; tags ✅</strong>';
     }
-
-    // Preview first 3 video entries
     if(preWrap && preview){
-      const lines = xml.split('\n');
-      preview.textContent = lines.slice(0,40).join('\n') + '\n...';
+      preview.textContent = xml.split('\n').slice(0,50).join('\n')+'\n...';
       preWrap.style.display='block';
     }
-
     if(dlBtn) dlBtn.style.display='inline-flex';
-    showToast('Done!', 'Sitemap ready — click Download', 'ok');
+    showToast('Done!','Sitemap ready — '+totalVideos+' videos tagged','ok');
+
   } catch(e){
     showToast('Error', e.message, 'err');
+    console.error(e);
   }
   btn.disabled=false;
-  btn.textContent='Generate Sitemap';
+  btn.textContent='🗺️ Generate Sitemap';
 };
 
 window.downloadSitemap = ()=>{
@@ -1728,14 +1778,6 @@ window.downloadSitemap = ()=>{
   URL.revokeObjectURL(url);
   showToast('Downloaded!','Upload sitemap.xml to GitHub root','ok');
 };
-
-function durToSec(str){
-  if(!str) return '';
-  const p=str.trim().split(':').map(Number);
-  if(p.length===2) return String(p[0]*60+p[1]);
-  if(p.length===3) return String(p[0]*3600+p[1]*60+p[2]);
-  return '';
-}
 
 // ── AUTO START ──
 // ── COMMENTS PANEL ──────────────────────────────────
