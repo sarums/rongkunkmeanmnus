@@ -66,11 +66,10 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus)",
-    "alternateName": "RKMN",
-    "alternateName": "រោងកុនគ្មានមនុស្ស",
+    "name": "រោងកុនគ្មានមនុស្ស",
+    "alternateName": ["RongKunKmeanMnus", "RKMN"],
     "url": "https://www.rongkunkmeanmnus.com",
-    "description": "Watch Khmer drama, series and entertainment videos online.",
+    "description": "Watch Chinese Drama and Khmer dubbed series online for free. រោងកុនគ្មានមនុស្ស — your free streaming destination.",
     "inLanguage": ["km", "en"],
     "potentialAction": {
       "@type": "SearchAction",
@@ -91,7 +90,6 @@
 
   <link rel="stylesheet" href="/assets/css/main.css">
   <!-- Google AdSense -->
-  <meta name="google-adsense-account" content="ca-pub-6821890542678085">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6821890542678085" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -429,9 +427,30 @@
 
 
 
-        <div id="watch-desc-wrap">
-          <p id="watch-desc" class="watch-desc" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden"></p>
-          <span class="watch-desc-expand" id="watch-desc-toggle" onclick="toggleDesc()" style="display:none">Show more ▾</span>
+        <!-- Description Info Card -->
+        <div id="watch-desc-wrap" style="margin-top:14px;">
+
+          <!-- Synopsis (collapsible) -->
+          <div id="watch-synopsis-wrap" style="display:none;margin-bottom:12px;">
+            <div id="watch-synopsis" class="watch-desc" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></div>
+            <span class="watch-desc-expand" id="watch-desc-toggle" onclick="toggleDesc()" style="display:none">Show more ▾</span>
+          </div>
+
+          <!-- Info Card -->
+          <div id="watch-info-card" style="display:none;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden;">
+            <!-- Card header -->
+            <div id="watch-card-title" style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;font-weight:800;color:#e4e4e7;display:flex;align-items:center;justify-content:space-between;">
+              <span id="watch-drama-title"></span>
+              <span id="watch-drama-year" style="font-size:.68rem;color:#555;font-weight:500;"></span>
+            </div>
+            <!-- Info rows -->
+            <div id="watch-info-rows" style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+            </div>
+          </div>
+
+          <!-- Plain text fallback -->
+          <p id="watch-desc" class="watch-desc" style="display:none;"></p>
+
         </div>
         <div class="watch-tags" id="watch-tags"></div>
 
@@ -589,7 +608,25 @@
   </div>
 
   <!-- ═══ 404 PAGE ═══ -->
-  <div id="page-404" class="page" style="min-height:100vh;display:none;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;flex-direction:column;">
+  <!-- BLOG LIST PAGE -->
+  <div class="page" id="page-blog">
+    <div style="max-width:900px;margin:0 auto;padding:5rem 1rem 2rem;">
+      <div style="margin-bottom:1.5rem;">
+        <h1 style="font-size:1.4rem;font-weight:900;color:#e4e4e7;margin-bottom:.3rem;">📝 Blog</h1>
+        <p style="font-size:.82rem;color:#555;">Drama reviews, episode recaps and more</p>
+      </div>
+      <div id="blog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem;"></div>
+    </div>
+  </div>
+
+  <!-- BLOG POST PAGE -->
+  <div class="page" id="page-blog-post">
+    <div style="max-width:720px;margin:0 auto;padding:5rem 1rem 2rem;">
+      <div id="blog-article"></div>
+    </div>
+  </div>
+
+  <div id="page-404" class="page"  style="min-height:100vh;display:none;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;flex-direction:column;">
     <div style="max-width:480px;width:100%;">
       <!-- 404 number -->
       <div style="font-size:clamp(6rem,18vw,10rem);font-weight:900;line-height:1;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.07);position:relative;user-select:none;margin-bottom:-1rem;">404</div>
