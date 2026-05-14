@@ -40,6 +40,7 @@
       <div class="sidebar-section">System</div>
       <button class="nav-item" onclick="showPanel('settings',this)"><span class="ico">⚙️</span>Settings</button>
       <button class="nav-item" onclick="showPanel('sitemap',this)"><span class="ico">🗺️</span>Sitemap</button>
+      <button class="nav-item" onclick="showPanel('blog',this)"><span class="ico">📝</span>Blog Posts</button>
       <button class="nav-item" onclick="showPanel('ads',this)"><span class="ico">📢</span>Ads Settings</button>
       <button class="nav-item" onclick="showPanel('products',this)"><span class="ico">🛍️</span>Products</button>
       <div style="margin-top:auto;padding:1rem;">
@@ -166,7 +167,20 @@
           </div>
           <div class="fg full" style="margin-bottom:1rem;">
             <label class="flabel">Description</label>
-            <textarea class="ftextarea" id="fDesc" placeholder="Brief description..."></textarea>
+            <div class="rich-editor-wrap" id="fDescWrap">
+              <div class="rich-toolbar">
+                <button type="button" onclick="richCmd('fDescEditor','bold')" title="Bold"><b>B</b></button>
+                <button type="button" onclick="richCmd('fDescEditor','italic')" title="Italic"><i>I</i></button>
+                <button type="button" onclick="richCmd('fDescEditor','underline')" title="Underline"><u>U</u></button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="richLink('fDescEditor')" title="Insert Link">🔗</button>
+                <button type="button" onclick="richCmd('fDescEditor','insertUnorderedList')" title="List">• List</button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="richClear('fDescEditor')" title="Clear">✕ Clear</button>
+              </div>
+              <div class="rich-content" id="fDescEditor" contenteditable="true" 
+                data-placeholder="Write a description... (supports bold, italic, links)"></div>
+            </div>
           </div>
           <div class="form-grid-3" style="margin-bottom:1rem;">
             <div class="fg">
@@ -686,7 +700,73 @@
         </div>
       </div>
 
-            <!-- ═══ SITEMAP PANEL ═══ -->
+            <!-- ═══ BLOG PANEL ═══ -->
+      <div class="panel" id="panel-blog">
+        <div class="panel-title">📝 Blog Posts</div>
+
+        <!-- Add Post Form -->
+        <div class="form-card" style="margin-bottom:1.5rem;">
+          <div class="form-card-title">➕ New Blog Post</div>
+          <div class="fg full" style="margin-bottom:.75rem;">
+            <label class="flabel">Title</label>
+            <input type="text" class="finput" id="blogTitle" placeholder="e.g. Top 10 Chinese Dramas 2024...">
+          </div>
+          <div class="fg full" style="margin-bottom:.75rem;">
+            <label class="flabel">Slug (URL) — auto generated</label>
+            <input type="text" class="finput" id="blogSlug" placeholder="e.g. top-10-chinese-dramas-2024">
+          </div>
+          <div class="fg full" style="margin-bottom:.75rem;">
+            <label class="flabel">Cover Image URL (optional)</label>
+            <input type="text" class="finput" id="blogCover" placeholder="https://...image.jpg">
+          </div>
+          <div class="fg full" style="margin-bottom:.75rem;">
+            <label class="flabel">Category</label>
+            <select class="fselect" id="blogCat">
+              <option value="Drama Review">🎭 Drama Review</option>
+              <option value="Episode Recap">📺 Episode Recap</option>
+              <option value="Top List">🏆 Top List</option>
+              <option value="Actor Profile">⭐ Actor Profile</option>
+              <option value="News">📰 News</option>
+              <option value="Guide">📖 Guide</option>
+            </select>
+          </div>
+          <div class="fg full" style="margin-bottom:.75rem;">
+            <label class="flabel">Excerpt (short summary — shown in blog list)</label>
+            <textarea class="ftextarea" id="blogExcerpt" placeholder="Short summary of the article..." style="height:60px;"></textarea>
+          </div>
+          <div class="fg full" style="margin-bottom:.75rem;">
+            <label class="flabel">Content (full article — supports **bold**, *italic*, ## Heading, [link](url))</label>
+            <textarea class="ftextarea" id="blogContent" placeholder="Write your full article here..." style="height:200px;"></textarea>
+          </div>
+          <div class="form-grid" style="margin-bottom:1rem;">
+            <div class="fg">
+              <label class="flabel">Status</label>
+              <select class="fselect" id="blogStatus">
+                <option value="published">✅ Published</option>
+                <option value="draft">📝 Draft</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">Language</label>
+              <select class="fselect" id="blogLang">
+                <option value="km">🇰🇭 Khmer</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="both">🌐 Both</option>
+              </select>
+            </div>
+          </div>
+          <button class="submit-btn" onclick="addBlogPost()">➕ Publish Post</button>
+        </div>
+
+        <!-- Posts List -->
+        <div class="form-card">
+          <div class="form-card-title">📋 All Posts <span id="blog-count" style="font-size:.75rem;color:var(--text2);font-weight:500"></span></div>
+          <div id="blog-empty" style="display:none;padding:2rem;text-align:center;color:var(--muted);font-size:.85rem;">No posts yet — write your first article above!</div>
+          <div id="blog-list" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <!-- ═══ SITEMAP PANEL ═══ -->
       <div class="panel" id="panel-sitemap">
         <div class="panel-title">🗺️ Sitemap Generator</div>
         <div class="form-card" style="margin-bottom:1.5rem;">
@@ -767,7 +847,20 @@
       </div>
       <div class="fg full" style="margin-bottom:1rem;">
         <label class="flabel">Description</label>
-        <textarea class="ftextarea" id="editDesc"></textarea>
+        <div class="rich-editor-wrap">
+          <div class="rich-toolbar">
+            <button type="button" onclick="richCmd('editDescEditor','bold')" title="Bold"><b>B</b></button>
+            <button type="button" onclick="richCmd('editDescEditor','italic')" title="Italic"><i>I</i></button>
+            <button type="button" onclick="richCmd('editDescEditor','underline')" title="Underline"><u>U</u></button>
+            <span class="rich-sep"></span>
+            <button type="button" onclick="richLink('editDescEditor')" title="Insert Link">🔗</button>
+            <button type="button" onclick="richCmd('editDescEditor','insertUnorderedList')" title="List">• List</button>
+            <span class="rich-sep"></span>
+            <button type="button" onclick="richClear('editDescEditor')" title="Clear">✕ Clear</button>
+          </div>
+          <div class="rich-content" id="editDescEditor" contenteditable="true"
+            data-placeholder="Write a description..."></div>
+        </div>
       </div>
       <div class="form-grid-3" style="margin-bottom:1rem;">
         <div class="fg">
