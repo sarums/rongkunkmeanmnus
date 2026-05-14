@@ -130,6 +130,7 @@ window.showPanel = (id, btn) => {
   if(id==='ads') loadAdsSettings();
   if(id==='products') loadProducts();
   if(id==='sitemap') {}; // sitemap panel ready
+  if(id==='blog') loadBlogPosts();
   if(id==='addvideo'){ populateSelects(); }
 };
 
@@ -1777,6 +1778,181 @@ window.downloadSitemap = ()=>{
   a.href=url; a.download='sitemap.xml'; a.click();
   URL.revokeObjectURL(url);
   showToast('Downloaded!','Upload sitemap.xml to GitHub root','ok');
+};
+
+// ══════════════════════════════════════════
+//  BLOG MANAGER
+// ══════════════════════════════════════════
+let allBlogPosts = [];
+
+function blogSlugify(s){
+  return (s||'').toLowerCase()
+    .replace(/\s+/g,'-')
+    .replace(/[^a-z0-9-]/g,'')
+    .replace(/-+/g,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,80);
+}
+
+// Auto-generate slug from title
+document.addEventListener('DOMContentLoaded', ()=>{
+  const titleEl = document.getElementById('blogTitle');
+  const slugEl  = document.getElementById('blogSlug');
+  if(titleEl && slugEl){
+    titleEl.addEventListener('input', ()=>{
+      if(!slugEl._manualEdit) slugEl.value = blogSlugify(titleEl.value);
+    });
+    slugEl.addEventListener('input', ()=>{ slugEl._manualEdit = true; });
+  }
+});
+
+async function loadBlogPosts(){
+  try {
+    const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    allBlogPosts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderBlogPosts();
+  } catch(e){ showToast('Error', e.message, 'err'); }
+}
+
+function renderBlogPosts(){
+  const list  = qs('blog-list');
+  const empty = qs('blog-empty');
+  const count = qs('blog-count');
+  if(!list) return;
+  count.textContent = '('+allBlogPosts.length+')';
+  if(!allBlogPosts.length){ empty.style.display='block'; list.innerHTML=''; return; }
+  empty.style.display='none';
+  list.innerHTML = allBlogPosts.map(p=>`
+    <div style="display:flex;align-items:flex-start;gap:.85rem;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:.85rem 1rem;transition:border-color .2s"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+      ${p.cover?`<img src="${p.cover}" style="width:80px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">`:
+        `<div style="width:80px;aspect-ratio:16/9;background:var(--bg4);border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem">📝</div>`}
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px;">
+          <span style="font-size:.88rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title||'—'}</span>
+          <span style="font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:4px;background:${p.status==='published'?'rgba(34,197,94,.1)':'rgba(255,165,0,.1)'};color:${p.status==='published'?'#22c55e':'orange'}">${p.status==='published'?'✅ Live':'📝 Draft'}</span>
+        </div>
+        <div style="font-size:.72rem;color:var(--text2);margin-bottom:4px;">${p.category||''} · ${p.lang==='km'?'🇰🇭 Khmer':p.lang==='en'?'🇺🇸 English':'🌐 Both'}</div>
+        <div style="font-size:.75rem;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.excerpt||''}</div>
+        <div style="font-size:.65rem;color:#444;margin-top:4px;">🔗 /blog/${p.slug||p.id}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+        <button class="act-btn act-edit" onclick="editBlogPost('${p.id}')">✏️ Edit</button>
+        <button class="act-btn act-del" onclick="deleteBlogPost('${p.id}','${(p.title||'').replace(/'/g,"\'")}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+window.addBlogPost = async ()=>{
+  const title   = qs('blogTitle').value.trim();
+  const slug    = qs('blogSlug').value.trim() || blogSlugify(title);
+  const cover   = qs('blogCover').value.trim();
+  const cat     = qs('blogCat').value;
+  const excerpt = qs('blogExcerpt').value.trim();
+  const content = qs('blogContent').value.trim();
+  const status  = qs('blogStatus').value;
+  const lang    = qs('blogLang').value;
+
+  if(!title){ showToast('Missing','Title is required','err'); return; }
+  if(!content){ showToast('Missing','Content is required','err'); return; }
+
+  const btn = document.querySelector('#panel-blog .submit-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Publishing...'; }
+
+  try {
+    const data = { title, slug, cover, category:cat, excerpt, content,
+      status, lang, views:0, createdAt:serverTimestamp() };
+    const ref = await addDoc(collection(db,'blog_posts'), data);
+    allBlogPosts.unshift({id:ref.id,...data});
+
+    // Reset form
+    ['blogTitle','blogSlug','blogCover','blogExcerpt','blogContent'].forEach(id=>{ if(qs(id)) qs(id).value=''; });
+    if(qs('blogSlug')) qs('blogSlug')._manualEdit = false;
+
+    showToast('Published!','"'+title+'" is now live','ok');
+    renderBlogPosts();
+  } catch(e){ showToast('Error',e.message,'err'); }
+
+  if(btn){ btn.disabled=false; btn.textContent='➕ Publish Post'; }
+};
+
+window.deleteBlogPost = (id, title)=>{
+  showConfirm('Delete Post?','"'+title+'" will be permanently deleted.',async()=>{
+    try {
+      await deleteDoc(doc(db,'blog_posts',id));
+      allBlogPosts = allBlogPosts.filter(p=>p.id!==id);
+      renderBlogPosts();
+      showToast('Deleted','Post removed','warn');
+    } catch(e){ showToast('Error',e.message,'err'); }
+  });
+};
+
+window.editBlogPost = id=>{
+  const p = allBlogPosts.find(x=>x.id===id); if(!p) return;
+  const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;" id="blogEditOverlay">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.75rem;width:640px;max-width:100%;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <span style="font-size:1rem;font-weight:800;">✏️ Edit Blog Post</span>
+      <button onclick="document.getElementById('blogEditOverlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;">×</button>
+    </div>
+    <label class="flabel">Title</label>
+    <input type="text" class="finput" id="beTi" value="${(p.title||'').replace(/"/g,'&quot;')}" style="margin-bottom:.75rem;">
+    <label class="flabel">Slug</label>
+    <input type="text" class="finput" id="beSl" value="${p.slug||''}" style="margin-bottom:.75rem;">
+    <label class="flabel">Cover Image URL</label>
+    <input type="text" class="finput" id="beCo" value="${p.cover||''}" style="margin-bottom:.75rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+      <div>
+        <label class="flabel">Category</label>
+        <select class="fselect" id="beCat">
+          ${['Drama Review','Episode Recap','Top List','Actor Profile','News','Guide'].map(c=>`<option value="${c}" ${c===p.category?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Status</label>
+        <select class="fselect" id="beSt">
+          <option value="published" ${p.status==='published'?'selected':''}>✅ Published</option>
+          <option value="draft" ${p.status==='draft'?'selected':''}>📝 Draft</option>
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Language</label>
+        <select class="fselect" id="beLa">
+          <option value="km" ${p.lang==='km'?'selected':''}>🇰🇭 Khmer</option>
+          <option value="en" ${p.lang==='en'?'selected':''}>🇺🇸 English</option>
+          <option value="both" ${p.lang==='both'?'selected':''}>🌐 Both</option>
+        </select>
+      </div>
+    </div>
+    <label class="flabel">Excerpt</label>
+    <textarea class="ftextarea" id="beEx" style="height:60px;margin-bottom:.75rem;">${p.excerpt||''}</textarea>
+    <label class="flabel">Content</label>
+    <textarea class="ftextarea" id="beCn" style="height:220px;margin-bottom:1rem;">${p.content||''}</textarea>
+    <button onclick="saveBlogPost('${id}')" class="submit-btn" style="width:100%;">💾 Save Changes</button>
+  </div>
+</div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+};
+
+window.saveBlogPost = async id=>{
+  const data = {
+    title   : document.getElementById('beTi')?.value.trim(),
+    slug    : document.getElementById('beSl')?.value.trim(),
+    cover   : document.getElementById('beCo')?.value.trim(),
+    category: document.getElementById('beCat')?.value,
+    status  : document.getElementById('beSt')?.value,
+    lang    : document.getElementById('beLa')?.value,
+    excerpt : document.getElementById('beEx')?.value.trim(),
+    content : document.getElementById('beCn')?.value.trim(),
+  };
+  if(!data.title){ showToast('Error','Title required','err'); return; }
+  try {
+    await updateDoc(doc(db,'blog_posts',id), data);
+    const p = allBlogPosts.find(x=>x.id===id); if(p) Object.assign(p,data);
+    document.getElementById('blogEditOverlay')?.remove();
+    showToast('Saved!','Post updated','ok');
+    renderBlogPosts();
+  } catch(e){ showToast('Error',e.message,'err'); }
 };
 
 // ── AUTO START ──
