@@ -23,7 +23,7 @@
 // ═══════════════════════════════════════════════════
 
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import{getFirestore,collection,getDocs,addDoc,deleteDoc,doc,updateDoc,increment,query,orderBy,getDoc,serverTimestamp,onSnapshot}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import{getFirestore,collection,getDocs,addDoc,deleteDoc,doc,updateDoc,increment,query,orderBy,getDoc,serverTimestamp,onSnapshot,where}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ── Firebase Config ──
 const firebaseConfig={apiKey:"AIzaSyAnXxuc92620WOz_bVkovnUEQ_LL4YFPp8",authDomain:"streamhub-ce717.firebaseapp.com",projectId:"streamhub-ce717",storageBucket:"streamhub-ce717.firebasestorage.app",messagingSenderId:"223272731262",appId:"1:223272731262:web:d17866d4a12f610c864e2f"};
@@ -2111,7 +2111,6 @@ async function showBlogPage(){
   if(!grid){ NP.done(); return; }
   grid.innerHTML = '<div class="skel-card"><div class="skeleton skel-thumb"></div><div class="skeleton skel-title"></div></div>'.repeat(4);
   try {
-    const { getDocs, collection, query, orderBy, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
     const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
     const posts = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
     if(!posts.length){
@@ -2143,7 +2142,6 @@ async function showBlogPost(slug){
   if(!article){ NP.done(); return; }
   article.innerHTML = '<div style="text-align:center;padding:3rem;color:#555;">Loading...</div>';
   try {
-    const { getDocs, collection, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
     const snap = await getDocs(query(collection(db,'blog_posts'), where('slug','==',slug)));
     const post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
     if(!post || post.status!=='published'){ show404(); return; }
