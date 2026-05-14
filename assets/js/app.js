@@ -119,7 +119,7 @@ window.showToast=(msg,type="ok")=>{
 };
 
 // ── SEO Meta Updater ──
-function updateMeta({title, desc, image, url, type='website', videoId=''}){
+function updateMeta({title, desc, image, url, type='website', videoId='', vid=null}){
   const sn = siteName||'RongKunKmeanMnus';
   const fullTitle = title ? `${title} | ${sn}` : `${sn} - Watch Videos Online`;
   const fullDesc  = desc  || 'Watch Khmer drama, series and entertainment videos online.';
@@ -151,18 +151,33 @@ function updateMeta({title, desc, image, url, type='website', videoId=''}){
 
   // JSON-LD — update dynamically for video pages
   const jsonld = document.getElementById('jsonld-main');
-  if(jsonld && type === 'video.other' && title){
-    jsonld.textContent = JSON.stringify({
+  if(jsonld && type === 'video.other' && title && videoId){
+    // Find video data for accurate schema
+    const schemaVid = videos.find(x=>x.id===videoId);
+    const uploadDate = schemaVid?.createdAt?.toDate
+      ? schemaVid.createdAt.toDate().toISOString()
+      : new Date().toISOString();
+    const embedUrl = schemaVid ? getEmbedUrl(schemaVid) : fullUrl;
+    const duration = schemaVid?.duration ? 'PT' + schemaVid.duration.replace(':','M') + 'S' : undefined;
+
+    const schema = {
       "@context": "https://schema.org",
       "@type": "VideoObject",
       "name": title,
-      "description": fullDesc,
-      "thumbnailUrl": fullImg,
+      "description": fullDesc.replace(/<[^>]*>/g,''), // strip HTML tags
+      "thumbnailUrl": [fullImg],
+      "uploadDate": uploadDate,
       "url": fullUrl,
-      "embedUrl": fullUrl,
-      "uploadDate": new Date().toISOString(),
-      "inLanguage": "en"
-    });
+      "embedUrl": embedUrl,
+      "inLanguage": "km",
+      "publisher": {
+        "@type": "Organization",
+        "name": "រោងកុនគ្មានមនុស្ស",
+        "url": "https://www.rongkunkmeanmnus.com"
+      }
+    };
+    if(duration) schema.duration = duration;
+    jsonld.textContent = JSON.stringify(schema);
   } else if(jsonld && type === 'website'){
     jsonld.textContent = JSON.stringify({
       "@context": "https://schema.org",
@@ -446,6 +461,12 @@ function routeFromUrl(push=false){
     return;
   }
 
+  // Blog
+  if(path==='/blog'){ showBlogPage(); return; }
+  if(path.startsWith('/blog/')){
+    const slug=path.replace('/blog/','');
+    showBlogPost(slug); return;
+  }
   // History
   if(path==='/history'){ showHistoryPage(); return; }
 
@@ -468,7 +489,7 @@ window.addEventListener("popstate",e=>{
   if(!state){ showPage('home',false); return; }
 
   if(state.page==='watch' && state.videoId){
-    $('player-iframe').src='';
+    // Real page - just re-render from URL
     openVideo(state.videoId, false);
   } else if(state.page==='cat'){
     const cat = categories.find(c=>c.id===state.catId);
@@ -486,42 +507,245 @@ window.addEventListener("popstate",e=>{
 });
 
 // ── Load Data ──
+// ── MARKDOWN PARSER (bold, italic, links) ─────────────────
+function parseMd(text){
+  if(!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') // escape HTML
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#e4e4e7;font-weight:700;">$1</strong>') // **bold**
+    .replace(/\*(.+?)\*/g,'<em style="color:#aaa;">$1</em>') // *italic*
+    .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:#f27d26;text-decoration:none;">$1</a>'); // [link](url)
+}
+
+// ── WATCH DESCRIPTION RENDERER ───────────────────────────
+function renderWatchDescription(v){
+  const rawDesc = v.description||'';
+  const parsed  = parseStructuredDesc(rawDesc);
+  const synEl   = $('watch-synopsis');
+  const synWrap = $('watch-synopsis-wrap');
+  const card    = $('watch-info-card');
+  const descEl  = $('watch-desc');
+  const toggle  = $('watch-desc-toggle');
+
+  if(parsed){
+    // Show synopsis
+    if(synEl && parsed.synopsis){
+      synEl.innerHTML = parseMd(parsed.synopsis);
+      if(synWrap) synWrap.style.display='block';
+      if(toggle){
+        toggle.style.display = parsed.synopsis.length>150 ? '' : 'none';
+        toggle.textContent = 'Show more ▾';
+        synEl.style.webkitLineClamp='3';
+        synEl.style.overflow='hidden';
+      }
+    }
+    // Show info card
+    if(card && parsed.fields && parsed.fields.length){
+      $('watch-drama-title').textContent = parsed.dramaTitle||v.title||'';
+      $('watch-drama-year').textContent  = parsed.year||'';
+      const rows = $('watch-info-rows');
+      if(rows){
+        rows.innerHTML = parsed.fields.map(f=>`
+          <div class="watch-info-row${f.full?' full':''}">
+            <span class="watch-info-label">${f.icon} ${f.label}</span>
+            <span class="watch-info-value">${parseMd(f.value)}</span>
+          </div>`).join('');
+      }
+      card.style.display='block';
+    }
+    if(descEl) descEl.style.display='none';
+  } else {
+    // Fallback plain text
+    const platform = v.platform||v.source||'';
+    const cat = v.category||'';
+    const epText = v.episodeNum?`Episode ${v.episodeNum}`:'';
+    const fallback = rawDesc.trim().length>20 ? rawDesc :
+      [v.title?`Watch "${v.title}"${epText?' - '+epText:''} online for free on រោងកុនគ្មានមនុស្ស.`:'',
+       cat?`This is a ${cat} video.`:'',
+       `Stream free ${cat||'drama'} content on រោងកុនគ្មានមនុស្ស. No subscription needed.`
+      ].filter(Boolean).join(' ');
+    if(descEl){ descEl.style.display=''; descEl.innerHTML=parseMd(fallback); }
+    if(synWrap) synWrap.style.display='none';
+    if(card) card.style.display='none';
+    if(toggle){
+      toggle.style.display=fallback.length>150?'':'none';
+      toggle.textContent='Show more ▾';
+      if(descEl){ descEl.style.webkitLineClamp='3'; descEl.style.overflow='hidden'; }
+    }
+  }
+}
+
+// Parse structured description text into fields
+function parseStructuredDesc(text){
+  if(!text||text.trim().length<30) return null;
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+
+  // Detect structured format — look for "Key: Value" lines
+  const fieldLines = lines.filter(l=>/^(Title|Type|Format|Country|Episodes|Aired|Duration|Network|Content Rating|Cast|Genre|Director)\s*:/i.test(l));
+  if(fieldLines.length < 2) return null; // not structured enough
+
+  // Extract synopsis — lines before first field
+  const firstFieldIdx = lines.findIndex(l=>/^(Title|Type|Format|Country|Episodes|Aired|Duration|Network)\s*:/i.test(l));
+  const synopsisLines = firstFieldIdx > 0 ? lines.slice(0, firstFieldIdx) : [];
+  // Remove episode title lines (lines with "|" separators)
+  const synopsis = synopsisLines.filter(l=>!l.includes('|')).join(' ').trim();
+
+  // Extract drama title and year
+  const titleLine = fieldLines.find(l=>/^Title\s*:/i.test(l));
+  const dramaTitle = titleLine ? titleLine.replace(/^Title\s*:/i,'').trim() : '';
+  const airedLine = fieldLines.find(l=>/^Aired\s*:/i.test(l));
+  const yearMatch = airedLine ? airedLine.match(/\d{4}/) : null;
+  const year = yearMatch ? yearMatch[0] : '';
+
+  // Build info fields
+  const fieldMap = [
+    {key:'Type',      icon:'🎭', label:'Type'},
+    {key:'Country',   icon:'🌏', label:'Country'},
+    {key:'Episodes',  icon:'📺', label:'Episodes'},
+    {key:'Aired',     icon:'📅', label:'Aired', full:true},
+    {key:'Duration',  icon:'⏱', label:'Duration'},
+    {key:'Network',   icon:'📡', label:'Network', full:true},
+    {key:'Format',    icon:'🎬', label:'Format'},
+    {key:'Cast',      icon:'⭐', label:'Cast', full:true},
+    {key:'Genre',     icon:'🏷', label:'Genre', full:true},
+  ];
+
+  const fields = [];
+  fieldMap.forEach(({key,icon,label,full})=>{
+    const line = fieldLines.find(l=>new RegExp(`^${key}\s*:`,'i').test(l));
+    if(line){
+      const value = line.replace(new RegExp(`^${key}\s*:`,'i'),'').replace(/\.+$/,'').trim();
+      if(value && value.toLowerCase()!=='not yet rated' && value!=='-'){
+        fields.push({icon,label,value,full:!!full});
+      }
+    }
+  });
+
+  return { synopsis, dramaTitle, year, fields };
+}
+
+// toggleDesc works for both synopsis and plain desc
+window.toggleDesc=()=>{
+  // Try synopsis first
+  const syn = $('watch-synopsis');
+  const desc = $('watch-desc');
+  const btn  = $('watch-desc-toggle');
+  const el   = syn?.style.display!=='none' ? syn : desc;
+  if(!el||!btn) return;
+  const collapsed = el.style.overflow==='hidden';
+  el.style.overflow  = collapsed?'visible':'hidden';
+  el.style.webkitLineClamp = collapsed?'unset':'3';
+  btn.textContent    = collapsed?'Show less ▴':'Show more ▾';
+};
+
+// ── SESSION CACHE ─────────────────────────────────────────
+const CACHE_KEY = 'rkmn_cache';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function saveCache(data){
+  try{
+    // Convert Firestore Timestamps to milliseconds for JSON serialization
+    function serialize(obj){
+      if(Array.isArray(obj)) return obj.map(serialize);
+      if(obj && typeof obj === 'object'){
+        if(obj.toDate && typeof obj.toDate === 'function'){
+          return {_ts: obj.toDate().getTime()}; // serialize timestamp
+        }
+        const result = {};
+        for(const k in obj) result[k] = serialize(obj[k]);
+        return result;
+      }
+      return obj;
+    }
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      data: serialize(data)
+    }));
+  } catch(e){ console.log('Cache save failed:', e.message); }
+}
+
+function loadCache(){
+  try{
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if(!raw) return null;
+    const {ts, data} = JSON.parse(raw);
+    // Expire after 5 minutes
+    if(Date.now() - ts > CACHE_TTL){ sessionStorage.removeItem(CACHE_KEY); return null; }
+    // Restore timestamps
+    function deserialize(obj){
+      if(Array.isArray(obj)) return obj.map(deserialize);
+      if(obj && typeof obj === 'object'){
+        if(obj._ts !== undefined){
+          // Restore as object with toDate() method
+          const d = new Date(obj._ts);
+          return { toDate: ()=>d, seconds: Math.floor(obj._ts/1000) };
+        }
+        const result = {};
+        for(const k in obj) result[k] = deserialize(obj[k]);
+        return result;
+      }
+      return obj;
+    }
+    return deserialize(data);
+  } catch(e){ return null; }
+}
+
+function applySettings(s){
+  if(s?.name){
+    siteName = s.name;
+    ["site-name","footer-name"].forEach(id=>{ if($(id)) $(id).textContent=s.name; });
+    document.title = s.name;
+    document.getElementById('og-site')?.setAttribute('content', s.name);
+    const yr = new Date().getFullYear();
+    const copy = `© ${yr} ${s.name}. All rights reserved.`;
+    ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{ if($(id)) $(id).textContent=copy; });
+  }
+  if(s?.footer && $("footer-desc")) $("footer-desc").textContent = s.footer;
+}
+
 async function loadAll(){
   try{
-    // Load ads config first so feed cards render correctly
+    // Load ads config first
     if(window.loadAdsConfig) await window.loadAdsConfig();
 
-    const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
-      getDocs(collection(db,"categories")),
-      getDocs(collection(db,"playlists")),
-      getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
-      getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
-    ]);
-    categories=catSnap.docs.map(d=>({id:d.id,...d.data()}));
-    playlists=plSnap.docs.map(d=>({id:d.id,...d.data()}));
-    videos=vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
-    sections=secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+    // Try cache first — instant load
+    const cached = loadCache();
+    if(cached){
+      categories = cached.categories||[];
+      playlists  = cached.playlists||[];
+      videos     = cached.videos||[];
+      sections   = cached.sections||[];
+      applySettings(cached.settings);
+    } else {
+      // No cache — fetch from Firebase
+      const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
+        getDocs(collection(db,"categories")),
+        getDocs(collection(db,"playlists")),
+        getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
+        getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
+      ]);
+      categories = catSnap.docs.map(d=>({id:d.id,...d.data()}));
+      playlists  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
+      videos     = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+      sections   = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
 
-    const stDoc=await getDoc(doc(db,"settings","main")).catch(()=>null);
-    if(stDoc?.exists()){
-      const s=stDoc.data();
-      if(s.name){
-        siteName=s.name;
-        ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=s.name;});
-        document.title=s.name;
-        document.getElementById('og-site')?.setAttribute('content',s.name);
+      const stDoc = await getDoc(doc(db,"settings","main")).catch(()=>null);
+      const settings = stDoc?.exists() ? stDoc.data() : null;
+
+      // Apply settings
+      if(settings){
+        applySettings(settings);
+      } else {
+        ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=siteDefaults.name;});
         const yr=new Date().getFullYear();
-        const copy=`© ${yr} ${s.name}. All rights reserved.`;
+        const copy=`© ${yr} ${siteDefaults.name}. All rights reserved.`;
         ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{if($(id))$(id).textContent=copy;});
+        document.title=siteDefaults.name;
+        if($("footer-desc"))$("footer-desc").textContent=siteDefaults.footer;
       }
-      if(s.footer&&$("footer-desc"))$("footer-desc").textContent=s.footer;
-    }else{
-      ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=siteDefaults.name;});
-      const yr=new Date().getFullYear();
-      const copy=`© ${yr} ${siteDefaults.name}. All rights reserved.`;
-      ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{if($(id))$(id).textContent=copy;});
-      document.title=siteDefaults.name;
-      if($("footer-desc"))$("footer-desc").textContent=siteDefaults.footer;
+
+      // Save to cache for next page load
+      saveCache({ categories, playlists, videos, sections, settings });
     }
 
     buildNav();buildHero();buildSections();
@@ -540,6 +764,8 @@ async function loadAll(){
     initCookieBanner();
     // Real-time listener — auto-update cards when videos change in Firestore
     startVideoListener();
+    // Background refresh cache silently after 10s (keeps data fresh)
+    setTimeout(refreshCacheBackground, 10000);
   }catch(err){
     console.error(err);
     showToast("Failed to load data","err");
@@ -548,45 +774,61 @@ async function loadAll(){
   }
 }
 
-function startVideoListener(){
-  let isFirst = true;
-  onSnapshot(query(collection(db,'videos'),orderBy('createdAt','desc')), snap=>{
-    // Skip first snapshot — already loaded in loadAll()
-    if(isFirst){ isFirst=false; return; }
+// Refresh cache in background without blocking UI
+async function refreshCacheBackground(){
+  try{
+    const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
+      getDocs(collection(db,"categories")),
+      getDocs(collection(db,"playlists")),
+      getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
+      getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
+    ]);
+    const newCats = catSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const newPls  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const newVids = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+    const newSecs = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+    const stDoc   = await getDoc(doc(db,"settings","main")).catch(()=>null);
+    const settings = stDoc?.exists() ? stDoc.data() : null;
 
-    const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+    // Check if new videos added
+    const newCount = newVids.filter(nv=>!videos.find(v=>v.id===nv.id)).length;
 
-    // Check what changed
-    const addedIds   = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
-    const removedIds = videos.filter(v=>!updated.find(uv=>uv.id===v.id)).map(v=>v.id);
-    // Only trigger on structural changes (new/deleted videos, title/status changes)
-    // NOT on view count changes to avoid interfering with playback history
-    const hasChanges = addedIds.length > 0 || removedIds.length > 0 ||
-      updated.some(uv=>{
-        const old=videos.find(v=>v.id===uv.id);
-        if(!old) return false;
-        // Only care about title, status, category changes — NOT views
-        return old.title!==uv.title || old.status!==uv.status || 
-               old.category!==uv.category || old.platform!==uv.platform;
-      });
+    // Update state
+    categories = newCats;
+    playlists  = newPls;
+    videos     = newVids;
+    sections   = newSecs;
 
-    if(!hasChanges) return;
+    // Save fresh cache
+    saveCache({ categories, playlists, videos, sections, settings });
 
-    // Update videos array
-    videos = updated;
-
-    // Only rebuild if NOT on watch page - avoid interfering with playback
-    const onWatchPage = document.getElementById('page-watch')?.classList.contains('active');
-    if(!onWatchPage){
+    // Show toast if new videos found
+    if(newCount > 0){
+      showUpdateToast(newCount);
       buildSections();
       buildHero();
     }
+  } catch(e){}
+}
 
-    // Show toast for new videos (always)
-    if(addedIds.length > 0){
-      showUpdateToast(addedIds.length);
-    }
-  });
+function startVideoListener(){
+  // Poll every 60s instead of onSnapshot to avoid corrupting browser history
+  // onSnapshot fires on view count updates causing extra pushState entries
+  setInterval(async ()=>{
+    const onWatch = document.getElementById('page-watch')?.classList.contains('active');
+    if(onWatch) return;
+    try {
+      const snap = await getDocs(query(collection(db,'videos'),orderBy('createdAt','desc')));
+      const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+      const addedIds = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
+      if(addedIds.length > 0){
+        videos = updated;
+        buildSections();
+        buildHero();
+        showUpdateToast(addedIds.length);
+      }
+    } catch(e){}
+  }, 60000);
 }
 
 // Show a subtle "new content" toast
@@ -684,6 +926,7 @@ function buildNav(activeId){
     </a>`;
   $("footer-links").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
+    +`<a href="/blog" onclick="event.preventDefault();showBlogPage()">Blog</a>`
     +`<a href="/about">About</a>`
     +`<a href="/privacy">Privacy</a>`
     +`<a href="/terms">Terms</a>`
@@ -728,7 +971,7 @@ function buildCard(v){
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
   const watchUrl=pl?`/watch/${playlistSlug(pl)}/ep-${epNum}`:`/watch/${videoSlug(v)}`;
-  const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='/watch/${videoSlug(v)}'`;
+  const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
   return`<a class="vcard" data-id="${v.id}" href="${watchUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
       <img src="${getThumb(v)}" alt="${(v.title||"").replace(/"/g,"")}" loading="lazy"
@@ -892,10 +1135,7 @@ window.heroClick=()=>{
   if(!v)return;
   const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
   if(pl) openPlaylist(pl.id,v.id);
-  else {
-    const vv=videos.find(x=>x.id===window._currentHeroId);
-    if(vv) window.location.href=`/watch/${videoSlug(vv)}`;
-  }
+  else openVideo(v.id);
 };
 
 function resetHeroTimer(){
@@ -924,7 +1164,7 @@ function buildContinueWatching(container){
       ${cwVids.map(v=>{
         const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
         const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
-        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='/watch/${videoSlug(v)}'`;
+        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
         return`<div class="cw-card" onclick="${click}">
           <div class="cw-thumb" style="position:relative;">
             <img src="${getThumb(v)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
@@ -1120,10 +1360,22 @@ window.seeAll=sid=>{
 // ── Watch ──
 window.openVideo=async (id,push=true)=>{
   if(!id) return;
+  // Always navigate to real URL when push=true
+  if(push){
+    const v=videos.find(x=>x.id===id); if(!v) return;
+    const pl2=playlists.find(p=>(p.videos||[]).includes(id));
+    if(pl2){
+      const epNum=(pl2.videos||[]).indexOf(id)+1;
+      window.location.href=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
+    } else {
+      window.location.href=`/watch/${videoSlug(v)}`;
+    }
+    return;
+  }
+  // push=false means called from routeFromUrl (page just loaded) — render directly
+  // When push=false: render watch page directly (called from routeFromUrl after page load)
   NP.start();
-
-  // Save current URL as previous page before navigating (for back button)
-  if(push) previousPage=location.pathname;
+  previousPage=location.pathname;
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
   window.scrollTo(0,0);
   playlistQueue=[];plQueueIdx=0;
@@ -1133,28 +1385,31 @@ window.openVideo=async (id,push=true)=>{
   $("watch-next-btn").style.display="none";
   $("watch-prev-btn").style.display="none";
   clearCountdown();
-  // Reset filter chips
   document.querySelectorAll('.watch-filter-chip').forEach(c=>c.classList.remove('active'));
   document.querySelector('.watch-filter-chip')?.classList.add('active');
   const chipPl=$("chip-playlist");
   if(chipPl)chipPl.style.display='none';
   $("suggested-list").innerHTML=skelRow(3);
   if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=skelRow(3);
+  _suggPage=0; _suggList=[];
+  if(_suggObserver){ _suggObserver.disconnect(); _suggObserver=null; }
+  // Reset description card
+  const synWrapR=$('watch-synopsis-wrap');
+  const cardR=$('watch-info-card');
+  const descR=$('watch-desc');
+  if(synWrapR) synWrapR.style.display='none';
+  if(cardR) cardR.style.display='none';
+  if(descR){ descR.style.display='none'; descR.innerHTML=''; }
 
   const v=videos.find(x=>x.id===id);if(!v)return;
 
-  // Build watch URL
-  if(push){
-    const pl2=playlists.find(p=>(p.videos||[]).includes(id));
-    if(pl2){
-      const epNum=(pl2.videos||[]).indexOf(id)+1;
-      const watchUrl=`/watch/${playlistSlug(pl2)}/ep-${epNum}`;
-      history.pushState({page:'watch',videoId:id},'',watchUrl);
-      console.log('▶ pushState:', watchUrl, '| length:', history.length);
-    } else {
-      history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
-      console.log('▶ pushState:', `/watch/${videoSlug(v)}`, '| history length:', history.length);
-    }
+  // Update URL to reflect current episode
+  const pl2=playlists.find(p=>(p.videos||[]).includes(id));
+  if(pl2){
+    const epNum=(pl2.videos||[]).indexOf(id)+1;
+    history.replaceState({page:'watch',videoId:id},'',`/watch/${playlistSlug(pl2)}/ep-${epNum}`);
+  } else {
+    history.replaceState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
   }
 
   // Show pre-roll ad, then load video with mid-roll schedule
@@ -1171,28 +1426,8 @@ window.openVideo=async (id,push=true)=>{
   $("watch-cat").textContent=v.category||"";
   $("watch-views").textContent=fmtViews((v.views||0)+1);
   $("watch-date").textContent=v.createdAt?.toDate?v.createdAt.toDate().toLocaleDateString():"—";
-  // Description with expand toggle — rich fallback for SEO
-  const platform = v.platform||v.source||'';
-  const platformName = platform==='youtube'?'YouTube':platform==='dailymotion'?'Dailymotion':
-    platform==='rumble'?'Rumble':platform==='vimeo'?'Vimeo':platform==='facebook'?'Facebook':
-    platform==='odysee'?'Odysee':platform;
-  const cat = v.category||'';
-  const epText = v.episodeNum ? `Episode ${v.episodeNum}` : '';
-  const fallbackDesc = [
-    v.title ? `Watch "${v.title}"${epText?' - '+epText:''} online for free on រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus).` : '',
-    cat ? `This is a ${cat} video${platformName?' available on '+platformName:''}.` : '',
-    `Stream high quality ${cat||'drama'} content for free. No subscription needed. Enjoy the best ${cat||'entertainment'} videos online.`,
-    `រោងកុនគ្មានមនុស្ស brings you the best ${cat||'video'} content curated from top streaming platforms.`
-  ].filter(Boolean).join(' ');
-  const descText = v.description && v.description.trim().length > 20 ? v.description : fallbackDesc;
-  $("watch-desc").textContent=descText;
-  const toggle=$("watch-desc-toggle");
-  if(toggle){
-    toggle.style.display=descText.length>150?'':'none';
-    toggle.textContent='Show more ▾';
-    $("watch-desc").style.webkitLineClamp='3';
-    $("watch-desc").style.overflow='hidden';
-  }
+  // Render description as info card
+  renderWatchDescription(v);
 
   // Tags
   const tagsEl=$("watch-tags");
@@ -1204,13 +1439,14 @@ window.openVideo=async (id,push=true)=>{
   // SEO + History
   addToHistory(id);
   updateMeta({
-    title : v.title,
-    desc  : v.description && v.description.trim().length>20
+    title   : v.title,
+    desc    : v.description && v.description.trim().length>20
       ? v.description
       : `Watch "${v.title}"${v.episodeNum?' Episode '+v.episodeNum:''} online free on រោងកុនគ្មានមនុស្ស. Stream ${v.category||'drama'} videos for free — no subscription needed.`,
-    image : getThumb(v),
-    url   : location.href,
-    type  : 'video.other'
+    image   : getThumb(v),
+    url     : location.href,
+    type    : 'video.other',
+    videoId : v.id
   });
 
   updateDoc(doc(db,"videos",id),{views:increment(1)}).catch(()=>{});
@@ -1240,7 +1476,7 @@ window.openVideo=async (id,push=true)=>{
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
         href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
-        onclick="event.preventDefault();navigateToEp('${pv.id}')">
+        onclick="event.preventDefault();window.location.href='/watch/${playlistSlug(pl)}/ep-${pi+1}'">
         <div class="pl-thumb" style="position:relative;">
           <img src="${getThumb(pv)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pv.id}/320/180'">
           ${isCurrent?`<div class="pl-thumb-overlay"><svg width="11" height="11" fill="#fff" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>`:''}
@@ -1273,11 +1509,9 @@ window.openVideo=async (id,push=true)=>{
   // Smarter related videos — same category first, then others
   const sameCat=videos.filter(x=>x.id!==id&&x.category===v.category);
   const others=videos.filter(x=>x.id!==id&&x.category!==v.category);
-  const related=[...sameCat,...others].slice(0,10);
-  const watched=getHistory();
-  const suggHtml=buildSuggWithAds(related,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
-  $("suggested-list").innerHTML=suggHtml;
-  if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=suggHtml;
+  const allRelated=[...sameCat,...others]; // ALL videos, not limited
+  // Init infinite scroll for suggested
+  initSuggInfiniteScroll(allRelated);
 
   // Load likes/dislikes + comments for this video
   loadReactions(id);
@@ -1286,17 +1520,17 @@ window.openVideo=async (id,push=true)=>{
   // Setup mini player observer
 };
 
+
 window.openPlaylist=(plId,startId)=>{
   const pl=playlists.find(p=>p.id===plId);
   if(!pl||!(pl.videos||[]).length){
-    // Single video - use real navigation
     const v=videos.find(x=>x.id===startId);
     if(v) window.location.href=`/watch/${videoSlug(v)}`;
     return;
   }
   const i=pl.videos.indexOf(startId);
-  const targetId=pl.videos[i>=0?i:0];
-  const epNum=(pl.videos||[]).indexOf(targetId)+1;
+  const vid=pl.videos[i>=0?i:0];
+  const epNum=(pl.videos||[]).indexOf(vid)+1;
   window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
 };
 let _countdownTimer=null;
@@ -1324,7 +1558,7 @@ function startCountdown(){
     if(lbl) lbl.textContent=`Next in ${remaining}s`;
     if(remaining<=0){
       clearCountdown();
-      openVideo(next.id);
+      playNext();
       return;
     }
     remaining--;
@@ -1345,25 +1579,19 @@ window.toggleDesc=()=>{
 window.playNext=()=>{
   clearCountdown();
   const n=playlistQueue[plQueueIdx+1];
-  if(n) navigateToEp(n.id);
+  if(!n) return;
+  const pl=playlists.find(p=>(p.videos||[]).includes(n.id));
+  if(pl){ const ep=(pl.videos||[]).indexOf(n.id)+1; window.location.href=`/watch/${playlistSlug(pl)}/ep-${ep}`; }
+  else { const v=videos.find(x=>x.id===n.id); if(v) window.location.href=`/watch/${videoSlug(v)}`; }
 };
 
 window.playPrev=()=>{
   clearCountdown();
   const p=playlistQueue[plQueueIdx-1];
-  if(p) navigateToEp(p.id);
-};
-
-// Navigate to episode URL — lets browser handle history natively
-window.navigateToEp=(id)=>{
-  const v=videos.find(x=>x.id===id); if(!v) return;
-  const pl=playlists.find(p=>(p.videos||[]).includes(id));
-  if(pl){
-    const epNum=(pl.videos||[]).indexOf(id)+1;
-    window.location.href=`/watch/${playlistSlug(pl)}/ep-${epNum}`;
-  } else {
-    window.location.href=`/watch/${videoSlug(v)}`;
-  }
+  if(!p) return;
+  const pl=playlists.find(pl=>(pl.videos||[]).includes(p.id));
+  if(pl){ const ep=(pl.videos||[]).indexOf(p.id)+1; window.location.href=`/watch/${playlistSlug(pl)}/ep-${ep}`; }
+  else { const v=videos.find(x=>x.id===p.id); if(v) window.location.href=`/watch/${videoSlug(v)}`; }
 };
 
 // ── Watch filter chips ──
@@ -1725,11 +1953,11 @@ document.addEventListener('keydown',e=>{
   if(!watchActive) return;
   if(e.key==='ArrowRight'||e.key==='n'){
     const next=playlistQueue[plQueueIdx+1];
-    if(next){ clearCountdown(); navigateToEp(next.id); }
+    if(next){ clearCountdown(); openVideo(next.id); }
   }
   if(e.key==='ArrowLeft'||e.key==='p'){
     const prev=playlistQueue[plQueueIdx-1];
-    if(prev){ clearCountdown(); navigateToEp(prev.id); }
+    if(prev){ clearCountdown(); openVideo(prev.id); }
   }
   if(e.key==='Escape') goBack();
 });
@@ -1771,6 +1999,176 @@ document.addEventListener('click', e=>{
   const m=document.getElementById('donate-modal');
   if(m && e.target===m) closeDonateModal();
 });
+
+// ── SUGGESTED INFINITE SCROLL ────────────────────────────
+let _suggList = [];
+let _suggPage = 0;
+const SUGG_PER_PAGE = 10;
+let _suggObserver = null;
+
+function initSuggInfiniteScroll(allVideos){
+  // Reset state
+  _suggList = allVideos;
+  _suggPage = 0;
+
+  // Clear both lists
+  const el  = $('suggested-list');
+  const elm = $('suggested-list-mobile');
+  if(el)  el.innerHTML  = '';
+  if(elm) elm.innerHTML = '';
+
+  // Remove old observer
+  if(_suggObserver) _suggObserver.disconnect();
+
+  // Load first batch
+  loadMoreSugg();
+
+  // Setup IntersectionObserver on sentinel element
+  setupSuggObserver();
+}
+
+function loadMoreSugg(){
+  const start = _suggPage * SUGG_PER_PAGE;
+  const end   = start + SUGG_PER_PAGE;
+  const batch = _suggList.slice(start, end);
+  if(!batch.length) return;
+
+  _suggPage++;
+
+  const html = buildSuggWithAds(batch,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
+
+  const el  = $('suggested-list');
+  const elm = $('suggested-list-mobile');
+
+  // Remove old sentinel before appending
+  el?.querySelector('.sugg-sentinel')?.remove();
+  elm?.querySelector('.sugg-sentinel')?.remove();
+
+  if(el)  el.insertAdjacentHTML('beforeend', html);
+  if(elm) elm.insertAdjacentHTML('beforeend', html);
+
+  // Add sentinel if more videos available
+  if(_suggPage * SUGG_PER_PAGE < _suggList.length){
+    const sentinel = `<div class="sugg-sentinel" style="height:20px;"></div>`;
+    if(el)  el.insertAdjacentHTML('beforeend', sentinel);
+    if(elm) elm.insertAdjacentHTML('beforeend', sentinel);
+    setupSuggObserver();
+  }
+}
+
+function setupSuggObserver(){
+  if(_suggObserver) _suggObserver.disconnect();
+
+  // Observe ALL sentinels — mobile scroll body + desktop sidebar
+  const sentinels = [
+    document.querySelector('.watch-scroll-body .sugg-sentinel'),
+    document.querySelector('#suggested-list .sugg-sentinel'),
+    document.querySelector('#suggested-list-mobile .sugg-sentinel'),
+  ].filter(Boolean);
+
+  if(!sentinels.length) return;
+
+  let fired = false;
+  _suggObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting && !fired){
+        fired = true;
+        _suggObserver.disconnect();
+        loadMoreSugg();
+      }
+    });
+  }, { rootMargin: '300px' });
+
+  sentinels.forEach(s => _suggObserver.observe(s));
+}
+
+// ── BLOG ──────────────────────────────────────────────────
+function blogMd(text){
+  if(!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^## (.+)$/gm,'<h2 style="font-size:1.1rem;font-weight:800;color:#e4e4e7;margin:1.2rem 0 .4rem;">$1</h2>')
+    .replace(/^### (.+)$/gm,'<h3 style="font-size:.95rem;font-weight:700;color:#ccc;margin:1rem 0 .3rem;">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#e4e4e7;">$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em style="color:#aaa;">$1</em>')
+    .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:#f27d26;text-decoration:underline;">$1</a>')
+    .replace(/^- (.+)$/gm,'<li style="margin:.25rem 0;">$1</li>')
+    .replace(/(<li.*<\/li>
+?)+/g,'<ul style="padding-left:1.25rem;margin:.5rem 0;">$&</ul>')
+    .replace(/
+
+/g,'</p><p style="margin:.75rem 0;line-height:1.8;color:#999;">')
+    .replace(/^(?!<[h|u|l])/gm,'');
+}
+
+async function showBlogPage(){
+  NP.start();
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog'));
+  window.scrollTo(0,0);
+  history.pushState({page:'blog'},'','/blog');
+  updateMeta({title:'Blog | រោងកុនគ្មានមនុស្ស', desc:'Drama reviews, episode recaps, top lists and more from រោងកុនគ្មានមនុស្ស.'});
+  const grid = $('blog-grid');
+  if(!grid){ NP.done(); return; }
+  grid.innerHTML = '<div class="skel-card"><div class="skeleton skel-thumb"></div><div class="skeleton skel-title"></div></div>'.repeat(4);
+  try {
+    const { getDocs, collection, query, orderBy, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    const posts = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+    if(!posts.length){
+      grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#555;">No articles yet — check back soon!</div>';
+      NP.done(); return;
+    }
+    grid.innerHTML = posts.map(p=>`
+      <a class="blog-card" href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')">
+        <div class="blog-card-img">
+          ${p.cover
+            ?`<img src="${p.cover}" loading="lazy" onerror="this.parentElement.style.background='#1a1a1a'">`
+            :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;background:#111;">📝</div>`}
+        </div>
+        <div class="blog-card-body">
+          <div class="blog-card-cat">${p.category||'Article'}</div>
+          <div class="blog-card-title">${p.title||''}</div>
+          <div class="blog-card-excerpt">${p.excerpt||''}</div>
+        </div>
+      </a>`).join('');
+  } catch(e){ grid.innerHTML='<div style="color:#555;padding:2rem;">Could not load posts.</div>'; }
+  NP.done();
+}
+
+async function showBlogPost(slug){
+  NP.start();
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog-post'));
+  window.scrollTo(0,0);
+  const article = $('blog-article');
+  if(!article){ NP.done(); return; }
+  article.innerHTML = '<div style="text-align:center;padding:3rem;color:#555;">Loading...</div>';
+  try {
+    const { getDocs, collection, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const snap = await getDocs(query(collection(db,'blog_posts'), where('slug','==',slug)));
+    const post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
+    if(!post || post.status!=='published'){ show404(); return; }
+    history.pushState({page:'blog-post',slug},'','/blog/'+slug);
+    updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
+    const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : '';
+    article.innerHTML = `
+      ${post.cover?`<div style="width:100%;aspect-ratio:16/6;overflow:hidden;border-radius:14px;margin-bottom:1.5rem;background:#111;">
+        <img src="${post.cover}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+      </div>`:''}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:.75rem;flex-wrap:wrap;">
+        <span style="font-size:.72rem;font-weight:700;background:rgba(242,125,38,.1);color:#f27d26;padding:3px 10px;border-radius:9999px;border:1px solid rgba(242,125,38,.2);">${post.category||'Article'}</span>
+        ${date?`<span style="font-size:.72rem;color:#555;">${date}</span>`:''}
+      </div>
+      <h1 style="font-size:1.4rem;font-weight:900;color:#e4e4e7;line-height:1.35;margin-bottom:1rem;">${post.title||''}</h1>
+      ${post.excerpt?`<p style="font-size:.9rem;color:#888;line-height:1.7;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.06);">${post.excerpt}</p>`:''}
+      <div style="font-size:.88rem;color:#999;line-height:1.8;">
+        <p style="margin:.75rem 0;">${blogMd(post.content||'')}</p>
+      </div>
+      <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+        <a href="/blog" onclick="event.preventDefault();showBlogPage()" style="color:#f27d26;font-size:.82rem;font-weight:700;text-decoration:none;">← Back to Blog</a>
+      </div>`;
+  } catch(e){ article.innerHTML='<div style="color:#555;padding:2rem;">Could not load article.</div>'; }
+  NP.done();
+}
 
 // ── COOKIE CONSENT ───────────────────────────────────────
 function initCookieBanner(){
