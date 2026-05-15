@@ -588,3 +588,15 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 .blog-card-cat { font-size:.65rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#f27d26; margin-bottom:.3rem; }
 .blog-card-title { font-size:.9rem; font-weight:700; color:#e4e4e7; line-height:1.4; margin-bottom:.4rem; }
 .blog-card-excerpt { font-size:.76rem; color:#555; line-height:1.6; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* ── Blog Post Content ── */
+.blog-post-content { color:#999; line-height:1.85; font-size:.88rem; }
+.blog-post-content h2 { font-size:1.1rem; font-weight:800; color:#e4e4e7; margin:1.5rem 0 .5rem; }
+.blog-post-content h3 { font-size:.95rem; font-weight:700; color:#ccc; margin:1.2rem 0 .4rem; }
+.blog-post-content p { margin:.75rem 0; }
+.blog-post-content strong { color:#e4e4e7; font-weight:700; }
+.blog-post-content em { color:#aaa; }
+.blog-post-content a { color:#f27d26; text-decoration:underline; }
+.blog-post-content ul, .blog-post-content ol { padding-left:1.4rem; margin:.6rem 0; }
+.blog-post-content li { margin:.3rem 0; }
+.blog-post-content img { max-width:100%; border-radius:10px; margin:.75rem 0; display:block; }
