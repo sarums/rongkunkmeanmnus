@@ -735,8 +735,33 @@
             <textarea class="ftextarea" id="blogExcerpt" placeholder="Short summary of the article..." style="height:60px;"></textarea>
           </div>
           <div class="fg full" style="margin-bottom:.75rem;">
-            <label class="flabel">Content (full article — supports **bold**, *italic*, ## Heading, [link](url))</label>
-            <textarea class="ftextarea" id="blogContent" placeholder="Write your full article here..." style="height:200px;"></textarea>
+            <label class="flabel">Content</label>
+            <div class="rich-editor-wrap">
+              <div class="rich-toolbar">
+                <button type="button" onclick="blogCmd('Bold')" title="Bold"><b>B</b></button>
+                <button type="button" onclick="blogCmd('Italic')" title="Italic"><i>I</i></button>
+                <button type="button" onclick="blogCmd('Underline')" title="Underline"><u>U</u></button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="blogH2()" title="Heading">H2</button>
+                <button type="button" onclick="blogH3()" title="Sub Heading">H3</button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="blogCmd('insertUnorderedList')" title="Bullet List">• List</button>
+                <button type="button" onclick="blogCmd('insertOrderedList')" title="Numbered List">1. List</button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="blogCmd('justifyLeft')" title="Align Left">◀</button>
+                <button type="button" onclick="blogCmd('justifyCenter')" title="Center">≡</button>
+                <button type="button" onclick="blogCmd('justifyFull')" title="Justify">☰</button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="blogLink()" title="Insert Link">🔗</button>
+                <button type="button" onclick="blogImg()" title="Insert Image">🖼</button>
+                <span class="rich-sep"></span>
+                <button type="button" onclick="blogClearFormat()" title="Clear Format">✕</button>
+              </div>
+              <div class="rich-content" id="blogContent" contenteditable="true"
+                data-placeholder="Write your full article here...
+&#10;Tips: Select text then click B for bold, I for italic, H2 for heading..."
+                style="min-height:200px;max-height:450px;"></div>
+            </div>
           </div>
           <div class="form-grid" style="margin-bottom:1rem;">
             <div class="fg">
