@@ -1866,7 +1866,8 @@ window.addBlogPost = async ()=>{
     allBlogPosts.unshift({id:ref.id,...data});
 
     // Reset form
-    ['blogTitle','blogSlug','blogCover','blogExcerpt','blogContent'].forEach(id=>{ if(qs(id)) qs(id).value=''; });
+    ['blogTitle','blogSlug','blogCover','blogExcerpt'].forEach(id=>{ if(qs(id)) qs(id).value=''; });
+    if(qs('blogContent')) qs('blogContent').innerHTML='';
     if(qs('blogSlug')) qs('blogSlug')._manualEdit = false;
 
     showToast('Published!','"'+title+'" is now live','ok');
