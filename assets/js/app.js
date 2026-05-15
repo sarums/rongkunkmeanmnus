@@ -2203,8 +2203,8 @@ window.showBlogPost = async function showBlogPost(slug){
       </div>
       <h1 style="font-size:1.4rem;font-weight:900;color:#e4e4e7;line-height:1.35;margin-bottom:1rem;">${post.title||''}</h1>
       ${post.excerpt?`<p style="font-size:.9rem;color:#888;line-height:1.7;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.06);">${post.excerpt}</p>`:''}
-      <div style="font-size:.88rem;color:#999;line-height:1.8;">
-        <p style="margin:.75rem 0;">${blogMd(post.content||'')}</p>
+      <div class="blog-post-content" style="font-size:.88rem;color:#999;line-height:1.8;">
+        ${post.content||''}
       </div>
       <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.06);">
         <a href="/blog" onclick="event.preventDefault();showBlogPage()" style="color:#f27d26;font-size:.82rem;font-weight:700;text-decoration:none;">← Back to Blog</a>
