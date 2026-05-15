@@ -2085,7 +2085,7 @@ function setupSuggObserver(){
 // ── BLOG ──────────────────────────────────────────────────
 function blogMd(text){
   if(!text) return '';
-  return text
+  let t = text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/^## (.+)$/gm,'<h2 style="font-size:1.1rem;font-weight:800;color:#e4e4e7;margin:1.2rem 0 .4rem;">$1</h2>')
     .replace(/^### (.+)$/gm,'<h3 style="font-size:.95rem;font-weight:700;color:#ccc;margin:1rem 0 .3rem;">$1</h3>')
@@ -2093,12 +2093,8 @@ function blogMd(text){
     .replace(/\*(.+?)\*/g,'<em style="color:#aaa;">$1</em>')
     .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:#f27d26;text-decoration:underline;">$1</a>')
     .replace(/^- (.+)$/gm,'<li style="margin:.25rem 0;">$1</li>')
-    .replace(/(<li.*<\/li>
-?)+/g,'<ul style="padding-left:1.25rem;margin:.5rem 0;">$&</ul>')
-    .replace(/
-
-/g,'</p><p style="margin:.75rem 0;line-height:1.8;color:#999;">')
-    .replace(/^(?!<[h|u|l])/gm,'');
+    .split('\n\n').join('</p><p style="margin:.75rem 0;line-height:1.8;color:#999;">');
+  return t;
 }
 
 async function showBlogPage(){
