@@ -1849,7 +1849,7 @@ window.addBlogPost = async ()=>{
   const cover   = qs('blogCover').value.trim();
   const cat     = qs('blogCat').value;
   const excerpt = qs('blogExcerpt').value.trim();
-  const content = qs('blogContent').value.trim();
+  const content = qs('blogContent').innerHTML.trim();
   const status  = qs('blogStatus').value;
   const lang    = qs('blogLang').value;
 
@@ -1927,7 +1927,28 @@ window.editBlogPost = id=>{
     <label class="flabel">Excerpt</label>
     <textarea class="ftextarea" id="beEx" style="height:60px;margin-bottom:.75rem;">${p.excerpt||''}</textarea>
     <label class="flabel">Content</label>
-    <textarea class="ftextarea" id="beCn" style="height:220px;margin-bottom:1rem;">${p.content||''}</textarea>
+    <div class="rich-editor-wrap" style="margin-bottom:1rem;">
+      <div class="rich-toolbar">
+        <button type="button" onclick="blogCmd('Bold')"><b>B</b></button>
+        <button type="button" onclick="blogCmd('Italic')"><i>I</i></button>
+        <button type="button" onclick="blogCmd('Underline')"><u>U</u></button>
+        <span class="rich-sep"></span>
+        <button type="button" onclick="blogH2()">H2</button>
+        <button type="button" onclick="blogH3()">H3</button>
+        <span class="rich-sep"></span>
+        <button type="button" onclick="blogCmd('insertUnorderedList')">• List</button>
+        <button type="button" onclick="blogCmd('insertOrderedList')">1. List</button>
+        <span class="rich-sep"></span>
+        <button type="button" onclick="blogCmd('justifyLeft')">◀</button>
+        <button type="button" onclick="blogCmd('justifyCenter')">≡</button>
+        <button type="button" onclick="blogCmd('justifyFull')">☰</button>
+        <span class="rich-sep"></span>
+        <button type="button" onclick="blogLink()">🔗</button>
+        <button type="button" onclick="blogImg()">🖼</button>
+      </div>
+      <div class="rich-content" id="beCn" contenteditable="true"
+        style="min-height:200px;max-height:400px;">${p.content||''}</div>
+    </div>
     <button onclick="saveBlogPost('${id}')" class="submit-btn" style="width:100%;">💾 Save Changes</button>
   </div>
 </div>`;
@@ -1943,7 +1964,7 @@ window.saveBlogPost = async id=>{
     status  : document.getElementById('beSt')?.value,
     lang    : document.getElementById('beLa')?.value,
     excerpt : document.getElementById('beEx')?.value.trim(),
-    content : document.getElementById('beCn')?.value.trim(),
+    content : document.getElementById('beCn')?.innerHTML.trim(),
   };
   if(!data.title){ showToast('Error','Title required','err'); return; }
   try {
@@ -1954,6 +1975,75 @@ window.saveBlogPost = async id=>{
     renderBlogPosts();
   } catch(e){ showToast('Error',e.message,'err'); }
 };
+
+// ── BLOG RICH EDITOR ─────────────────────────────────────
+// Get the currently focused blog editor
+function getBlogEditor(){
+  // Return whichever blog editor is currently focused/active
+  const focused = document.activeElement;
+  if(focused && focused.classList.contains('rich-content')) return focused;
+  // fallback: main blog editor
+  return document.getElementById('blogContent') || document.getElementById('beCn');
+}
+
+window.blogCmd = (cmd)=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  document.execCommand(cmd, false, null);
+};
+
+window.blogH2 = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  document.execCommand('formatBlock', false, 'h2');
+};
+
+window.blogH3 = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  document.execCommand('formatBlock', false, 'h3');
+};
+
+window.blogLink = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  const url = prompt('Enter URL:', 'https://');
+  if(!url) return;
+  document.execCommand('createLink', false, url);
+  // Make links open in new tab
+  el?.querySelectorAll('a:not([target])').forEach(a=>{ a.target='_blank'; a.rel='noopener'; });
+};
+
+window.blogImg = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  const url = prompt('Enter image URL:', 'https://');
+  if(!url) return;
+  document.execCommand('insertHTML', false,
+    `<img src="${url}" style="max-width:100%;border-radius:8px;margin:.5rem 0;" loading="lazy">`);
+};
+
+window.blogClearFormat = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  document.execCommand('removeFormat', false, null);
+};
+
+// Handle Enter key — insert <br> instead of <div> for cleaner output
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Enter') return;
+  const el = document.activeElement;
+  if(!el || !el.classList.contains('rich-content')) return;
+  // Allow natural enter — browser handles it
+  // But prevent double-div wrapping on empty lines
+}, false);
+
+// Placeholder behavior for contenteditable
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.querySelectorAll('.rich-content[data-placeholder]').forEach(el=>{
+    el.addEventListener('focus', ()=>{ if(!el.textContent.trim()) el.innerHTML=''; });
+  });
+});
 
 // ── AUTO START ──
 // ── COMMENTS PANEL ──────────────────────────────────
