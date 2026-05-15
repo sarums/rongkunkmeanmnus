@@ -883,6 +883,7 @@ function buildNav(activeId){
   $("nav-cats").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
     +desktopCats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("")
+    +`<a href="/blog" onclick="event.preventDefault();showBlogPage()" style="font-weight:600;">📝 Blog</a>`
     +`<a href="/donate" style="color:#f27d26;font-weight:800;display:flex;align-items:center;gap:5px;" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">☕ Donate</a>`;
 
   // Populate More dropdown with overflow categories
@@ -917,6 +918,13 @@ function buildNav(activeId){
       Home
     </a>`
     +cats.map(c=>navLink(c,true)).join("")
+    +`<a href="/blog" onclick="event.preventDefault();toggleMobileMenu();showBlogPage()"
+      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.8);text-decoration:none;"
+      onmouseover="this.style.background='rgba(242,125,38,.08)';this.style.color='#f27d26'"
+      onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.8)'">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;">📝</div>
+      Blog
+    </a>`
     +`<a href="/donate"
       style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:700;color:#f27d26;text-decoration:none;background:rgba(242,125,38,.06);border:1px solid rgba(242,125,38,.15);margin-top:8px;"
       onmouseover="this.style.background='rgba(242,125,38,.12)'"
@@ -1193,6 +1201,9 @@ function buildSections(){
     {id:"trending",title:"Trending Now",icon:"Flame",target_type:"trending"},
     {id:"new",title:"New Arrivals",icon:"Sparkles",target_type:"latest"}
   ];
+  // Add blog section at bottom of home feed
+  buildBlogSection(container);
+
   list.forEach(sec=>{
     const rowId=`row-${sec.id}`;
     const el=document.createElement("div");
@@ -1213,6 +1224,44 @@ function buildSections(){
     container.appendChild(el);
     fillSection(sec,rowId);
   });
+}
+
+async function buildBlogSection(container){
+  try{
+    const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    const posts = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published').slice(0,6);
+    if(!posts.length) return;
+
+    const sec = document.createElement('div');
+    sec.className = 'section';
+    sec.innerHTML = `
+      <div class="section-header">
+        <div class="section-left">
+          <div class="section-icon">📝</div>
+          <span class="section-title">Latest Articles</span>
+        </div>
+        <a href="/blog" onclick="event.preventDefault();showBlogPage()" class="section-more">View All ›</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;padding:0 2px;">
+        ${posts.map(p=>`
+          <a href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')"
+            style="display:flex;flex-direction:column;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;text-decoration:none;transition:border-color .2s,transform .2s;"
+            onmouseover="this.style.borderColor='rgba(242,125,38,.3)';this.style.transform='translateY(-2px)'"
+            onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.transform=''">
+            <div style="aspect-ratio:16/9;overflow:hidden;background:#111;flex-shrink:0;">
+              ${p.cover
+                ?`<img src="${p.cover}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`
+                :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;">📝</div>`}
+            </div>
+            <div style="padding:.75rem .9rem .85rem;">
+              <div style="font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#f27d26;margin-bottom:.25rem;">${p.category||'Article'}</div>
+              <div style="font-size:.84rem;font-weight:700;color:#e4e4e7;line-height:1.35;margin-bottom:.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.title||''}</div>
+              <div style="font-size:.72rem;color:#555;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.excerpt||''}</div>
+            </div>
+          </a>`).join('')}
+      </div>`;
+    container.appendChild(sec);
+  } catch(e){}
 }
 
 function buildPlaylistCard(pl){
