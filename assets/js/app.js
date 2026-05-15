@@ -2146,7 +2146,7 @@ function blogMd(text){
   return t;
 }
 
-async function showBlogPage(){
+window.showBlogPage = async function showBlogPage(){
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog'));
   window.scrollTo(0,0);
@@ -2179,7 +2179,7 @@ async function showBlogPage(){
   NP.done();
 }
 
-async function showBlogPost(slug){
+window.showBlogPost = async function showBlogPost(slug){
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog-post'));
   window.scrollTo(0,0);
