@@ -2015,6 +2015,39 @@ window.saveBlogPost = async id=>{
   } catch(e){ showToast('Error',e.message,'err'); }
 };
 
+// ── RICH EDITOR HELPERS ──────────────────────────────────
+window.richCmd = (editorId, cmd)=>{
+  const el = document.getElementById(editorId);
+  if(!el) return;
+  el.focus();
+  document.execCommand(cmd, false, null);
+};
+
+window.richLink = (editorId)=>{
+  const el = document.getElementById(editorId);
+  if(!el) return;
+  const url = prompt('Enter URL:', 'https://');
+  if(!url) return;
+  el.focus();
+  document.execCommand('createLink', false, url);
+  el.querySelectorAll('a:not([target])').forEach(a=>{ a.target='_blank'; a.rel='noopener'; });
+};
+
+window.richClear = (editorId)=>{
+  const el = document.getElementById(editorId);
+  if(el) el.innerHTML = '';
+};
+
+function getRichContent(editorId){
+  const el = document.getElementById(editorId);
+  return el ? el.innerHTML.trim() : '';
+}
+
+function setRichContent(editorId, html){
+  const el = document.getElementById(editorId);
+  if(el) el.innerHTML = html || '';
+}
+
 // ── BLOG RELATED VIDEOS PICKER ───────────────────────────
 let blogSelVids = [];
 
