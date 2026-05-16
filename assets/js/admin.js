@@ -2055,38 +2055,40 @@ window.searchBlogVids = ()=>{
   const q = (qs('blogVidSearch')?.value||'').toLowerCase();
   const box = qs('blogVidResults');
   if(!box) return;
+  // Show ALL videos - selected ones shown with checkmark
   const filtered = allVideos.filter(v=>
-    !blogSelVids.includes(v.id) &&
     (v.title||'').toLowerCase().includes(q)
   ).slice(0,30);
   if(!filtered.length){
     box.innerHTML=`<div style="padding:.6rem .9rem;color:var(--text2);font-size:.78rem;">No videos found</div>`;
     return;
   }
-  box.innerHTML = filtered.map(v=>`
-    <div onclick="addBlogVid('${v.id}')"
-      style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;"
-      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+  box.innerHTML = filtered.map(v=>{
+    const selected = blogSelVids.includes(v.id);
+    return `<div onclick="${selected?`removeBlogVid('${v.id}')`:`addBlogVid('${v.id}')`}" id="bvr-${v.id}"
+      style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;background:${selected?'rgba(242,125,38,.06)':''}"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background='${selected?'rgba(242,125,38,.06)':''}'">
       <img src="${getAdminThumb(v)}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0;"
         onerror="this.src='https://picsum.photos/seed/${v.id}/160/90'">
       <div style="min-width:0;flex:1;">
         <div style="font-size:.77rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</div>
         <div style="font-size:.66rem;color:var(--text2);">${v.category||''} · ${v.platform||''}</div>
       </div>
-      <span style="color:var(--accent);font-size:1.3rem;line-height:1;">+</span>
-    </div>`).join('');
+      <span style="font-size:1.1rem;line-height:1;flex-shrink:0;color:${selected?'#22c55e':'var(--accent)'};">${selected?'✓':'+'}</span>
+    </div>`;
+  }).join('');
 };
 
 window.addBlogVid = id=>{
   if(!blogSelVids.includes(id)) blogSelVids.push(id);
   renderBlogVidSelected();
-  searchBlogVids();
+  searchBlogVids(); // refresh to show checkmark
 };
 
 window.removeBlogVid = id=>{
   blogSelVids = blogSelVids.filter(x=>x!==id);
   renderBlogVidSelected();
-  searchBlogVids();
+  searchBlogVids(); // refresh to remove checkmark
 };
 
 function renderBlogVidSelected(){
@@ -2184,29 +2186,30 @@ window.searchEditBlogVids = (postId)=>{
   const q = (document.getElementById('editBlogVidSearch')?.value||'').toLowerCase();
   const box = document.getElementById('editBlogVidResults');
   if(!box) return;
-  const filtered = allVideos.filter(v=>
-    !editBlogSelVids.includes(v.id) &&
-    (v.title||'').toLowerCase().includes(q)
-  ).slice(0,20);
+  const filtered = allVideos.filter(v=>(v.title||'').toLowerCase().includes(q)).slice(0,20);
   if(!filtered.length){ box.innerHTML=`<div style="padding:.5rem .75rem;color:var(--text2);font-size:.75rem;">No videos found</div>`; return; }
-  box.innerHTML = filtered.map(v=>`
-    <div onclick="addEditBlogVid('${v.id}')"
-      style="display:flex;align-items:center;gap:.5rem;padding:.4rem .65rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;"
-      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+  box.innerHTML = filtered.map(v=>{
+    const selected = editBlogSelVids.includes(v.id);
+    return `<div onclick="${selected?`removeEditBlogVid('${v.id}')`:`addEditBlogVid('${v.id}')`}"
+      style="display:flex;align-items:center;gap:.5rem;padding:.4rem .65rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;background:${selected?'rgba(242,125,38,.06)':''}"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background='${selected?'rgba(242,125,38,.06)':''}'">
       <img src="${getAdminThumb(v)}" style="width:46px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;flex-shrink:0;">
       <div style="min-width:0;flex:1;font-size:.73rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</div>
-      <span style="color:var(--accent);font-size:1.1rem;line-height:1;">+</span>
-    </div>`).join('');
+      <span style="font-size:1rem;line-height:1;color:${selected?'#22c55e':'var(--accent)'};">${selected?'✓':'+'}</span>
+    </div>`;
+  }).join('');
 };
 
 window.addEditBlogVid = id=>{
   if(!editBlogSelVids.includes(id)) editBlogSelVids.push(id);
   renderEditBlogVidSelected();
+  searchEditBlogVids();
 };
 
 window.removeEditBlogVid = id=>{
   editBlogSelVids = editBlogSelVids.filter(x=>x!==id);
   renderEditBlogVidSelected();
+  searchEditBlogVids();
 };
 
 function renderEditBlogVidSelected(){
