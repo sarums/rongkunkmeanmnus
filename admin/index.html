@@ -780,6 +780,19 @@
               </select>
             </div>
           </div>
+          <!-- Related Videos Picker -->
+          <div class="fg full" style="margin-top:1rem;margin-bottom:1rem;">
+            <label class="flabel">🎬 Related Videos <span style="color:#555;font-weight:500">(optional — shown below article)</span></label>
+            <div style="position:relative;margin-bottom:.5rem;">
+              <input type="text" class="finput" id="blogVidSearch" placeholder="Search videos to add..." oninput="searchBlogVids()" style="padding-left:2rem;">
+              <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4;">🔍</span>
+            </div>
+            <div id="blogVidResults" style="max-height:180px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:.6rem;"></div>
+            <div style="font-size:.7rem;color:var(--text2);font-weight:700;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.06em;">Selected <span id="blogVidCount" style="color:var(--accent);">(0)</span></div>
+            <div id="blogVidSelected" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;">
+              <span style="font-size:.75rem;color:var(--muted);padding:4px;">None — will show random videos</span>
+            </div>
+          </div>
           <button class="submit-btn" onclick="addBlogPost()">➕ Publish Post</button>
         </div>
 
