@@ -2157,7 +2157,9 @@ async function loadVideoArticle(articleId){
 
     wrap.innerHTML = `
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:1.25rem;margin-top:1rem;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;">
+
+        <!-- Header: title + read more button -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:1rem;">📝</span>
             <span style="font-size:.78rem;font-weight:800;color:#e4e4e7;">${post.title||''}</span>
@@ -2167,10 +2169,21 @@ async function loadVideoArticle(articleId){
             Read Full Article ›
           </a>
         </div>
+
+        <!-- Cover image if exists -->
+        ${post.cover?`
+        <div style="width:100%;aspect-ratio:16/6;overflow:hidden;border-radius:10px;margin-bottom:1rem;background:#111;">
+          <img src="${post.cover}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"
+            onerror="this.parentElement.style.display='none'">
+        </div>`:''}
+
+        <!-- Excerpt -->
         ${post.excerpt?`<p style="font-size:.82rem;color:#777;line-height:1.65;margin-bottom:1rem;">${post.excerpt}</p>`:''}
+
+        <!-- Full content collapsible -->
         <div id="video-article-content" class="blog-post-content" style="max-height:200px;overflow:hidden;position:relative;">
           ${post.content||''}
-          <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,var(--bg));"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,var(--bg));pointer-events:none;"></div>
         </div>
         <button onclick="expandVideoArticle(this)" style="background:none;border:none;color:#f27d26;font-size:.75rem;font-weight:700;cursor:pointer;padding:.4rem 0;display:block;margin-top:.5rem;">Show more ▾</button>
       </div>`;
