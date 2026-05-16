@@ -2183,9 +2183,9 @@ window.showBlogPost = async function showBlogPost(slug){
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog-post'));
   window.scrollTo(0,0);
-  const article = $('blog-article');
-  if(!article){ NP.done(); return; }
-  article.innerHTML = '<div style="text-align:center;padding:3rem;color:#555;">Loading...</div>';
+  const wrap = $('blog-post-wrap');
+  if(!wrap){ NP.done(); return; }
+  wrap.innerHTML = '<div style="text-align:center;padding:3rem;color:#555;">Loading...</div>';
   try {
     const snap = await getDocs(query(collection(db,'blog_posts'), where('slug','==',slug)));
     const post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
@@ -2193,23 +2193,115 @@ window.showBlogPost = async function showBlogPost(slug){
     history.pushState({page:'blog-post',slug},'','/blog/'+slug);
     updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
     const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : '';
-    article.innerHTML = `
-      ${post.cover?`<div style="width:100%;aspect-ratio:16/6;overflow:hidden;border-radius:14px;margin-bottom:1.5rem;background:#111;">
-        <img src="${post.cover}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
-      </div>`:''}
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:.75rem;flex-wrap:wrap;">
-        <span style="font-size:.72rem;font-weight:700;background:rgba(242,125,38,.1);color:#f27d26;padding:3px 10px;border-radius:9999px;border:1px solid rgba(242,125,38,.2);">${post.category||'Article'}</span>
-        ${date?`<span style="font-size:.72rem;color:#555;">${date}</span>`:''}
-      </div>
-      <h1 style="font-size:1.4rem;font-weight:900;color:#e4e4e7;line-height:1.35;margin-bottom:1rem;">${post.title||''}</h1>
-      ${post.excerpt?`<p style="font-size:.9rem;color:#888;line-height:1.7;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.06);">${post.excerpt}</p>`:''}
-      <div class="blog-post-content" style="font-size:.88rem;color:#999;line-height:1.8;">
-        ${post.content||''}
-      </div>
-      <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.06);">
-        <a href="/blog" onclick="event.preventDefault();showBlogPage()" style="color:#f27d26;font-size:.82rem;font-weight:700;text-decoration:none;">← Back to Blog</a>
+
+    // Get sidebar data — random articles + random videos
+    const allPostsSnap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    const sidebarPosts = allPostsSnap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .filter(p=>p.status==='published' && p.slug!==slug)
+      .sort(()=>Math.random()-.5).slice(0,3);
+    const sidebarVids = [...videos].sort(()=>Math.random()-.5).slice(0,4);
+
+    // Get related videos (selected or random)
+    const relIds = post.relatedVideos||[];
+    const relVids = relIds.length
+      ? relIds.map(id=>videos.find(v=>v.id===id)).filter(Boolean)
+      : [...videos].filter(v=>v.category===post.category).sort(()=>Math.random()-.5).slice(0,6);
+
+    wrap.innerHTML = `
+      <div class="blog-post-layout">
+        <!-- Main Article -->
+        <div class="blog-post-main">
+          ${post.cover?`<div style="width:100%;aspect-ratio:16/6;overflow:hidden;border-radius:14px;margin-bottom:1.5rem;background:#111;">
+            <img src="${post.cover}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+          </div>`:''}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:.75rem;flex-wrap:wrap;">
+            <span style="font-size:.72rem;font-weight:700;background:rgba(242,125,38,.1);color:#f27d26;padding:3px 10px;border-radius:9999px;border:1px solid rgba(242,125,38,.2);">${post.category||'Article'}</span>
+            ${date?`<span style="font-size:.72rem;color:#555;">${date}</span>`:''}
+          </div>
+          <h1 style="font-size:1.4rem;font-weight:900;color:#e4e4e7;line-height:1.35;margin-bottom:1rem;">${post.title||''}</h1>
+          ${post.excerpt?`<p style="font-size:.9rem;color:#888;line-height:1.7;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.06);">${post.excerpt}</p>`:''}
+          <div class="blog-post-content">${post.content||''}</div>
+
+          <!-- Below Article Videos -->
+          ${relVids.length?`
+          <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+            <div style="font-size:.78rem;font-weight:800;color:#e4e4e7;margin-bottom:1rem;display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1rem;">🎬</span> Related Videos
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;">
+              ${relVids.map(v=>{
+                const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
+                const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
+                const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='${url}'`;
+                return `<a href="${url}" onclick="event.preventDefault();${click}"
+                  style="display:flex;flex-direction:column;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden;text-decoration:none;transition:border-color .2s,transform .2s;"
+                  onmouseover="this.style.borderColor='rgba(242,125,38,.3)';this.style.transform='translateY(-2px)'"
+                  onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.transform=''">
+                  <div style="aspect-ratio:16/9;overflow:hidden;background:#111;">
+                    <img src="${getThumb(v)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"
+                      onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
+                  </div>
+                  <div style="padding:.5rem .6rem;">
+                    <div style="font-size:.75rem;font-weight:700;color:#ccc;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${v.title||''}</div>
+                    <div style="font-size:.65rem;color:#555;margin-top:2px;">${v.category||''}</div>
+                  </div>
+                </a>`;
+              }).join('')}
+            </div>
+          </div>`:''}
+
+          <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+            <a href="/blog" onclick="event.preventDefault();showBlogPage()" style="color:#f27d26;font-size:.82rem;font-weight:700;text-decoration:none;">← Back to Blog</a>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="blog-post-sidebar">
+          ${sidebarPosts.length?`
+          <div class="blog-sidebar-section">
+            <div class="blog-sidebar-title">📝 More Articles</div>
+            ${sidebarPosts.map(p=>`
+              <a href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')"
+                style="display:flex;gap:.6rem;align-items:flex-start;text-decoration:none;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);"
+                onmouseover="this.querySelector('.sb-title').style.color='#f27d26'"
+                onmouseout="this.querySelector('.sb-title').style.color='#ccc'">
+                <div style="width:64px;aspect-ratio:16/9;flex-shrink:0;border-radius:6px;overflow:hidden;background:#111;">
+                  ${p.cover?`<img src="${p.cover}" style="width:100%;height:100%;object-fit:cover;">`
+                  :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">📝</div>`}
+                </div>
+                <div>
+                  <div class="sb-title" style="font-size:.77rem;font-weight:700;color:#ccc;line-height:1.3;transition:color .15s;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.title||''}</div>
+                  <div style="font-size:.65rem;color:#555;margin-top:2px;">${p.category||''}</div>
+                </div>
+              </a>`).join('')}
+          </div>`:''}
+
+          ${sidebarVids.length?`
+          <div class="blog-sidebar-section" style="margin-top:1.25rem;">
+            <div class="blog-sidebar-title">🎬 Watch Now</div>
+            ${sidebarVids.map(v=>{
+              const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
+              const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
+              const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`window.location.href='${url}'`;
+              return `<a href="${url}" onclick="event.preventDefault();${click}"
+                style="display:flex;gap:.6rem;align-items:flex-start;text-decoration:none;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);"
+                onmouseover="this.querySelector('.sb-vtitle').style.color='#f27d26'"
+                onmouseout="this.querySelector('.sb-vtitle').style.color='#ccc'">
+                <div style="width:64px;aspect-ratio:16/9;flex-shrink:0;border-radius:6px;overflow:hidden;background:#111;">
+                  <img src="${getThumb(v)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"
+                    onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
+                </div>
+                <div>
+                  <div class="sb-vtitle" style="font-size:.77rem;font-weight:700;color:#ccc;line-height:1.3;transition:color .15s;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${v.title||''}</div>
+                  <div style="font-size:.65rem;color:#555;margin-top:2px;">${v.category||''}</div>
+                </div>
+              </a>`;
+            }).join('')}
+          </div>`:''}
+        </div>
       </div>`;
-  } catch(e){ article.innerHTML='<div style="color:#555;padding:2rem;">Could not load article.</div>'; }
+  } catch(e){ wrap.innerHTML='<div style="color:#555;padding:2rem;">Could not load article.</div>'; }
   NP.done();
 }
 
