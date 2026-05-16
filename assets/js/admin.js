@@ -321,7 +321,8 @@ window.addVideo = async ()=>{
   const btn=qs('addVidBtn'); btn.disabled=true; btn.textContent='Adding...';
   try {
     const status=qs('fStatus')?.value||'public';
-    const data={ platform,videoId,title,description,category,featured:section==='featured'?'yes':'no',
+    const articleId=qs('fArticleId')?.value||'';
+    const data={ platform,videoId,title,description,category,featured:section==='featured'?'yes':'no',articleId,
       section:section||'', duration:duration||'', customThumb:customThumb||'',
       viewsDisplay:viewsDisplay||'', views:0, episodeNum:epNum||0, badgePos:badgePos, status:status, createdAt:serverTimestamp() };
     const ref=await addDoc(collection(db,'videos'),data);
@@ -337,6 +338,7 @@ window.addVideo = async ()=>{
     richClear('fDescEditor');
     qs('fSection').value=''; qs('fPlaylist').value='';
     qs('thumbPreview').innerHTML='<span>Enter Video ID to preview thumbnail</span>';
+    clearArticle('fArticleSearch','fArticleId','fArticlePreview');
     setPlatform('dailymotion');
     if(qs('fBadgePos')) qs('fBadgePos').value='top-left';
     renderOverview();
@@ -405,6 +407,17 @@ window.openEdit = (id)=>{
     qs('editPlaylist').value=pl?pl.id:'';
     previewEditThumb();
   },50);
+  // Load existing article link
+  const existingArticleId = v.articleId||'';
+  if(qs('editArticleId')) qs('editArticleId').value = existingArticleId;
+  if(existingArticleId){
+    ensureBlogCache().then(()=>{
+      const art = _allBlogCache.find(p=>p.id===existingArticleId);
+      if(art) selectArticle(existingArticleId, art.title, 'editArticleSearch','editArticleId','editArticlePreview');
+    });
+  } else {
+    clearArticle('editArticleSearch','editArticleId','editArticlePreview');
+  }
   qs('editModal').classList.add('open');
 };
 window.closeEditModal = ()=>{ qs('editModal').classList.remove('open'); };
@@ -422,6 +435,7 @@ window.saveEdit = async ()=>{
   try {
     const data={ platform,videoId,title,description,category,
       featured:section==='featured'?'yes':'no', section:section||'',
+      articleId:qs('editArticleId')?.value||'',
       status:qs('editStatus')?.value||'public',
       duration, customThumb, episodeNum:epNum||0, badgePos:badgePos };
     await updateDoc(doc(db,'videos',id),data);
@@ -2178,6 +2192,70 @@ function renderEditBlogVidSelected(){
     </div>`:'';
   }).join('');
 }
+
+// ── ARTICLE PICKER FOR VIDEOS ────────────────────────────
+let _allBlogCache = [];
+
+async function ensureBlogCache(){
+  if(_allBlogCache.length) return;
+  try{
+    const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    _allBlogCache = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+  }catch(e){}
+}
+
+window.searchArticles = async (searchId, hiddenId, previewId)=>{
+  await ensureBlogCache();
+  const q = (qs(searchId)?.value||'').toLowerCase();
+  const resultsId = searchId.replace('Search','Results');
+  const box = qs(resultsId);
+  if(!box) return;
+
+  if(!q){ box.style.display='none'; return; }
+
+  const filtered = _allBlogCache.filter(p=>
+    (p.title||'').toLowerCase().includes(q) ||
+    (p.category||'').toLowerCase().includes(q)
+  ).slice(0,8);
+
+  if(!filtered.length){
+    box.innerHTML=`<div style="padding:.6rem .9rem;color:var(--text2);font-size:.78rem;">No articles found</div>`;
+    box.style.display='block';
+    return;
+  }
+
+  box.style.display='block';
+  box.innerHTML = filtered.map(p=>`
+    <div onclick="selectArticle('${p.id}','${(p.title||'').replace(/'/g,"\'")}','${searchId}','${hiddenId}','${previewId}')"
+      style="display:flex;align-items:center;gap:.65rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+      ${p.cover?`<img src="${p.cover}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0;">`
+        :`<div style="width:52px;aspect-ratio:16/9;background:var(--bg4);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem;">📝</div>`}
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title||''}</div>
+        <div style="font-size:.65rem;color:var(--text2);">${p.category||''}</div>
+      </div>
+    </div>`).join('');
+};
+
+window.selectArticle = (id, title, searchId, hiddenId, previewId)=>{
+  if(qs(hiddenId)) qs(hiddenId).value = id;
+  if(qs(searchId)) qs(searchId).value = '';
+  const resultsId = searchId.replace('Search','Results');
+  if(qs(resultsId)) qs(resultsId).style.display='none';
+  // Show preview
+  const prev = qs(previewId);
+  const prevTitle = qs(previewId+'Title');
+  if(prev) prev.style.display='block';
+  if(prevTitle) prevTitle.textContent='📝 '+title;
+};
+
+window.clearArticle = (searchId, hiddenId, previewId)=>{
+  if(qs(hiddenId)) qs(hiddenId).value='';
+  if(qs(searchId)) qs(searchId).value='';
+  const prev = qs(previewId);
+  if(prev) prev.style.display='none';
+};
 
 // ── AUTO START ──
 // ── COMMENTS PANEL ──────────────────────────────────
