@@ -237,6 +237,22 @@
               </select>
             </div>
           </div>
+          <!-- Article Link -->
+          <div class="fg full" style="margin-bottom:1rem;">
+            <label class="flabel">📝 Link Blog Article <span style="color:#555;font-weight:500">(optional — replaces description on watch page)</span></label>
+            <div style="position:relative;margin-bottom:.5rem;">
+              <input type="text" class="finput" id="fArticleSearch" placeholder="Search articles..." oninput="searchArticles('fArticleSearch','fArticleId','fArticlePreview')">
+              <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4;">🔍</span>
+            </div>
+            <input type="hidden" id="fArticleId" value="">
+            <div id="fArticleResults" style="display:none;max-height:160px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:.5rem;"></div>
+            <div id="fArticlePreview" style="display:none;background:rgba(242,125,38,.05);border:1px solid rgba(242,125,38,.2);border-radius:8px;padding:.6rem .85rem;font-size:.78rem;color:#ccc;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span id="fArticlePreviewTitle" style="font-weight:700;"></span>
+                <button onclick="clearArticle('fArticleSearch','fArticleId','fArticlePreview')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:.8rem;">✕ Remove</button>
+              </div>
+            </div>
+          </div>
           <button class="submit-btn" id="addVidBtn" onclick="addVideo()">➕ Add Video</button>
         </div>
       </div>
@@ -944,6 +960,22 @@
             <option value="no">No</option>
             <option value="yes">⭐ Yes</option>
           </select>
+        </div>
+      </div>
+      <!-- Article Link -->
+      <div class="fg full" style="margin-bottom:1rem;">
+        <label class="flabel">📝 Link Blog Article <span style="color:#555;font-weight:500">(optional)</span></label>
+        <div style="position:relative;margin-bottom:.5rem;">
+          <input type="text" class="finput" id="editArticleSearch" placeholder="Search articles..." oninput="searchArticles('editArticleSearch','editArticleId','editArticlePreview')">
+          <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4;">🔍</span>
+        </div>
+        <input type="hidden" id="editArticleId" value="">
+        <div id="editArticleResults" style="display:none;max-height:160px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:.5rem;"></div>
+        <div id="editArticlePreview" style="display:none;background:rgba(242,125,38,.05);border:1px solid rgba(242,125,38,.2);border-radius:8px;padding:.6rem .85rem;font-size:.78rem;color:#ccc;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span id="editArticlePreviewTitle" style="font-weight:700;"></span>
+            <button onclick="clearArticle('editArticleSearch','editArticleId','editArticlePreview')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:.8rem;">✕ Remove</button>
+          </div>
         </div>
       </div>
       <button class="submit-btn blue" onclick="saveEdit()">💾 Save Changes</button>
