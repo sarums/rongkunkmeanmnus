@@ -1442,6 +1442,10 @@ window.openVideo=async (id,push=true)=>{
   if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=skelRow(3);
   _suggPage=0; _suggList=[];
   if(_suggObserver){ _suggObserver.disconnect(); _suggObserver=null; }
+  // Reset article wrap
+  const articleWrap = $('video-article-wrap');
+  if(articleWrap){ articleWrap.style.display='none'; articleWrap.innerHTML=''; }
+
   // Reset description card
   const synWrapR=$('watch-synopsis-wrap');
   const cardR=$('watch-info-card');
@@ -1553,6 +1557,14 @@ window.openVideo=async (id,push=true)=>{
     } else {
       $("watch-prev-btn").style.display="none";
     }
+  }
+
+  // Load linked article if exists
+  if(v.articleId){
+    loadVideoArticle(v.articleId);
+  } else {
+    const articleWrap = $('video-article-wrap');
+    if(articleWrap) articleWrap.style.display='none';
   }
 
   // Smarter related videos — same category first, then others
@@ -2130,6 +2142,50 @@ function setupSuggObserver(){
 
   sentinels.forEach(s => _suggObserver.observe(s));
 }
+
+// ── VIDEO ARTICLE DESCRIPTION ────────────────────────────
+async function loadVideoArticle(articleId){
+  const wrap = $('video-article-wrap');
+  if(!wrap) return;
+  wrap.style.display='block';
+  wrap.innerHTML = `<div style="padding:1rem;text-align:center;color:#444;font-size:.8rem;">Loading article...</div>`;
+  try {
+    const snap = await getDoc(doc(db,'blog_posts',articleId));
+    if(!snap.exists()){ wrap.style.display='none'; return; }
+    const post = {id:snap.id,...snap.data()};
+    if(post.status!=='published'){ wrap.style.display='none'; return; }
+
+    wrap.innerHTML = `
+      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:1.25rem;margin-top:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1rem;">📝</span>
+            <span style="font-size:.78rem;font-weight:800;color:#e4e4e7;">${post.title||''}</span>
+          </div>
+          <a href="/blog/${post.slug||post.id}" onclick="event.preventDefault();showBlogPost('${post.slug||post.id}')"
+            style="font-size:.68rem;font-weight:700;color:#f27d26;text-decoration:none;background:rgba(242,125,38,.08);padding:3px 10px;border-radius:9999px;border:1px solid rgba(242,125,38,.2);white-space:nowrap;">
+            Read Full Article ›
+          </a>
+        </div>
+        ${post.excerpt?`<p style="font-size:.82rem;color:#777;line-height:1.65;margin-bottom:1rem;">${post.excerpt}</p>`:''}
+        <div id="video-article-content" class="blog-post-content" style="max-height:200px;overflow:hidden;position:relative;">
+          ${post.content||''}
+          <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,var(--bg));"></div>
+        </div>
+        <button onclick="expandVideoArticle(this)" style="background:none;border:none;color:#f27d26;font-size:.75rem;font-weight:700;cursor:pointer;padding:.4rem 0;display:block;margin-top:.5rem;">Show more ▾</button>
+      </div>`;
+  } catch(e){ wrap.style.display='none'; }
+}
+
+window.expandVideoArticle = (btn)=>{
+  const c = $('video-article-content');
+  if(!c) return;
+  const expanded = c.style.maxHeight === 'none';
+  c.style.maxHeight = expanded ? '200px' : 'none';
+  c.style.overflow  = expanded ? 'hidden' : 'visible';
+  c.querySelector('div')?.style && (c.querySelector('div[style*="gradient"]').style.display = expanded ? '' : 'none');
+  btn.textContent = expanded ? 'Show more ▾' : 'Show less ▴';
+};
 
 // ── BLOG ──────────────────────────────────────────────────
 function blogMd(text){
