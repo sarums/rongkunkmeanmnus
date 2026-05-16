@@ -600,3 +600,14 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 .blog-post-content ul, .blog-post-content ol { padding-left:1.4rem; margin:.6rem 0; }
 .blog-post-content li { margin:.3rem 0; }
 .blog-post-content img { max-width:100%; border-radius:10px; margin:.75rem 0; display:block; }
+
+/* ── Blog Post Layout ── */
+.blog-post-layout { display:grid; grid-template-columns:1fr 280px; gap:2rem; align-items:start; }
+.blog-post-main { min-width:0; }
+.blog-post-sidebar { position:sticky; top:80px; }
+.blog-sidebar-section { background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:1rem; }
+.blog-sidebar-title { font-size:.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#f27d26; margin-bottom:.75rem; }
+@media(max-width:768px){
+  .blog-post-layout { grid-template-columns:1fr; }
+  .blog-post-sidebar { position:static; }
+}
