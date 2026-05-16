@@ -1850,6 +1850,7 @@ window.addBlogPost = async ()=>{
   const cat     = qs('blogCat').value;
   const excerpt = qs('blogExcerpt').value.trim();
   const content = qs('blogContent').innerHTML.trim();
+  const relatedVideos = [...blogSelVids];
   const status  = qs('blogStatus').value;
   const lang    = qs('blogLang').value;
 
@@ -1860,7 +1861,7 @@ window.addBlogPost = async ()=>{
   if(btn){ btn.disabled=true; btn.textContent='Publishing...'; }
 
   try {
-    const data = { title, slug, cover, category:cat, excerpt, content,
+    const data = { title, slug, cover, category:cat, excerpt, content, relatedVideos,
       status, lang, views:0, createdAt:serverTimestamp() };
     const ref = await addDoc(collection(db,'blog_posts'), data);
     allBlogPosts.unshift({id:ref.id,...data});
@@ -1868,6 +1869,9 @@ window.addBlogPost = async ()=>{
     // Reset form
     ['blogTitle','blogSlug','blogCover','blogExcerpt'].forEach(id=>{ if(qs(id)) qs(id).value=''; });
     if(qs('blogContent')) qs('blogContent').innerHTML='';
+    blogSelVids=[]; renderBlogVidSelected();
+    if(qs('blogVidSearch')) qs('blogVidSearch').value='';
+    if(qs('blogVidResults')) qs('blogVidResults').innerHTML='';
     if(qs('blogSlug')) qs('blogSlug')._manualEdit = false;
 
     showToast('Published!','"'+title+'" is now live','ok');
@@ -1950,10 +1954,29 @@ window.editBlogPost = id=>{
       <div class="rich-content" id="beCn" contenteditable="true"
         style="min-height:200px;max-height:400px;">${p.content||''}</div>
     </div>
+    <!-- Related Videos in Edit Modal -->
+    <label class="flabel" style="margin-bottom:.4rem;display:block;">🎬 Related Videos <span style="color:#555;font-weight:500">(optional)</span></label>
+    <div style="position:relative;margin-bottom:.5rem;">
+      <input type="text" class="finput" id="editBlogVidSearch" placeholder="Search videos..." oninput="searchEditBlogVids('${id}')" style="padding-left:2rem;">
+      <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4;">🔍</span>
+    </div>
+    <div id="editBlogVidResults" style="max-height:150px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:.5rem;"></div>
+    <div id="editBlogVidSelected" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px;padding:5px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:1rem;">
+      ${(p.relatedVideos||[]).map(vid=>{
+        const v=allVideos.find(x=>x.id===vid);
+        return v?`<div style="display:flex;align-items:center;gap:3px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:2px 6px 2px 3px;">
+          <img src="${getAdminThumb(v)}" style="width:34px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;">
+          <span style="font-size:.68rem;font-weight:600;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</span>
+          <button onclick="removeEditBlogVid('${v.id}')" style="background:none;border:none;color:var(--red);font-size:.85rem;cursor:pointer;padding:0;line-height:1;">×</button>
+        </div>`:'';
+      }).join('')||'<span style="font-size:.72rem;color:var(--muted);padding:3px;">None selected</span>'}
+    </div>
     <button onclick="saveBlogPost('${id}')" class="submit-btn" style="width:100%;">💾 Save Changes</button>
   </div>
 </div>`;
   document.body.insertAdjacentHTML('beforeend', html);
+  // Load existing related videos
+  editBlogSelVids = [...(p.relatedVideos||[])];
 };
 
 window.saveBlogPost = async id=>{
@@ -1966,6 +1989,7 @@ window.saveBlogPost = async id=>{
     lang    : document.getElementById('beLa')?.value,
     excerpt : document.getElementById('beEx')?.value.trim(),
     content : document.getElementById('beCn')?.innerHTML.trim(),
+    relatedVideos : [...editBlogSelVids],
   };
   if(!data.title){ showToast('Error','Title required','err'); return; }
   try {
@@ -1976,6 +2000,66 @@ window.saveBlogPost = async id=>{
     renderBlogPosts();
   } catch(e){ showToast('Error',e.message,'err'); }
 };
+
+// ── BLOG RELATED VIDEOS PICKER ───────────────────────────
+let blogSelVids = [];
+
+window.searchBlogVids = ()=>{
+  const q = (qs('blogVidSearch')?.value||'').toLowerCase();
+  const box = qs('blogVidResults');
+  if(!box) return;
+  const filtered = allVideos.filter(v=>
+    !blogSelVids.includes(v.id) &&
+    (v.title||'').toLowerCase().includes(q)
+  ).slice(0,30);
+  if(!filtered.length){
+    box.innerHTML=`<div style="padding:.6rem .9rem;color:var(--text2);font-size:.78rem;">No videos found</div>`;
+    return;
+  }
+  box.innerHTML = filtered.map(v=>`
+    <div onclick="addBlogVid('${v.id}')"
+      style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+      <img src="${getAdminThumb(v)}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0;"
+        onerror="this.src='https://picsum.photos/seed/${v.id}/160/90'">
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:.77rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</div>
+        <div style="font-size:.66rem;color:var(--text2);">${v.category||''} · ${v.platform||''}</div>
+      </div>
+      <span style="color:var(--accent);font-size:1.3rem;line-height:1;">+</span>
+    </div>`).join('');
+};
+
+window.addBlogVid = id=>{
+  if(!blogSelVids.includes(id)) blogSelVids.push(id);
+  renderBlogVidSelected();
+  searchBlogVids();
+};
+
+window.removeBlogVid = id=>{
+  blogSelVids = blogSelVids.filter(x=>x!==id);
+  renderBlogVidSelected();
+  searchBlogVids();
+};
+
+function renderBlogVidSelected(){
+  const wrap = qs('blogVidSelected');
+  const cnt  = qs('blogVidCount');
+  if(!wrap) return;
+  if(cnt) cnt.textContent = '('+blogSelVids.length+')';
+  if(!blogSelVids.length){
+    wrap.innerHTML=`<span style="font-size:.75rem;color:var(--muted);padding:4px;">None — will show random videos</span>`;
+    return;
+  }
+  wrap.innerHTML = blogSelVids.map(id=>{
+    const v = allVideos.find(x=>x.id===id);
+    return v?`<div style="display:flex;align-items:center;gap:4px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:3px 8px 3px 3px;">
+      <img src="${getAdminThumb(v)}" style="width:38px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;">
+      <span style="font-size:.7rem;font-weight:600;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</span>
+      <button onclick="removeBlogVid('${id}')" style="background:none;border:none;color:var(--red);font-size:.9rem;cursor:pointer;padding:0;line-height:1;margin-left:2px;">×</button>
+    </div>`:'';
+  }).join('');
+}
 
 // ── BLOG RICH EDITOR ─────────────────────────────────────
 // Get the currently focused blog editor
@@ -2045,6 +2129,55 @@ document.addEventListener('DOMContentLoaded', ()=>{
     el.addEventListener('focus', ()=>{ if(!el.textContent.trim()) el.innerHTML=''; });
   });
 });
+
+// Edit modal related videos
+let editBlogSelVids = [];
+
+window.searchEditBlogVids = (postId)=>{
+  const q = (document.getElementById('editBlogVidSearch')?.value||'').toLowerCase();
+  const box = document.getElementById('editBlogVidResults');
+  if(!box) return;
+  const filtered = allVideos.filter(v=>
+    !editBlogSelVids.includes(v.id) &&
+    (v.title||'').toLowerCase().includes(q)
+  ).slice(0,20);
+  if(!filtered.length){ box.innerHTML=`<div style="padding:.5rem .75rem;color:var(--text2);font-size:.75rem;">No videos found</div>`; return; }
+  box.innerHTML = filtered.map(v=>`
+    <div onclick="addEditBlogVid('${v.id}')"
+      style="display:flex;align-items:center;gap:.5rem;padding:.4rem .65rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+      <img src="${getAdminThumb(v)}" style="width:46px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;flex-shrink:0;">
+      <div style="min-width:0;flex:1;font-size:.73rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</div>
+      <span style="color:var(--accent);font-size:1.1rem;line-height:1;">+</span>
+    </div>`).join('');
+};
+
+window.addEditBlogVid = id=>{
+  if(!editBlogSelVids.includes(id)) editBlogSelVids.push(id);
+  renderEditBlogVidSelected();
+};
+
+window.removeEditBlogVid = id=>{
+  editBlogSelVids = editBlogSelVids.filter(x=>x!==id);
+  renderEditBlogVidSelected();
+};
+
+function renderEditBlogVidSelected(){
+  const wrap = document.getElementById('editBlogVidSelected');
+  if(!wrap) return;
+  if(!editBlogSelVids.length){
+    wrap.innerHTML=`<span style="font-size:.72rem;color:var(--muted);padding:3px;">None selected</span>`;
+    return;
+  }
+  wrap.innerHTML = editBlogSelVids.map(id=>{
+    const v = allVideos.find(x=>x.id===id);
+    return v?`<div style="display:flex;align-items:center;gap:3px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:2px 6px 2px 3px;">
+      <img src="${getAdminThumb(v)}" style="width:34px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;">
+      <span style="font-size:.68rem;font-weight:600;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</span>
+      <button onclick="removeEditBlogVid('${id}')" style="background:none;border:none;color:var(--red);font-size:.85rem;cursor:pointer;padding:0;line-height:1;">×</button>
+    </div>`:'';
+  }).join('');
+}
 
 // ── AUTO START ──
 // ── COMMENTS PANEL ──────────────────────────────────
