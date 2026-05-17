@@ -1479,8 +1479,18 @@ window.openVideo=async (id,push=true)=>{
   $("watch-cat").textContent=v.category||"";
   $("watch-views").textContent=fmtViews((v.views||0)+1);
   $("watch-date").textContent=v.createdAt?.toDate?v.createdAt.toDate().toLocaleDateString():"—";
-  // Render description as info card
-  renderWatchDescription(v);
+  // If article linked → hide description area (article shown below playlist)
+  if(v.articleId){
+    // Hide all description elements
+    const descEl=$('watch-desc'), synWrap=$('watch-synopsis-wrap'), card=$('watch-info-card'), toggle=$('watch-desc-toggle');
+    if(descEl){ descEl.style.display='none'; descEl.innerHTML=''; }
+    if(synWrap) synWrap.style.display='none';
+    if(card) card.style.display='none';
+    if(toggle) toggle.style.display='none';
+  } else {
+    // Render description normally
+    renderWatchDescription(v);
+  }
 
   // Tags
   const tagsEl=$("watch-tags");
