@@ -73,6 +73,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/for-you",
+      "destination": "/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
