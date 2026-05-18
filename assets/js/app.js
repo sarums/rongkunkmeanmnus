@@ -461,6 +461,8 @@ function routeFromUrl(push=false){
     return;
   }
 
+  // For You
+  if(path==='/for-you'){ showForYouPage(); return; }
   // Blog
   if(path==='/blog'){ showBlogPage(); return; }
   if(path.startsWith('/blog/')){
@@ -499,6 +501,8 @@ window.addEventListener("popstate",e=>{
     doSearch(state.q);
   } else if(state.page==='history'){
     showHistoryPage();
+  } else if(state.page==='for-you'){
+    showForYouPage();
   } else if(state.page==='home'){
     showPage('home',false);
   } else {
@@ -882,6 +886,7 @@ function buildNav(activeId){
 
   $("nav-cats").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
+    +`<a href="/for-you" onclick="event.preventDefault();showForYouPage()" ${resolvedActive==='for-you'?'class="active"':''}>✨ For You</a>`
     +desktopCats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("")
     +`<a href="/blog" onclick="event.preventDefault();showBlogPage()" style="font-weight:600;">📝 Blog</a>`
     +`<a href="/donate" style="color:#f27d26;font-weight:800;display:flex;align-items:center;gap:5px;" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">☕ Donate</a>`;
@@ -918,6 +923,13 @@ function buildNav(activeId){
       Home
     </a>`
     +cats.map(c=>navLink(c,true)).join("")
+    +`<a href="/for-you" onclick="event.preventDefault();toggleMobileMenu();showForYouPage()"
+      style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.8);text-decoration:none;"
+      onmouseover="this.style.background='rgba(242,125,38,.08)';this.style.color='#f27d26'"
+      onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.8)'">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;">✨</div>
+      For You
+    </a>`
     +`<a href="/blog" onclick="event.preventDefault();toggleMobileMenu();showBlogPage()"
       style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.8);text-decoration:none;"
       onmouseover="this.style.background='rgba(242,125,38,.08)';this.style.color='#f27d26'"
@@ -1716,10 +1728,24 @@ function showCatPage(cat){
   const count=catVideos.length;
   $("cat-desc").textContent=`${count} video${count!==1?'s':''} · ${cat.description||'Browse and enjoy'}`;
 
+  // Sort by newest first
+  catVideos.sort((a,b)=>{
+    const ta = a.createdAt?.toDate?a.createdAt.toDate():new Date(a.createdAt?.seconds*1000||0);
+    const tb = b.createdAt?.toDate?b.createdAt.toDate():new Date(b.createdAt?.seconds*1000||0);
+    return tb-ta;
+  });
   // Render grid
   if(cat.target_type==="playlist"){
-    const cards=ids.map(pid=>playlists.find(p=>p.id===pid)).filter(Boolean)
-      .map(pl=>buildPlaylistCard(pl)).join("");
+    const pls=ids.map(pid=>playlists.find(p=>p.id===pid)).filter(Boolean);
+    // Sort playlists by first video createdAt
+    pls.sort((a,b)=>{
+      const va=videos.find(v=>v.id===(a.videos||[])[0]);
+      const vb=videos.find(v=>v.id===(b.videos||[])[0]);
+      const ta=va?.createdAt?.toDate?va.createdAt.toDate():new Date(0);
+      const tb=vb?.createdAt?.toDate?vb.createdAt.toDate():new Date(0);
+      return tb-ta;
+    });
+    const cards=pls.map(pl=>buildPlaylistCard(pl)).join("");
     $("cat-grid").innerHTML=cards||`<div style="padding:2rem;color:#555;text-align:center">No playlists found.</div>`;
   } else {
     renderGrid($("cat-grid"),catVideos);
@@ -2152,6 +2178,68 @@ function setupSuggObserver(){
 
   sentinels.forEach(s => _suggObserver.observe(s));
 }
+
+// ── FOR YOU PAGE ─────────────────────────────────────────
+window.showForYouPage = async ()=>{
+  NP.start();
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-cat'));
+  window.scrollTo(0,0);
+  history.pushState({page:'for-you'},'','/for-you');
+  $('cat-title').textContent = '✨ For You';
+  $('cat-desc').textContent  = 'Personalized mix of videos and articles';
+  const bannerBg=$('cat-banner-bg');
+  if(bannerBg) bannerBg.style.backgroundImage='none';
+  updateMeta({title:'For You | រោងកុនគ្មានមនុស្ស', desc:'Your personalized mix of videos and articles on រោងកុនគ្មានមនុស្ស.', url:location.href});
+
+  const grid = $('cat-grid');
+  if(!grid){ NP.done(); return; }
+  grid.innerHTML = skelRow(4);
+
+  try {
+    // Get random videos
+    const shuffledVids = [...videos].sort(()=>Math.random()-.5).slice(0,20);
+
+    // Get random blog posts
+    const blogSnap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    const blogPosts = blogSnap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(p=>p.status==='published')
+      .sort(()=>Math.random()-.5).slice(0,6);
+
+    // Mix videos and articles together
+    const mixed = [];
+    let vi=0, bi=0;
+    // Insert 1 article every 4 videos
+    while(vi < shuffledVids.length || bi < blogPosts.length){
+      // Add 4 videos
+      for(let i=0;i<4&&vi<shuffledVids.length;i++) mixed.push({type:'video', data:shuffledVids[vi++]});
+      // Add 1 article
+      if(bi<blogPosts.length) mixed.push({type:'blog', data:blogPosts[bi++]});
+    }
+
+    grid.innerHTML = mixed.map(item=>{
+      if(item.type==='video') return buildCard(item.data);
+      const p = item.data;
+      return `<a class="vcard" href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')">
+        <div class="vcard-thumb" style="position:relative;">
+          ${p.cover
+            ?`<img src="${p.cover}" alt="${(p.title||'').replace(/"/g,'')}" loading="lazy">`
+            :`<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">📝</div>`}
+          <div class="vcard-overlay"></div>
+          <div style="position:absolute;top:6px;left:6px;background:#f27d26;color:#000;font-size:.58rem;font-weight:900;padding:2px 7px;border-radius:9999px;text-transform:uppercase;letter-spacing:.06em;">Article</div>
+          ${p.category?`<div class="vcard-duration">${p.category}</div>`:''}
+        </div>
+        <div class="vcard-title">${p.title||''}</div>
+        <div class="vcard-sub">${p.excerpt?p.excerpt.slice(0,60)+'…':''}</div>
+      </a>`;
+    }).join('');
+
+  } catch(e){
+    // Fallback — just show random videos if blog fails
+    const shuffled = [...videos].sort(()=>Math.random()-.5);
+    renderGrid(grid, shuffled);
+  }
+  NP.done();
+};
 
 // ── VIDEO ARTICLE DESCRIPTION ────────────────────────────
 async function loadVideoArticle(articleId){
