@@ -2317,13 +2317,15 @@ window.showBlogPost = async function showBlogPost(slug){
                   style="display:flex;flex-direction:column;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden;text-decoration:none;transition:border-color .2s,transform .2s;"
                   onmouseover="this.style.borderColor='rgba(242,125,38,.3)';this.style.transform='translateY(-2px)'"
                   onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.transform=''">
-                  <div style="aspect-ratio:16/9;overflow:hidden;background:#111;">
+                  <div style="aspect-ratio:16/9;overflow:hidden;background:#111;position:relative;">
                     <img src="${getThumb(v)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"
                       onerror="this.src='https://picsum.photos/seed/${v.id}/320/180'">
+                    ${v.episodeNum?`<div style="position:absolute;top:4px;left:4px;width:22px;height:22px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:2;line-height:1;">${v.episodeNum}</div>`:''}
+                    ${v.duration?`<div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.75);color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:3px;">${v.duration}</div>`:''}
                   </div>
                   <div style="padding:.5rem .6rem;">
                     <div style="font-size:.75rem;font-weight:700;color:#ccc;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${v.title||''}</div>
-                    <div style="font-size:.65rem;color:#555;margin-top:2px;">${v.category||''}</div>
+                    <div style="font-size:.65rem;color:#555;margin-top:2px;">${v.category||''}${pl?' · Series':''}</div>
                   </div>
                 </a>`;
               }).join('')}
