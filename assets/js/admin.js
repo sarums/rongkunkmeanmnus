@@ -437,6 +437,7 @@ window.saveEdit = async ()=>{
       featured:section==='featured'?'yes':'no', section:section||'',
       articleId:qs('editArticleId')?.value||'',
       status:qs('editStatus')?.value||'public',
+      updatedAt:serverTimestamp(),
       duration, customThumb, episodeNum:epNum||0, badgePos:badgePos };
     await updateDoc(doc(db,'videos',id),data);
     const v=allVideos.find(x=>x.id===id);
@@ -658,7 +659,7 @@ window.removeFromPlaylist = async (plId, vidId)=>{
   if(!pl) return;
   pl.videos=(pl.videos||[]).filter(x=>x!==vidId);
   try {
-    await updateDoc(doc(db,'playlists',plId),{videos:pl.videos});
+    await updateDoc(doc(db,'playlists',plId),{videos:pl.videos, updatedAt:serverTimestamp()});
     showToast('Removed','Video removed from playlist','info');
     renderPlaylists();
   } catch(e){ showToast('Error',e.message,'err'); }
@@ -1446,7 +1447,7 @@ window.addCheckedToPlaylist=async plId=>{
   const pl=allPlaylists.find(p=>p.id===plId); if(!pl)return;
   pl.videos=[...(pl.videos||[]),...checked.filter(id=>!(pl.videos||[]).includes(id))];
   try{
-    await updateDoc(doc(db,'playlists',plId),{videos:pl.videos});
+    await updateDoc(doc(db,'playlists',plId),{videos:pl.videos, updatedAt:serverTimestamp()});
     showToast('Added',`${checked.length} video${checked.length!==1?'s':''} added to playlist`,'ok');
     renderPlaylists();
   }catch(e){showToast('Error',e.message,'err');}
