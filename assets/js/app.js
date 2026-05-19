@@ -1315,24 +1315,25 @@ function fillSection(sec,rowId){
   }
   // MULTI_PLAYLIST — show one card per playlist
   if(sec.target_type==="multi_playlist"&&(sec.playlist_ids||[]).length){
-    const cards=(sec.playlist_ids||[])
-      .map(id=>playlists.find(p=>p.id===id)).filter(Boolean)
-      .map(pl=>buildPlaylistCard(pl)).join("");
+    const pls=sortNewest((sec.playlist_ids||[]).map(id=>playlists.find(p=>p.id===id)).filter(Boolean), true);
+    const cards=pls.map(pl=>buildPlaylistCard(pl)).join("");
     el.innerHTML=cards||`<div style="padding:1rem;color:#555;font-size:.82rem">No playlists found.</div>`;
     return;
   }
   if(sec.target_type==="single_videos"&&(sec.custom_videos||[]).length){
-    const list=(sec.custom_videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
+    const list=sortNewest((sec.custom_videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean));
     el.innerHTML=list.length?buildFeedWithAds(list,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6):skelRow();
     return;
   }
   if(sec.target_type==="category"&&sec.target_id){
     const cat=categories.find(c=>c.id===sec.target_id);
-    const list=videos.filter(v=>v.category===(cat?.name||sec.target_id)||v.category_id===sec.target_id).slice(0,12);
+    const list=sortNewest(videos.filter(v=>v.category===(cat?.name||sec.target_id)||v.category_id===sec.target_id)).slice(0,12);
     el.innerHTML=list.length?buildFeedWithAds(list,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6):skelRow();
     return;
   }
-  let list=isTrending?[...videos].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,12):videos.slice(0,12);
+  let list=isTrending
+    ?[...videos].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,12)
+    :sortNewest(videos).slice(0,12);
   el.innerHTML=list.length?list.map(v=>buildCard(v)).join(""):skelRow();
 }
 
@@ -1728,27 +1729,16 @@ function showCatPage(cat){
   const count=catVideos.length;
   $("cat-desc").textContent=`${count} video${count!==1?'s':''} · ${cat.description||'Browse and enjoy'}`;
 
-  // Sort by newest first
-  catVideos.sort((a,b)=>{
-    const ta = a.createdAt?.toDate?a.createdAt.toDate():new Date(a.createdAt?.seconds*1000||0);
-    const tb = b.createdAt?.toDate?b.createdAt.toDate():new Date(b.createdAt?.seconds*1000||0);
-    return tb-ta;
-  });
+  // Sort by newest/updated first
+  const sortedCatVideos = sortNewest(catVideos);
   // Render grid
   if(cat.target_type==="playlist"){
     const pls=ids.map(pid=>playlists.find(p=>p.id===pid)).filter(Boolean);
-    // Sort playlists by first video createdAt
-    pls.sort((a,b)=>{
-      const va=videos.find(v=>v.id===(a.videos||[])[0]);
-      const vb=videos.find(v=>v.id===(b.videos||[])[0]);
-      const ta=va?.createdAt?.toDate?va.createdAt.toDate():new Date(0);
-      const tb=vb?.createdAt?.toDate?vb.createdAt.toDate():new Date(0);
-      return tb-ta;
-    });
-    const cards=pls.map(pl=>buildPlaylistCard(pl)).join("");
+    const sortedPls = sortNewest(pls, true);
+    const cards=sortedPls.map(pl=>buildPlaylistCard(pl)).join("");
     $("cat-grid").innerHTML=cards||`<div style="padding:2rem;color:#555;text-align:center">No playlists found.</div>`;
   } else {
-    renderGrid($("cat-grid"),catVideos);
+    renderGrid($("cat-grid"), sortedCatVideos);
   }
   NP.done();
 }
@@ -2177,6 +2167,36 @@ function setupSuggObserver(){
   }, { rootMargin: '300px' });
 
   sentinels.forEach(s => _suggObserver.observe(s));
+}
+
+// ── SORT HELPERS ─────────────────────────────────────────
+// Get latest timestamp for a video (createdAt or updatedAt)
+function getVideoTime(v){
+  if(v.updatedAt?.toDate) return v.updatedAt.toDate().getTime();
+  if(v.createdAt?.toDate) return v.createdAt.toDate().getTime();
+  if(v.updatedAt?.seconds) return v.updatedAt.seconds*1000;
+  if(v.createdAt?.seconds) return v.createdAt.seconds*1000;
+  return 0;
+}
+
+// Get latest timestamp for a playlist (based on most recently added video)
+function getPlaylistTime(pl){
+  if(pl.updatedAt?.toDate) return pl.updatedAt.toDate().getTime();
+  if(pl.updatedAt?.seconds) return pl.updatedAt.seconds*1000;
+  // Fall back to most recent video in playlist
+  const times = (pl.videos||[]).map(id=>{
+    const v = videos.find(x=>x.id===id);
+    return v ? getVideoTime(v) : 0;
+  });
+  return times.length ? Math.max(...times) : 0;
+}
+
+function sortNewest(arr, isPlaylist=false){
+  return [...arr].sort((a,b)=>{
+    const ta = isPlaylist ? getPlaylistTime(a) : getVideoTime(a);
+    const tb = isPlaylist ? getPlaylistTime(b) : getVideoTime(b);
+    return tb - ta;
+  });
 }
 
 // ── FOR YOU PAGE ─────────────────────────────────────────
