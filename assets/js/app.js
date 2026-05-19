@@ -1246,8 +1246,25 @@ async function buildBlogSection(container){
         const ta = a.updatedAt?.seconds?a.updatedAt.seconds*1000:a.createdAt?.toDate?a.createdAt.toDate().getTime():0;
         const tb = b.updatedAt?.seconds?b.updatedAt.seconds*1000:b.createdAt?.toDate?b.createdAt.toDate().getTime():0;
         return tb-ta;
-      }).slice(0,6);
+      }).slice(0,8); // show 8 cards
     if(!posts.length) return;
+
+    const blogCard = p=>`
+      <a href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')"
+        style="display:flex;flex-direction:column;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;text-decoration:none;transition:border-color .2s,transform .2s;"
+        onmouseover="this.style.borderColor='rgba(242,125,38,.3)';this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.transform=''">
+        <div style="aspect-ratio:16/9;overflow:hidden;background:#111;flex-shrink:0;">
+          ${p.cover
+            ?`<img src="${p.cover}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`
+            :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;">📝</div>`}
+        </div>
+        <div style="padding:.75rem .9rem .85rem;">
+          <div style="font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#f27d26;margin-bottom:.25rem;">${p.category||'Article'}</div>
+          <div style="font-size:.84rem;font-weight:700;color:#e4e4e7;line-height:1.35;margin-bottom:.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.title||''}</div>
+          <div style="font-size:.72rem;color:#555;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.excerpt||''}</div>
+        </div>
+      </a>`;
 
     const sec = document.createElement('div');
     sec.className = 'section';
@@ -1260,22 +1277,16 @@ async function buildBlogSection(container){
         <a href="/blog" onclick="event.preventDefault();showBlogPage()" class="section-more">View All ›</a>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;padding:0 2px;">
-        ${posts.map(p=>`
-          <a href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')"
-            style="display:flex;flex-direction:column;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;text-decoration:none;transition:border-color .2s,transform .2s;"
-            onmouseover="this.style.borderColor='rgba(242,125,38,.3)';this.style.transform='translateY(-2px)'"
-            onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.transform=''">
-            <div style="aspect-ratio:16/9;overflow:hidden;background:#111;flex-shrink:0;">
-              ${p.cover
-                ?`<img src="${p.cover}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`
-                :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;">📝</div>`}
-            </div>
-            <div style="padding:.75rem .9rem .85rem;">
-              <div style="font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#f27d26;margin-bottom:.25rem;">${p.category||'Article'}</div>
-              <div style="font-size:.84rem;font-weight:700;color:#e4e4e7;line-height:1.35;margin-bottom:.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.title||''}</div>
-              <div style="font-size:.72rem;color:#555;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.excerpt||''}</div>
-            </div>
-          </a>`).join('')}
+        ${posts.map(p=>blogCard(p)).join('')}
+      </div>
+      <!-- Read More button -->
+      <div style="text-align:center;margin-top:1.25rem;">
+        <a href="/blog" onclick="event.preventDefault();showBlogPage()"
+          style="display:inline-flex;align-items:center;gap:8px;padding:10px 28px;background:rgba(242,125,38,.08);border:1px solid rgba(242,125,38,.25);color:#f27d26;font-size:.82rem;font-weight:800;border-radius:9999px;text-decoration:none;transition:all .2s;"
+          onmouseover="this.style.background='rgba(242,125,38,.18)'"
+          onmouseout="this.style.background='rgba(242,125,38,.08)'">
+          📝 Read More Articles ›
+        </a>
       </div>`;
     container.appendChild(sec);
   } catch(e){}
