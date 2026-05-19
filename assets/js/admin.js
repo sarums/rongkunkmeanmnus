@@ -2005,6 +2005,7 @@ window.saveBlogPost = async id=>{
     excerpt : document.getElementById('beEx')?.value.trim(),
     content : document.getElementById('beCn')?.innerHTML.trim(),
     relatedVideos : [...editBlogSelVids],
+    updatedAt: serverTimestamp(),
   };
   if(!data.title){ showToast('Error','Title required','err'); return; }
   try {
