@@ -1241,7 +1241,12 @@ function buildSections(){
 async function buildBlogSection(container){
   try{
     const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
-    const posts = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published').slice(0,6);
+    const posts = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published')
+      .sort((a,b)=>{
+        const ta = a.updatedAt?.seconds?a.updatedAt.seconds*1000:a.createdAt?.toDate?a.createdAt.toDate().getTime():0;
+        const tb = b.updatedAt?.seconds?b.updatedAt.seconds*1000:b.createdAt?.toDate?b.createdAt.toDate().getTime():0;
+        return tb-ta;
+      }).slice(0,6);
     if(!posts.length) return;
 
     const sec = document.createElement('div');
@@ -2344,7 +2349,12 @@ window.showBlogPage = async function showBlogPage(){
   grid.innerHTML = '<div class="skel-card"><div class="skeleton skel-thumb"></div><div class="skeleton skel-title"></div></div>'.repeat(4);
   try {
     const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
-    const posts = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+    const posts = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published')
+      .sort((a,b)=>{
+        const ta = a.updatedAt?.toDate?a.updatedAt.toDate().getTime():a.updatedAt?.seconds?a.updatedAt.seconds*1000:a.createdAt?.toDate?a.createdAt.toDate().getTime():0;
+        const tb = b.updatedAt?.toDate?b.updatedAt.toDate().getTime():b.updatedAt?.seconds?b.updatedAt.seconds*1000:b.createdAt?.toDate?b.createdAt.toDate().getTime():0;
+        return tb-ta;
+      });
     if(!posts.length){
       grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#555;">No articles yet — check back soon!</div>';
       NP.done(); return;
