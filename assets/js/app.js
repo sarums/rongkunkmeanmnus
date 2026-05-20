@@ -2249,19 +2249,16 @@ window.showForYouPage = async ()=>{
     const shuffledVids = [...videos].sort(()=>Math.random()-.5);
     const shuffledBlogs = [...blogPosts].sort(()=>Math.random()-.5);
 
-    // Build full mixed pool: 4 videos → 1 article → 1 ad every 6
+    // Build mixed pool: 4 videos → 1 article → 4 videos → 1 article...
+    // Ads are injected by buildFeedWithAds using AD_CONFIG.feedEvery setting
     const mixed = [];
-    let vi=0, bi=0, count=0;
+    let vi=0, bi=0;
     while(vi<shuffledVids.length || bi<shuffledBlogs.length){
       for(let i=0;i<4&&vi<shuffledVids.length;i++){
         mixed.push({type:'video', data:shuffledVids[vi++]});
-        count++;
-        // Insert ad every 6 items
-        if(count%6===0) mixed.push({type:'ad'});
       }
       if(bi<shuffledBlogs.length){
         mixed.push({type:'blog', data:shuffledBlogs[bi++]});
-        count++;
       }
     }
     _fyPool = mixed;
@@ -2315,9 +2312,11 @@ function _fyRenderBatch(grid){
   const sentinel = document.getElementById('fy-sentinel');
   if(sentinel) sentinel.remove();
 
-  // Build HTML
-  const html = batch.map(item=>{
-    if(item.type==='ad') return buildAdCard();
+  // Inject ads using AD_CONFIG.feedEvery from Admin → Ads Settings
+  const every = (window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6;
+  const injected = injectAdCards(batch, every);
+  const html = injected.map(item=>{
+    if(item==='__AD__') return buildAdCard();
     if(item.type==='blog') return _fyBlogCard(item.data);
     return buildCard(item.data);
   }).join('');
