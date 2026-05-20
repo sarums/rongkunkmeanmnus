@@ -1127,7 +1127,8 @@ function updateHero(i){
 
   // Description — show real desc or smart fallback
   const desc=v.description||(v.category?`A ${v.category} video from ${v.platform||'our collection'}.`:"");
-  $("hero-desc").textContent=desc;
+  // Strip HTML tags for hero — show plain text only
+  $("hero-desc").textContent=desc.replace(/<[^>]*>/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").trim();
   $("hero-desc").style.display=desc?"":"none";
 
   // Category badge
