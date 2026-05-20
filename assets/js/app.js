@@ -2217,6 +2217,10 @@ function sortNewest(arr, isPlaylist=false){
 }
 
 // ── FOR YOU PAGE ─────────────────────────────────────────
+// For You page state
+let _fyPool=[], _fyPage=0, _fyObserver=null;
+const FY_BATCH=20;
+
 window.showForYouPage = async ()=>{
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-cat'));
@@ -2232,51 +2236,103 @@ window.showForYouPage = async ()=>{
   if(!grid){ NP.done(); return; }
   grid.innerHTML = skelRow(4);
 
+  // Reset state
+  _fyPage=0; _fyPool=[];
+  if(_fyObserver){ _fyObserver.disconnect(); _fyObserver=null; }
+
   try {
-    // Get random videos
-    const shuffledVids = [...videos].sort(()=>Math.random()-.5).slice(0,20);
-
-    // Get random blog posts
+    // Fetch blog posts
     const blogSnap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
-    const blogPosts = blogSnap.docs.map(d=>({id:d.id,...d.data()}))
-      .filter(p=>p.status==='published')
-      .sort(()=>Math.random()-.5).slice(0,6);
+    const blogPosts = blogSnap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
 
-    // Mix videos and articles together
+    // Shuffle videos
+    const shuffledVids = [...videos].sort(()=>Math.random()-.5);
+    const shuffledBlogs = [...blogPosts].sort(()=>Math.random()-.5);
+
+    // Build full mixed pool: 4 videos → 1 article → 1 ad every 6
     const mixed = [];
-    let vi=0, bi=0;
-    // Insert 1 article every 4 videos
-    while(vi < shuffledVids.length || bi < blogPosts.length){
-      // Add 4 videos
-      for(let i=0;i<4&&vi<shuffledVids.length;i++) mixed.push({type:'video', data:shuffledVids[vi++]});
-      // Add 1 article
-      if(bi<blogPosts.length) mixed.push({type:'blog', data:blogPosts[bi++]});
+    let vi=0, bi=0, count=0;
+    while(vi<shuffledVids.length || bi<shuffledBlogs.length){
+      for(let i=0;i<4&&vi<shuffledVids.length;i++){
+        mixed.push({type:'video', data:shuffledVids[vi++]});
+        count++;
+        // Insert ad every 6 items
+        if(count%6===0) mixed.push({type:'ad'});
+      }
+      if(bi<shuffledBlogs.length){
+        mixed.push({type:'blog', data:shuffledBlogs[bi++]});
+        count++;
+      }
     }
+    _fyPool = mixed;
 
-    grid.innerHTML = mixed.map(item=>{
-      if(item.type==='video') return buildCard(item.data);
-      const p = item.data;
-      return `<a class="vcard" href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')">
-        <div class="vcard-thumb" style="position:relative;">
-          ${p.cover
-            ?`<img src="${p.cover}" alt="${(p.title||'').replace(/"/g,'')}" loading="lazy">`
-            :`<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">📝</div>`}
-          <div class="vcard-overlay"></div>
-          <div style="position:absolute;top:6px;left:6px;background:#f27d26;color:#000;font-size:.58rem;font-weight:900;padding:2px 7px;border-radius:9999px;text-transform:uppercase;letter-spacing:.06em;">Article</div>
-          ${p.category?`<div class="vcard-duration">${p.category}</div>`:''}
-        </div>
-        <div class="vcard-title">${p.title||''}</div>
-        <div class="vcard-sub">${p.excerpt?p.excerpt.slice(0,60)+'…':''}</div>
-      </a>`;
-    }).join('');
+    grid.innerHTML='';
+    _fyRenderBatch(grid);
+
+    // Setup infinite scroll sentinel
+    const sentinel = document.createElement('div');
+    sentinel.id='fy-sentinel';
+    sentinel.style.cssText='height:20px;grid-column:1/-1;';
+    grid.appendChild(sentinel);
+
+    _fyObserver = new IntersectionObserver(entries=>{
+      if(entries[0].isIntersecting){
+        _fyRenderBatch(grid);
+      }
+    },{rootMargin:'300px'});
+    _fyObserver.observe(sentinel);
 
   } catch(e){
-    // Fallback — just show random videos if blog fails
     const shuffled = [...videos].sort(()=>Math.random()-.5);
     renderGrid(grid, shuffled);
   }
   NP.done();
 };
+
+function _fyBlogCard(p){
+  return `<a class="vcard" href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')">
+    <div class="vcard-thumb" style="position:relative;">
+      ${p.cover
+        ?`<img src="${p.cover}" alt="${(p.title||'').replace(/"/g,'')}" loading="lazy"
+            onerror="this.parentElement.style.background='#111'">`
+        :`<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">📝</div>`}
+      <div class="vcard-overlay"></div>
+      <div style="position:absolute;top:6px;left:6px;background:#f27d26;color:#000;font-size:.58rem;font-weight:900;padding:2px 7px;border-radius:9999px;text-transform:uppercase;letter-spacing:.06em;">Article</div>
+      ${p.category?`<div class="vcard-duration">${p.category}</div>`:''}
+    </div>
+    <div class="vcard-title">${p.title||''}</div>
+    <div class="vcard-sub">${p.excerpt?p.excerpt.replace(/<[^>]*>/g,'').slice(0,60)+'…':''}</div>
+  </a>`;
+}
+
+function _fyRenderBatch(grid){
+  const start = _fyPage * FY_BATCH;
+  const batch = _fyPool.slice(start, start+FY_BATCH);
+  if(!batch.length) return;
+  _fyPage++;
+
+  // Remove sentinel temporarily
+  const sentinel = document.getElementById('fy-sentinel');
+  if(sentinel) sentinel.remove();
+
+  // Build HTML
+  const html = batch.map(item=>{
+    if(item.type==='ad') return buildAdCard();
+    if(item.type==='blog') return _fyBlogCard(item.data);
+    return buildCard(item.data);
+  }).join('');
+
+  grid.insertAdjacentHTML('beforeend', html);
+
+  // Re-add sentinel if more items
+  if(_fyPage * FY_BATCH < _fyPool.length){
+    const s = document.createElement('div');
+    s.id='fy-sentinel';
+    s.style.cssText='height:20px;grid-column:1/-1;';
+    grid.appendChild(s);
+    if(_fyObserver) _fyObserver.observe(s);
+  }
+}
 
 // ── VIDEO ARTICLE DESCRIPTION ────────────────────────────
 async function loadVideoArticle(articleId){
