@@ -235,6 +235,7 @@ function renderOverview(){
       <td>${pl?`<span class="badge badge-pl">📋 ${pl.name}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
       <td><div class="td-actions">
         <button class="act-btn act-edit" onclick="openEdit('${v.id}')">✏️ Edit</button>
+        <button class="act-btn" style="background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.25);" onclick="duplicateVideo('${v.id}')" title="Duplicate">⧉</button>
         <button class="act-btn act-del" onclick="deleteVideo('${v.id}','${v.title.replace(/'/g,"\'")}')">🗑️</button>
       </div></td>
     </tr>`;
@@ -379,6 +380,7 @@ function renderVideosTable(vids){
     <td><div class="td-actions">
       <button class="act-btn act-edit" onclick="openEdit('${v.id}')">✏️ Edit</button>
       <button class="act-btn act-feat" onclick="toggleFeatured('${v.id}')" title="${v.featured==='yes'?'Remove from hero':'Set as hero'}">⭐</button>
+      <button class="act-btn" style="background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.25);" onclick="duplicateVideo('${v.id}')" title="Duplicate">⧉</button>
       <button class="act-btn act-del" onclick="deleteVideo('${v.id}','${v.title.replace(/'/g,'\\\'').substring(0,30)}')">🗑️</button>
     </div></td>
   </tr>`).join('') || `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted)">No videos found</td></tr>`;
@@ -578,8 +580,11 @@ function renderPlaylists(){
       <!-- Video list (collapsed by default) -->
       <div class="pl-items-list" id="pl-eplist-${pl.id}" style="display:none;border-top:1px solid var(--border);">
         ${vids.length?vids.map((v,i)=>`
-          <div class="pl-item-row">
-            <div class="pl-num">${i+1}</div>
+          <div class="pl-item-row" style="cursor:grab;">
+            <div class="pl-num" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <span style="font-size:.7rem;color:#333;line-height:1;">⠿</span>
+              <span>${i+1}</span>
+            </div>
             <div class="pl-item-thumb"><img src="${thumbUrl(v)}" onerror="this.style.display='none'"></div>
             <div class="pl-item-info">
               <div class="pl-item-title">${v.title}</div>
@@ -1404,6 +1409,8 @@ window.togglePlEpisodes=plId=>{
   const isOpen = list.style.display !== 'none';
   list.style.display = isOpen ? 'none' : 'block';
   if(chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  // Init drag & drop when list opens
+  if(!isOpen) setTimeout(()=>initPlaylistDrag(plId), 50);
 };
 
 window.togglePlAddVideo=plId=>{
@@ -2293,6 +2300,97 @@ window.clearArticle = (searchId, hiddenId, previewId)=>{
   if(qs(searchId)) qs(searchId).value='';
   const prev = qs(previewId);
   if(prev) prev.style.display='none';
+};
+
+// ── DUPLICATE VIDEO ──────────────────────────────────────
+window.duplicateVideo = async (id)=>{
+  const v = allVideos.find(x=>x.id===id);
+  if(!v) return;
+  try {
+    const copy = {
+      ...v,
+      title     : 'Copy of ' + (v.title||''),
+      views     : 0,
+      createdAt : serverTimestamp(),
+      updatedAt : serverTimestamp(),
+    };
+    delete copy.id;
+    const ref = await addDoc(collection(db,'videos'), copy);
+    const newV = {id:ref.id, ...copy};
+    allVideos.unshift(newV);
+    showToast('Duplicated!', '"'+v.title+'" copied — click Edit to modify', 'ok');
+    renderOverview();
+    renderAllVideos();
+    // Open edit modal immediately so user can edit right away
+    setTimeout(()=>openEdit(ref.id), 300);
+  } catch(e){ showToast('Error', e.message, 'err'); }
+};
+
+// ── PLAYLIST DRAG & DROP ──────────────────────────────────
+let _dragSrcIdx = null;
+let _dragPlId   = null;
+
+window.initPlaylistDrag = (plId)=>{
+  const list = document.getElementById('pl-eplist-'+plId);
+  if(!list) return;
+  const rows = list.querySelectorAll('.pl-item-row');
+
+  rows.forEach((row, idx)=>{
+    row.setAttribute('draggable','true');
+    row.dataset.idx = idx;
+
+    row.addEventListener('dragstart', e=>{
+      _dragSrcIdx = idx;
+      _dragPlId   = plId;
+      row.style.opacity = '.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    row.addEventListener('dragend', e=>{
+      row.style.opacity = '';
+      list.querySelectorAll('.pl-item-row').forEach(r=>r.classList.remove('drag-over'));
+    });
+
+    row.addEventListener('dragover', e=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      list.querySelectorAll('.pl-item-row').forEach(r=>r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    });
+
+    row.addEventListener('dragleave', ()=>{
+      row.classList.remove('drag-over');
+    });
+
+    row.addEventListener('drop', async e=>{
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if(_dragSrcIdx === null || _dragSrcIdx === idx || _dragPlId !== plId) return;
+
+      const pl = allPlaylists.find(p=>p.id===plId);
+      if(!pl) return;
+
+      // Reorder videos array
+      const vids = [...(pl.videos||[])];
+      const [moved] = vids.splice(_dragSrcIdx, 1);
+      vids.splice(idx, 0, moved);
+      pl.videos = vids;
+
+      try {
+        await updateDoc(doc(db,'playlists',plId),{videos:vids, updatedAt:serverTimestamp()});
+        showToast('Reordered!','Episode order saved','ok');
+        renderPlaylists();
+        // Re-expand the episode list
+        setTimeout(()=>{
+          togglePlEpisodes(plId);
+          initPlaylistDrag(plId);
+        }, 100);
+      } catch(err){ showToast('Error', err.message, 'err'); }
+
+      _dragSrcIdx = null;
+      _dragPlId   = null;
+    });
+  });
 };
 
 // ── AUTO START ──
