@@ -1459,6 +1459,14 @@ window.openVideo=async (id,push=true)=>{
   window.scrollTo(0,0);
   playlistQueue=[];plQueueIdx=0;
   $("playlist-panel").style.display="none";
+  // Reset mobile playlist toggle
+  _mobilePlaylistOpen = false;
+  const _mBtn=$('mobile-playlist-btn-wrap');
+  if(_mBtn) _mBtn.style.display='none';
+  const _mLabel=$('mobile-playlist-label');
+  if(_mLabel) _mLabel.textContent='📋 Show Playlist';
+  const _mChevron=$('mobile-playlist-chevron');
+  if(_mChevron) _mChevron.style.transform='';
   $("suggested-list").style.display="";
   if($("suggested-list-mobile")) $("suggested-list-mobile").style.display="";
   $("watch-next-btn").style.display="none";
@@ -1582,7 +1590,23 @@ window.openVideo=async (id,push=true)=>{
         ${isWatched&&!isCurrent?`<div class="pl-watched-dot" title="Watched"></div>`:''}
       </a>`;
     }).join("");
-    $("playlist-panel").style.display="";
+    // Desktop: show playlist panel directly
+    // Mobile: show toggle button, keep playlist hidden by default
+    const isMobile = window.innerWidth <= 768;
+    if(isMobile){
+      $("playlist-panel").style.display="none";
+      _mobilePlaylistOpen = false;
+      const mBtn=$('mobile-playlist-btn-wrap');
+      const mLabel=$('mobile-playlist-label');
+      const mChevron=$('mobile-playlist-chevron');
+      const mClose=$('mobile-playlist-close');
+      if(mBtn) mBtn.style.display='block';
+      if(mLabel) mLabel.textContent='📋 Show Playlist';
+      if(mChevron) mChevron.style.transform='';
+      if(mClose) mClose.style.display='none';
+    } else {
+      $("playlist-panel").style.display="";
+    }
 
     // Show playlist chip on mobile
     const chipPl=$("chip-playlist");
@@ -2570,6 +2594,29 @@ window.showBlogPost = async function showBlogPost(slug){
   } catch(e){ wrap.innerHTML='<div style="color:#555;padding:2rem;">Could not load article.</div>'; }
   NP.done();
 }
+
+// ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
+let _mobilePlaylistOpen = false;
+
+window.toggleMobilePlaylist = ()=>{
+  _mobilePlaylistOpen = !_mobilePlaylistOpen;
+  const panel    = $('playlist-panel');
+  const label    = $('mobile-playlist-label');
+  const chevron  = $('mobile-playlist-chevron');
+  const closeBtn = $('mobile-playlist-close');
+
+  if(_mobilePlaylistOpen){
+    if(panel) panel.style.display = '';
+    if(label) label.textContent = '📋 Hide Playlist';
+    if(chevron) chevron.style.transform = 'rotate(180deg)';
+    if(closeBtn) closeBtn.style.display = 'block';
+  } else {
+    if(panel) panel.style.display = 'none';
+    if(label) label.textContent = '📋 Show Playlist';
+    if(chevron) chevron.style.transform = '';
+    if(closeBtn) closeBtn.style.display = 'none';
+  }
+};
 
 // ── COOKIE CONSENT ───────────────────────────────────────
 function initCookieBanner(){
