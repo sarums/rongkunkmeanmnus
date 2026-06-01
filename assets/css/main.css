@@ -427,6 +427,7 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .pl-dur { font-size: .65rem; color: #555; font-weight: 600; margin-top: 3px; }
 
 .suggested-title { font-size: .85rem; font-weight: 800; color: #888; text-transform:uppercase; letter-spacing:.1em; margin-bottom: 14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+/* ── Suggested Videos — Desktop (horizontal list) ── */
 .sugg-item { display: flex; gap: 10px; margin-bottom: 13px; cursor: pointer; }
 .sugg-thumb { width: 118px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background: #1a1a1a; flex-shrink: 0; position: relative; }
 .sugg-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
@@ -437,6 +438,45 @@ button, input, select, textarea { font-family: 'Kantumruy Pro', 'Outfit', sans-s
 .sugg-item:hover .sugg-title-text { color: var(--brand); }
 .sugg-meta { font-size: .67rem; font-weight: 600; color: #555; }
 .sugg-meta em { color: var(--brand); font-style: normal; }
+
+/* ── Suggested Videos — Mobile (full width card like YouTube) ── */
+@media(max-width:768px){
+  #suggested-list-mobile .sugg-item {
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 16px;
+    background: rgba(255,255,255,.02);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  #suggested-list-mobile .sugg-item:hover { border-color: rgba(242,125,38,.3); }
+  #suggested-list-mobile .sugg-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 0;
+    flex-shrink: unset;
+  }
+  #suggested-list-mobile .sugg-info {
+    padding: 8px 12px 10px;
+    gap: 4px;
+  }
+  #suggested-list-mobile .sugg-title-text {
+    font-size: .85rem;
+    font-weight: 700;
+    color: #e4e4e7;
+    -webkit-line-clamp: 2;
+  }
+  #suggested-list-mobile .sugg-meta {
+    font-size: .72rem;
+    color: #666;
+  }
+  #suggested-list-mobile .sugg-dur {
+    font-size: .65rem;
+    padding: 2px 6px;
+  }
+}
 
 /* ══ CATEGORY / SEARCH ══ */
 /* ── Category Banner ── */
@@ -615,4 +655,44 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 @media(max-width:768px){
   .blog-post-layout { grid-template-columns:1fr; }
   .blog-post-sidebar { position:static; }
+}
+
+/* ── Mobile Playlist Panel ── */
+@media(max-width:768px){
+  /* Hide desktop filter chips on mobile when playlist exists */
+  #mobile-playlist-btn-wrap { display:none; }
+
+  /* Playlist panel on mobile — max height with scroll */
+  #playlist-panel {
+    max-height: 320px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.02);
+    margin-bottom: 12px;
+    animation: slideDown .25s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity:0; transform:translateY(-8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* Mobile playlist header */
+  #playlist-panel .playlist-header {
+    position: sticky;
+    top: 0;
+    background: #0f0f0f;
+    z-index: 2;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Mobile suggested — full width YouTube style */
+  #suggested-list-mobile {
+    padding: 0 4px;
+  }
 }
