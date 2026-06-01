@@ -91,17 +91,6 @@
   <link rel="stylesheet" href="/assets/css/main.css">
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6821890542678085" crossorigin="anonymous"></script>
-  <!-- Google Analytics -->
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-S48YHRNPK2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-S48YHRNPK2');
-</script>
-  <!-- Google Analytics -->
 </head>
 <body>
 <!-- YouTube-style top progress bar -->
@@ -363,11 +352,20 @@
 
         <div class="watch-scroll-body">
         <div class="watch-info-wrap">
-          <!-- Filter chips -->
+          <!-- Filter chips (desktop only) -->
           <div class="watch-filter-row" id="watch-filter-row">
             <button class="watch-filter-chip active" onclick="setWatchFilter('all',this)">All</button>
             <button class="watch-filter-chip" onclick="setWatchFilter('related',this)">Related</button>
             <button class="watch-filter-chip" id="chip-playlist" style="display:none" onclick="setWatchFilter('playlist',this)">Playlist</button>
+          </div>
+
+          <!-- Mobile playlist toggle button -->
+          <div id="mobile-playlist-btn-wrap" style="display:none;margin-bottom:10px;">
+            <button id="mobile-playlist-toggle" onclick="toggleMobilePlaylist()"
+              style="width:100%;padding:10px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#e4e4e7;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:inherit;">
+              <span id="mobile-playlist-label">📋 Show Playlist</span>
+              <span id="mobile-playlist-chevron" style="font-size:.75rem;transition:transform .3s;">▾</span>
+            </button>
           </div>
 
           <div class="watch-source-row">
@@ -427,11 +425,14 @@
           </div>
         </div>
 
-        <!-- Playlist — below Views/Published/Share row -->
+        <!-- Playlist — collapsible on mobile -->
         <div class="playlist-panel" id="playlist-panel" style="display:none">
           <div class="playlist-header">
-            <span class="playlist-label">Playlist</span>
+            <span class="playlist-label">📋 Playlist</span>
             <span class="playlist-progress" id="playlist-progress"></span>
+            <!-- Mobile close button -->
+            <button id="mobile-playlist-close" onclick="toggleMobilePlaylist()"
+              style="display:none;background:none;border:none;color:#555;font-size:1.1rem;cursor:pointer;padding:0;line-height:1;margin-left:auto;">✕</button>
           </div>
           <div class="playlist-items hide-scroll" id="playlist-items"></div>
         </div>
