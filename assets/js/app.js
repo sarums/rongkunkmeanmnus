@@ -1813,21 +1813,35 @@ window.shareAction=(type)=>{
   const title   = document.title;
   $("share-panel")?.classList.remove("open");
 
-  // For Telegram/Facebook: use the OG API URL so bots get the correct thumbnail
-  // Extract video ID from current URL /watch/VIDEO_ID or /watch/PLAYLIST/EP
-  const watchMatch = location.pathname.match(/^\/watch\/([^/]+)/);
-  const videoId    = watchMatch ? watchMatch[1] : null;
-  const shareUrl   = videoId
-    ? `https://www.rongkunkmeanmnus.com/api/og?id=${videoId}`
+  // Resolve current video's Firestore ID from the URL (playlist ep or single video)
+  let currentVidId = null;
+  const path = location.pathname;
+  if(path.startsWith('/watch/')){
+    const parts = path.slice(7).split('/');
+    if(parts.length>=2){
+      // /watch/playlist-slug/ep-N
+      const pl = playlists.find(p=>playlistSlug(p)===parts[0]||toSlug(p.name)===parts[0]);
+      const epNum = parseInt((parts[1]||'').replace('ep-',''))||1;
+      if(pl && pl.videos && pl.videos[epNum-1]) currentVidId = pl.videos[epNum-1];
+    } else if(parts.length===1){
+      // /watch/video-slug
+      const v = videos.find(x=>videoSlug(x)===parts[0]||toSlug(x.title)===parts[0]||x.id===parts[0]);
+      if(v) currentVidId = v.id;
+    }
+  }
+
+  // Build share URL — use /api/og for Telegram/Facebook so bots get correct thumbnail
+  const ogUrl = currentVidId
+    ? `https://www.rongkunkmeanmnus.com/api/og?id=${currentVidId}`
     : pageUrl;
 
   if(type==="copy"){
     // Copy the real watch URL (not the API URL)
     navigator.clipboard.writeText(pageUrl).then(()=>showToast("Link copied!","ok"));
   } else if(type==="telegram"){
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`,'_blank');
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(ogUrl)}&text=${encodeURIComponent(title)}`,'_blank');
   } else if(type==="facebook"){
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,'_blank');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(ogUrl)}`,'_blank');
   }
 };
 window.copyLink=()=>shareAction('copy');
