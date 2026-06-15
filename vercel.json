@@ -77,6 +77,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/api/og",
+      "destination": "/api/og.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
