@@ -409,10 +409,13 @@ async function silentRefresh(){
   }catch(e){}
 }
 window.goBack=()=>{
-  if(previousPage&&previousPage!==location.pathname){
+  if(history.length > 1){
     history.back();
   } else {
+    // No history — go home
+    $('player-iframe').src='';
     showPage('home');
+    buildNav('home');
   }
 };
 
@@ -488,25 +491,34 @@ function show404(){
 
 window.addEventListener("popstate",e=>{
   const state = e.state;
-  if(!state){ showPage('home',false); return; }
+  if(!state){ routeFromUrl(false); return; }
 
   if(state.page==='watch' && state.videoId){
-    // Real page - just re-render from URL
+    $('player-iframe').src='';
     openVideo(state.videoId, false);
-  } else if(state.page==='cat'){
+  } else if(state.page==='cat' && state.catId){
     const cat = categories.find(c=>c.id===state.catId);
     if(cat) showCatPage(cat);
     else showPage('home',false);
+  } else if(state.page==='cat' && state.secId){
+    // seeAll section page
+    seeAll(state.secId);
   } else if(state.page==='search' && state.q){
     doSearch(state.q);
   } else if(state.page==='history'){
     showHistoryPage();
   } else if(state.page==='for-you'){
     showForYouPage();
+  } else if(state.page==='blog'){
+    showBlogPage();
+  } else if(state.page==='blog-post' && state.slug){
+    showBlogPost(state.slug);
   } else if(state.page==='home'){
     showPage('home',false);
+    // Stop video when going back to home
+    $('player-iframe').src='';
   } else {
-    showPage('home',false);
+    routeFromUrl(false);
   }
 });
 
@@ -1494,13 +1506,15 @@ window.openVideo=async (id,push=true)=>{
 
   const v=videos.find(x=>x.id===id);if(!v)return;
 
-  // Update URL to reflect current episode
+  // Update URL — pushState so back button works properly
   const pl2=playlists.find(p=>(p.videos||[]).includes(id));
-  if(pl2){
-    const epNum=(pl2.videos||[]).indexOf(id)+1;
-    history.replaceState({page:'watch',videoId:id},'',`/watch/${playlistSlug(pl2)}/ep-${epNum}`);
-  } else {
-    history.replaceState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
+  if(push){
+    if(pl2){
+      const epNum=(pl2.videos||[]).indexOf(id)+1;
+      history.pushState({page:'watch',videoId:id},'',`/watch/${playlistSlug(pl2)}/ep-${epNum}`);
+    } else {
+      history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
+    }
   }
 
   // Show pre-roll ad, then load video with mid-roll schedule
