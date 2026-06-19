@@ -1161,7 +1161,7 @@ function buildCard(v){
       </div></div>
       ${v.duration?`<div class="vcard-duration">${v.duration}</div>`:""}
       ${pl?`<div class="vcard-series">Series</div>`:""}
-      ${v.episodeNum?`<div class="ep-badge ep-badge--${v.badgePos||'top-left'}">${v.episodeNum}</div>`:""}
+      ${epNum?`<div class="ep-badge ep-badge--${v.badgePos||'top-left'}">${epNum}</div>`:""}
     </div>
     <div class="vcard-title">${v.title||""}</div>
     <div class="vcard-sub">${[
@@ -1224,7 +1224,7 @@ function buildSuggWithAds(list, every=6){
         <img src="${getThumb(x)}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${x.id}/320/180'">
         ${x.duration?`<div class="sugg-dur">${x.duration}</div>`:''}
         ${isWatched?`<div style="position:absolute;top:4px;right:4px;background:rgba(34,197,94,.85);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff">✓</div>`:''}
-        ${x.episodeNum?`<div style="position:absolute;top:4px;left:4px;width:22px;height:22px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:2;line-height:1">${x.episodeNum}</div>`:''}
+        ${(xpl?(xpl.videos||[]).indexOf(x.id)+1:x.episodeNum)||''?`<div style="position:absolute;top:4px;left:4px;width:22px;height:22px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:2;line-height:1">${xpl?(xpl.videos||[]).indexOf(x.id)+1:x.episodeNum}</div>`:''}
       </div>
       <div class="sugg-info">
         <div class="sugg-title-text">${x.title||''}</div>
@@ -1352,7 +1352,7 @@ function buildContinueWatching(container){
               <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
             </div></div>
             <div class="cw-progress"><div class="cw-progress-bar"></div></div>
-            ${v.episodeNum?`<div style="position:absolute;top:5px;left:5px;width:24px;height:24px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:3;line-height:1">${v.episodeNum}</div>`:''}
+            ${(()=>{ const cwpl=playlists.find(p=>(p.videos||[]).includes(v.id)); const cwep=cwpl?(cwpl.videos||[]).indexOf(v.id)+1:v.episodeNum; return cwep?`<div style="position:absolute;top:5px;left:5px;width:24px;height:24px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.25);z-index:3;line-height:1">${cwep}</div>`:''; })()}
           </div>
           <div class="cw-title">${v.title||''}</div>
           <div class="cw-meta">${v.category||''}</div>
