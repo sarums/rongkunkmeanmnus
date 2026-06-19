@@ -257,45 +257,192 @@ window.doSearch=(q2)=>{
   const q=(q2!=null?q2:($("search-input")?.value||$("mobile-search-input")?.value||"")).trim();
   if(!q)return;
   NP.start();
+  ensureSearchBlogCache(); // load blog cache for search
   if(mobileMenuOpen){ mobileMenuOpen=false; document.body.style.overflow=''; document.body.style.position=''; document.body.style.width=''; const s=$("mobile-menu"),b=$("sheet-backdrop"); if(s)s.style.transform='translateY(100%)'; if(b){b.style.background='rgba(0,0,0,0)';setTimeout(()=>b.style.display='none',350);} }
 
   history.pushState({page:'search',q},"",`/search?q=${encodeURIComponent(q)}`);
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-search"));
   window.scrollTo(0,0);
   updateMeta({title:`Search: ${q} | រោងកុនគ្មានមនុស្ស`, desc:`Search results for "${q}" — Watch free drama and entertainment videos on រោងកុនគ្មានមនុស្ស.`});
-  const results=videos.filter(v=>matchSearch(v,q));
-  $("search-info").textContent=`${results.length} results for "${q}"`;
-  renderGrid($("search-grid"),results);
+  // Search videos
+  const vidResults = videos.filter(v=>matchSearch(v,q));
+
+  // Search articles
+  const blogResults = _searchBlogCache.filter(p=>
+    (p.title||'').toLowerCase().includes(q.toLowerCase()) ||
+    (p.category||'').toLowerCase().includes(q.toLowerCase()) ||
+    (p.excerpt||'').toLowerCase().includes(q.toLowerCase())
+  );
+
+  const total = vidResults.length + blogResults.length;
+  $("search-info").textContent=`${total} results for "${q}"`;
+
+  // Build combined results grid
+  const grid=$("search-grid");
+  if(!total){
+    grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🔍</div><p>No results found for "${q}"</p></div>`;
+  } else {
+    // Article cards first if any, then videos
+    const articleHtml = blogResults.map(p=>`
+      <a class="vcard" href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')">
+        <div class="vcard-thumb" style="position:relative;">
+          ${p.cover?`<img src="${p.cover}" loading="lazy" onerror="this.parentElement.style.background='#111'">`
+            :`<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;font-size:2rem;">📝</div>`}
+          <div class="vcard-overlay"></div>
+          <div style="position:absolute;top:6px;left:6px;background:#f27d26;color:#000;font-size:.58rem;font-weight:900;padding:2px 7px;border-radius:9999px;text-transform:uppercase;">Article</div>
+          ${p.category?`<div class="vcard-duration">${p.category}</div>`:''}
+        </div>
+        <div class="vcard-title">${p.title||''}</div>
+        <div class="vcard-sub">${p.excerpt?p.excerpt.replace(/<[^>]*>/g,'').slice(0,60)+'…':''}</div>
+      </a>`).join('');
+    grid.innerHTML = articleHtml + buildFeedWithAds(vidResults,(window.AD_CONFIG&&window.AD_CONFIG.feedEvery)||6);
+  }
   NP.done();
 };
+// ── LIVE SEARCH WITH PREVIEW ────────────────────────────
+let _searchBlogCache = [];
+let _searchTimer = null;
+
+async function ensureSearchBlogCache(){
+  if(_searchBlogCache.length) return;
+  try{
+    const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    _searchBlogCache = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+  }catch(e){}
+}
+
 window.openDesktopSearch=()=>{
-  // Create overlay if not exists
   let overlay=$('desktop-search-overlay');
   if(!overlay){
     overlay=document.createElement('div');
     overlay.id='desktop-search-overlay';
-    overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding-top:120px;backdrop-filter:blur(6px);';
+    overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.82);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding-top:100px;backdrop-filter:blur(6px);';
     overlay.innerHTML=`
-      <div style="width:100%;max-width:600px;padding:0 20px;">
-        <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 18px;">
-          <svg width="18" height="18" fill="none" stroke="#f27d26" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input id="desktop-search-input" type="text" placeholder="Search videos..." autofocus
-            style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:1rem;font-family:inherit;"
-            onkeydown="if(event.key==='Enter'){closeDesktopSearch();doSearch(this.value);} if(event.key==='Escape') closeDesktopSearch();">
-          <button onclick="closeDesktopSearch()" style="background:none;border:none;color:#555;cursor:pointer;font-size:1.2rem;line-height:1;">✕</button>
+      <div style="width:100%;max-width:620px;padding:0 20px;">
+        <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;">
+          <!-- Search input -->
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);">
+            <svg width="18" height="18" fill="none" stroke="#f27d26" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="desktop-search-input" type="text" placeholder="Search videos and articles..." autofocus
+              style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:1rem;font-family:inherit;"
+              oninput="liveSearch(this.value)"
+              onkeydown="if(event.key==='Enter'){closeDesktopSearch();doSearch(this.value);} if(event.key==='Escape') closeDesktopSearch();">
+            <button onclick="closeDesktopSearch()" style="background:none;border:none;color:#555;cursor:pointer;font-size:1.2rem;line-height:1;padding:0;">✕</button>
+          </div>
+          <!-- Live results dropdown -->
+          <div id="search-preview-results" style="max-height:460px;overflow-y:auto;"></div>
         </div>
-        <p style="text-align:center;color:#444;font-size:.75rem;margin-top:12px;">Press Enter to search · Esc to close</p>
+        <p style="text-align:center;color:#333;font-size:.72rem;margin-top:10px;">Press Enter for all results · Esc to close</p>
       </div>`;
     overlay.addEventListener('click', e=>{ if(e.target===overlay) closeDesktopSearch(); });
     document.body.appendChild(overlay);
   } else {
     overlay.style.display='flex';
+    $('search-preview-results').innerHTML='';
+    $('desktop-search-input').value='';
   }
   setTimeout(()=>$('desktop-search-input')?.focus(),50);
+  ensureSearchBlogCache();
 };
+
 window.closeDesktopSearch=()=>{
   const o=$('desktop-search-overlay');
   if(o) o.style.display='none';
+};
+
+window.liveSearch=(q)=>{
+  clearTimeout(_searchTimer);
+  const box=$('search-preview-results');
+  if(!box) return;
+
+  if(!q || q.trim().length < 2){
+    box.innerHTML='<div style="padding:1.25rem;text-align:center;color:#444;font-size:.8rem;">Start typing to search videos and articles...</div>';
+    return;
+  }
+
+  _searchTimer = setTimeout(()=>{
+    const lq = q.toLowerCase().trim();
+
+    // Search videos
+    const matchVids = videos.filter(v=>
+      (v.title||'').toLowerCase().includes(lq) ||
+      (v.category||'').toLowerCase().includes(lq) ||
+      (v.description||'').toLowerCase().includes(lq)
+    ).slice(0,4);
+
+    // Search articles
+    const matchPosts = _searchBlogCache.filter(p=>
+      (p.title||'').toLowerCase().includes(lq) ||
+      (p.category||'').toLowerCase().includes(lq) ||
+      (p.excerpt||'').toLowerCase().includes(lq)
+    ).slice(0,2);
+
+    if(!matchVids.length && !matchPosts.length){
+      box.innerHTML=`<div style="padding:1.5rem;text-align:center;color:#444;font-size:.82rem;">No results for "<strong style="color:#888">${q}</strong>"</div>`;
+      return;
+    }
+
+    let html='';
+
+    // Videos section
+    if(matchVids.length){
+      html+=`<div style="padding:8px 16px 4px;font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#555;">🎬 Videos</div>`;
+      html+=matchVids.map(v=>{
+        const pl=playlists.find(p=>(p.videos||[]).includes(v.id));
+        const url=pl?`/watch/${playlistSlug(pl)}/ep-${(pl.videos||[]).indexOf(v.id)+1}`:`/watch/${videoSlug(v)}`;
+        const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
+        const thumb=getThumb(v);
+        return `<div onclick="closeDesktopSearch();${click}"
+          style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;transition:background .15s;"
+          onmouseover="this.style.background='rgba(255,255,255,.04)'"
+          onmouseout="this.style.background=''">
+          <div style="width:72px;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#111;flex-shrink:0;position:relative;">
+            <img src="${thumb}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"
+              onerror="this.src='https://picsum.photos/seed/${v.id}/160/90'">
+            ${v.episodeNum?`<div style="position:absolute;top:3px;left:3px;width:17px;height:17px;background:#f27d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:900;color:#000;">${v.episodeNum}</div>`:''}
+            ${v.duration?`<div style="position:absolute;bottom:2px;right:3px;background:rgba(0,0,0,.8);color:#fff;font-size:.55rem;font-weight:700;padding:1px 4px;border-radius:2px;">${v.duration}</div>`:''}
+          </div>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:.8rem;font-weight:700;color:#e4e4e7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</div>
+            <div style="font-size:.67rem;color:#555;margin-top:2px;">${v.category||''} · ${fmtViews(v.views||0)} views${pl?' · Series':''}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Articles section
+    if(matchPosts.length){
+      html+=`<div style="padding:8px 16px 4px;margin-top:4px;font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#555;border-top:1px solid rgba(255,255,255,.04);">📝 Articles</div>`;
+      html+=matchPosts.map(p=>`
+        <div onclick="closeDesktopSearch();showBlogPost('${p.slug||p.id}')"
+          style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;transition:background .15s;"
+          onmouseover="this.style.background='rgba(255,255,255,.04)'"
+          onmouseout="this.style.background=''">
+          <div style="width:72px;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#111;flex-shrink:0;">
+            ${p.cover
+              ?`<img src="${p.cover}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`
+              :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">📝</div>`}
+          </div>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:.8rem;font-weight:700;color:#e4e4e7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title||''}</div>
+            <div style="font-size:.67rem;color:#f27d26;margin-top:2px;">${p.category||'Article'}</div>
+          </div>
+        </div>`).join('');
+    }
+
+    // See all results button
+    html+=`<div style="border-top:1px solid rgba(255,255,255,.06);padding:10px 16px;">
+      <div onclick="closeDesktopSearch();doSearch('${q.replace(/'/g,"\'")}');"
+        style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background .15s;"
+        onmouseover="this.style.background='rgba(242,125,38,.08)'"
+        onmouseout="this.style.background=''">
+        <svg width="14" height="14" fill="none" stroke="#f27d26" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span style="font-size:.78rem;font-weight:700;color:#f27d26;">See all results for "<strong>${q}</strong>"</span>
+      </div>
+    </div>`;
+
+    box.innerHTML=html;
+  }, 200);
 };
 
 function matchSearch(v,q){
