@@ -123,9 +123,12 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/api/og",
+      "destination": "/api/og"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "framework": null
+  ]
 }
