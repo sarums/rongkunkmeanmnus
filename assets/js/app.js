@@ -802,8 +802,8 @@ window.toggleDesc=()=>{
 };
 
 // ── SESSION CACHE ─────────────────────────────────────────
-const CACHE_KEY = 'rkmn_cache';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_KEY = 'rkmn_cache_v3'; // v3 — forces refresh to fix episode badges
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 function saveCache(data){
   try{
@@ -868,17 +868,23 @@ function applySettings(s){
 
 async function loadAll(){
   try{
-    // Load ads config first
-    if(window.loadAdsConfig) await window.loadAdsConfig();
-
     // Try cache first — instant load
     const cached = loadCache();
+    // Load ads config in parallel (non-blocking)
+    if(window.loadAdsConfig) window.loadAdsConfig();
     if(cached){
       categories = cached.categories||[];
       playlists  = cached.playlists||[];
       videos     = cached.videos||[];
       sections   = cached.sections||[];
       applySettings(cached.settings);
+      // Show UI immediately from cache
+      buildNav();buildHero();buildSections();
+      initRecommended();setupRecObserver();
+      routeFromUrl(false);
+      hideLoader();
+      // Refresh in background silently
+      setTimeout(()=>silentRefresh(), 2000);
     } else {
       // No cache — fetch from Firebase
       const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
@@ -920,8 +926,7 @@ async function loadAll(){
     }
     routeFromUrl(false);
     // Hide loader
-    const loader=$('page-loader');
-    if(loader){ loader.classList.add('hidden'); setTimeout(()=>loader.remove(),500); }
+    hideLoader();
     // Lazy load images with IntersectionObserver
     setupLazyLoad();
     initCookieBanner();
@@ -1006,6 +1011,11 @@ function showUpdateToast(count){
   t.onclick = ()=>{ window.scrollTo({top:0,behavior:'smooth'}); t.remove(); };
   document.body.appendChild(t);
   setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 5000);
+}
+
+function hideLoader(){
+  const loader=$('page-loader');
+  if(loader){ loader.classList.add('hidden'); setTimeout(()=>loader.remove(),500); }
 }
 
 function setupLazyLoad(){
