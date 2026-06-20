@@ -56,6 +56,16 @@ window.showHistoryPage=()=>{
   NP.done();
 };
 
+// ── CACHE INVALIDATION LISTENER ──────────────────────────
+// Listens for cache clear signal from admin panel
+// When admin adds/edits video, site auto-reloads fresh data
+window.addEventListener('storage', e=>{
+  if(e.key === 'rkmn_cache_bust'){
+    // Admin cleared cache — reload fresh data silently
+    silentRefresh();
+  }
+});
+
 // ── Helpers ──
 const $=id=>document.getElementById(id);
 function toSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,80); }
@@ -537,18 +547,27 @@ window.goHome=e=>{
 
 async function silentRefresh(){
   try{
-    const[vidSnap,secSnap]=await Promise.all([
+    const[vidSnap,plSnap,secSnap]=await Promise.all([
       getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
+      getDocs(collection(db,"playlists")),
       getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
     ]);
-    const newVideos=vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
-    const newSections=secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
-    // Only rebuild if data changed
-    const changed=JSON.stringify(newVideos.map(v=>v.id))!==JSON.stringify(videos.map(v=>v.id))
-      ||newSections.length!==sections.length;
-    if(changed){
-      videos=newVideos;
-      sections=newSections;
+    const newVideos   = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+    const newPlaylists= plSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const newSections = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+
+    // Check if anything changed
+    const vidChanged = JSON.stringify(newVideos.map(v=>v.id)) !== JSON.stringify(videos.map(v=>v.id));
+    const plChanged  = JSON.stringify(newPlaylists.map(p=>p.id+(p.videos||[]).join(',')))
+                    !== JSON.stringify(playlists.map(p=>p.id+(p.videos||[]).join(',')));
+    const secChanged = newSections.length !== sections.length;
+
+    if(vidChanged || plChanged || secChanged){
+      videos    = newVideos;
+      playlists = newPlaylists;
+      sections  = newSections;
+      // Save fresh data to cache
+      saveCache({ categories, playlists, videos, sections });
       buildHero();
       buildSections();
       initRecommended();
