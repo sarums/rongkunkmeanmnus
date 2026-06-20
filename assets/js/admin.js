@@ -34,6 +34,11 @@ function clearSiteCache(){
       });
     });
   }
+  // Signal to all open site tabs to refresh data
+  try{
+    localStorage.setItem('rkmn_cache_bust', Date.now().toString());
+    setTimeout(()=>localStorage.removeItem('rkmn_cache_bust'), 1000);
+  }catch(e){}
 }
 
 // ── AUTH ──────────────────────────────────────────────
