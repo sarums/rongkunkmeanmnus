@@ -368,11 +368,15 @@
           </div>
 
           <!-- Mobile playlist toggle button -->
-          <div id="mobile-playlist-btn-wrap" style="display:none;margin-bottom:10px;">
+          <div id="mobile-playlist-btn-wrap" style="display:none;margin-bottom:0;">
             <button id="mobile-playlist-toggle" onclick="toggleMobilePlaylist()"
-              style="width:100%;padding:10px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#e4e4e7;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:inherit;">
-              <span id="mobile-playlist-label">📋 Show Playlist</span>
-              <span id="mobile-playlist-chevron" style="font-size:.75rem;transition:transform .3s;">▾</span>
+              style="width:100%;padding:11px 16px;background:rgba(242,125,38,.06);border:none;border-top:2px solid #f27d26;border-bottom:2px solid #f27d26;border-radius:0;color:#f27d26;font-size:.82rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:inherit;letter-spacing:.01em;transition:background .2s;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span>📋</span>
+                <span id="mobile-playlist-label">Show Playlist</span>
+                <span id="mobile-playlist-ep-count" style="font-size:.7rem;font-weight:600;color:rgba(242,125,38,.6);"></span>
+              </div>
+              <span id="mobile-playlist-chevron" style="font-size:.85rem;transition:transform .3s;color:#f27d26;">▾</span>
             </button>
           </div>
 
