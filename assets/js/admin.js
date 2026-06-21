@@ -15,32 +15,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ── CACHE BUSTER ─────────────────────────────────────────
-// Clears the site's sessionStorage cache so users see fresh data immediately
-function clearSiteCache(){
-  // Clear sessionStorage cache
-  Object.keys(sessionStorage).forEach(k=>{
-    if(k.startsWith('rkmn_cache')) sessionStorage.removeItem(k);
-  });
-  // Clear localStorage cache
-  Object.keys(localStorage).forEach(k=>{
-    if(k.startsWith('rkmn_cache')) localStorage.removeItem(k);
-  });
-  // Also clear service worker caches
-  if('caches' in window){
-    caches.keys().then(keys=>{
-      keys.forEach(k=>{
-        if(k.startsWith('rkmn-')) caches.delete(k);
-      });
-    });
-  }
-  // Signal to all open site tabs to refresh data
-  try{
-    localStorage.setItem('rkmn_cache_bust', Date.now().toString());
-    setTimeout(()=>localStorage.removeItem('rkmn_cache_bust'), 1000);
-  }catch(e){}
-}
-
 // ── AUTH ──────────────────────────────────────────────
 const SESSION_KEY = 'rkmn_admin_auth';
 
@@ -359,7 +333,6 @@ window.addVideo = async ()=>{
       const pl=allPlaylists.find(p=>p.id===plId);
       if(pl){ pl.videos=pl.videos||[]; pl.videos.push(ref.id); await updateDoc(doc(db,'playlists',plId),{videos:pl.videos}); }
     }
-    clearSiteCache(); // clear site cache so users see new video immediately
     showToast('Video Added!',`"${title}" has been added successfully`,'ok');
     // reset form
     ['fVidId','fTitle','fDuration','fThumb','fViews','fEpNum'].forEach(id=>{ if(qs(id)) qs(id).value=''; });
@@ -488,7 +461,6 @@ window.saveEdit = async ()=>{
       }
     }
 
-    clearSiteCache(); // clear site cache so users see update immediately
     showToast('Saved!',`"${title}" updated successfully`,'ok');
     closeEditModal();
     renderOverview(); renderAllVideos();
@@ -519,7 +491,6 @@ window.deleteVideo = (id, name)=>{
         allComments=allComments.filter(c=>c.videoId!==id);
       }
 
-      clearSiteCache();
       showToast('Deleted',`Video and ${commSnap.size} comment(s) removed`,'warn');
       renderOverview(); renderAllVideos();
     } catch(e){ showToast('Error',e.message,'err'); }
@@ -673,7 +644,6 @@ window.savePlEdit = async id=>{
     const pl=allPlaylists.find(p=>p.id===id);
     if(pl){ pl.name=name; pl.description=desc||''; pl.thumbnail=thumb||''; }
     document.getElementById('plEditOverlay')?.remove();
-    clearSiteCache();
     showToast('Saved!','Playlist updated','ok');
     populateSelects(); renderPlaylists();
   }catch(e){ showToast('Error',e.message,'err'); }
@@ -1186,7 +1156,6 @@ window.addSection = async ()=>{
     qs('secPlSearch') && (qs('secPlSearch').value='');
     secSelectedVids=[]; secSelectedPls=[];
     qs('secType').value='trending'; onSecTypeChange();
-    clearSiteCache();
     showToast('Done!','Section added','ok');
     renderSections();
   }catch(e){ showToast('Error',e.message,'err'); }
@@ -1486,7 +1455,6 @@ window.addCheckedToPlaylist=async plId=>{
   pl.videos=[...(pl.videos||[]),...checked.filter(id=>!(pl.videos||[]).includes(id))];
   try{
     await updateDoc(doc(db,'playlists',plId),{videos:pl.videos, updatedAt:serverTimestamp()});
-    clearSiteCache();
     showToast('Added',`${checked.length} video${checked.length!==1?'s':''} added to playlist`,'ok');
     renderPlaylists();
   }catch(e){showToast('Error',e.message,'err');}
