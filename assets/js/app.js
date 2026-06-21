@@ -1652,9 +1652,11 @@ window.openVideo=async (id,push=true)=>{
   const _mBtn=$('mobile-playlist-btn-wrap');
   if(_mBtn) _mBtn.style.display='none';
   const _mLabel=$('mobile-playlist-label');
-  if(_mLabel) _mLabel.textContent='📋 Show Playlist';
+  if(_mLabel) _mLabel.textContent='Show Playlist';
   const _mChevron=$('mobile-playlist-chevron');
   if(_mChevron) _mChevron.style.transform='';
+  const _mEp=$('mobile-playlist-ep-count');
+  if(_mEp) _mEp.textContent='';
   $("suggested-list").style.display="";
   if($("suggested-list-mobile")) $("suggested-list-mobile").style.display="";
   $("watch-next-btn").style.display="none";
@@ -1790,10 +1792,17 @@ window.openVideo=async (id,push=true)=>{
       const mLabel=$('mobile-playlist-label');
       const mChevron=$('mobile-playlist-chevron');
       const mClose=$('mobile-playlist-close');
+      const mEpCount=$('mobile-playlist-ep-count');
       if(mBtn) mBtn.style.display='block';
-      if(mLabel) mLabel.textContent='📋 Show Playlist';
+      if(mLabel) mLabel.textContent='Show Playlist';
       if(mChevron) mChevron.style.transform='';
       if(mClose) mClose.style.display='none';
+      // Show episode count e.g. "EP 4 / 24"
+      if(mEpCount && pl){
+        const total = (pl.videos||[]).length;
+        const current = (pl.videos||[]).indexOf(id)+1;
+        mEpCount.textContent = `· EP ${current} / ${total}`;
+      }
     } else {
       $("playlist-panel").style.display="";
     }
@@ -2808,17 +2817,20 @@ window.toggleMobilePlaylist = ()=>{
   const label    = $('mobile-playlist-label');
   const chevron  = $('mobile-playlist-chevron');
   const closeBtn = $('mobile-playlist-close');
+  const btn      = $('mobile-playlist-toggle');
 
   if(_mobilePlaylistOpen){
-    if(panel) panel.style.display = '';
-    if(label) label.textContent = '📋 Hide Playlist';
+    if(panel){ panel.style.display=''; panel.style.animation='slideDown .25s ease'; }
+    if(label) label.textContent = 'Hide Playlist';
     if(chevron) chevron.style.transform = 'rotate(180deg)';
     if(closeBtn) closeBtn.style.display = 'block';
+    if(btn) btn.style.background = 'rgba(242,125,38,.12)';
   } else {
     if(panel) panel.style.display = 'none';
-    if(label) label.textContent = '📋 Show Playlist';
+    if(label) label.textContent = 'Show Playlist';
     if(chevron) chevron.style.transform = '';
     if(closeBtn) closeBtn.style.display = 'none';
+    if(btn) btn.style.background = 'rgba(242,125,38,.06)';
   }
 };
 
