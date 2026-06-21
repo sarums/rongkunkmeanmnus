@@ -696,3 +696,11 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
     padding: 0 4px;
   }
 }
+
+/* ── Mobile Playlist Toggle Button ── */
+#mobile-playlist-toggle:hover {
+  background: rgba(242,125,38,.15) !important;
+}
+#mobile-playlist-toggle:active {
+  background: rgba(242,125,38,.2) !important;
+}
