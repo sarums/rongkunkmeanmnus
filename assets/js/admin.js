@@ -2343,6 +2343,7 @@ window.duplicateVideo = async (id)=>{
       ...v,
       title     : 'Copy of ' + (v.title||''),
       views     : 0,
+      status    : 'draft', // always draft until manually published
       createdAt : serverTimestamp(),
       updatedAt : serverTimestamp(),
     };
