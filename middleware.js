@@ -149,6 +149,31 @@ export default async function middleware(req){
     return ok(`Blog | ${SITE_NAME}`,'Read drama articles.',DEFAULT_IMG);
   }
 
+  // /drama/slug — playlist detail page
+  if(pathname.startsWith('/drama/')){
+    const slug = pathname.replace('/drama/','');
+    const pls  = await getPlaylists();
+    const pl   = pls.find(p=>{
+      const s = slugify(p.name);
+      return p.id===slug||(s.length>=3&&s===slug);
+    });
+    if(pl){
+      // Get thumbnail from first video
+      const firstVidId = (pl.videos||[])[0];
+      let img = DEFAULT_IMG;
+      if(firstVidId){
+        const v = await getVideo(firstVidId);
+        if(v?.img) img = v.img;
+      }
+      return ok(
+        `${pl.name} | ${SITE_NAME}`,
+        `Watch all ${(pl.videos||[]).length} episodes of ${pl.name} online free on ${SITE_NAME}.`,
+        img,
+        'video.other'
+      );
+    }
+  }
+
   // /blog
   if(pathname==='/blog'){
     return ok(`Blog | ${SITE_NAME}`,'Drama reviews and more.',DEFAULT_IMG);
@@ -159,5 +184,5 @@ export default async function middleware(req){
 }
 
 export const config = {
-  matcher:['/watch/:path*','/blog','/blog/:path*','/'],
+  matcher:['/watch/:path*','/blog','/blog/:path*','/drama/:path*','/'],
 };
