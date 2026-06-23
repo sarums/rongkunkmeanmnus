@@ -507,8 +507,12 @@ const NP = {
 function showPage(id,push=true){
   if(id!=="watch"){
     previousPage=id;
-    // Stop video when leaving watch page
+    // If leaving watch page and video is playing → show mini player
     const iframe = document.getElementById('player-iframe');
+    const watchActive = document.getElementById('page-watch')?.classList.contains('active');
+    if(iframe && watchActive && iframe.src && iframe.src!=='about:blank' && _miniVideoId){
+      showMiniPlayer(iframe.src, _miniVideoTitle);
+    }
     if(iframe) iframe.src='';
     // Clear overlay banner if any
     if(window.clearOverlayBanner) clearOverlayBanner();
@@ -630,6 +634,13 @@ function routeFromUrl(push=false){
     return;
   }
 
+  // Drama detail
+  if(path.startsWith('/drama/')){
+    const slug = path.replace('/drama/','');
+    const pl = playlists.find(p=>playlistSlug(p)===slug||p.id===slug);
+    if(pl){ openDramaDetail(pl.id); return; }
+    show404(); return;
+  }
   // For You
   if(path==='/for-you'){ showForYouPage(); return; }
   // Blog
@@ -673,6 +684,8 @@ window.addEventListener("popstate",e=>{
     doSearch(state.q);
   } else if(state.page==='history'){
     showHistoryPage();
+  } else if(state.page==='drama' && state.plId){
+    openDramaDetail(state.plId);
   } else if(state.page==='for-you'){
     showForYouPage();
   } else if(state.page==='blog'){
@@ -1191,6 +1204,7 @@ function buildCard(v){
       ${v.duration?`<div class="vcard-duration">${v.duration}</div>`:""}
       ${pl?`<div class="vcard-series">Series</div>`:""}
       ${epNum?`<div class="ep-badge ep-badge--${v.badgePos||'top-left'}">${epNum}</div>`:""}
+      ${(()=>{ const t=v.createdAt?.toDate?v.createdAt.toDate():v.createdAt?.seconds?new Date(v.createdAt.seconds*1000):null; return t&&(Date.now()-t.getTime())<3*86400000?'<div class="new-badge">NEW</div>':''; })()}
     </div>
     <div class="vcard-title">${v.title||""}</div>
     <div class="vcard-sub">${[
@@ -1490,7 +1504,7 @@ function buildPlaylistCard(pl){
   const img=pl.thumbnail||(thumbVids[0]?getThumb(thumbVids[0]):`https://picsum.photos/seed/${pl.id}/800/450`);
   const thumbHtml=`<div class="pl-multithumb-single"><img src="${img}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pl.id}/800/450'"></div>`;
 
-  return`<a class="vcard" href="${watchUrl}" onclick="event.preventDefault();openPlaylistById('${pl.id}')">
+  return`<a class="vcard" href="/drama/${playlistSlug(pl)}" onclick="event.preventDefault();openDramaDetail('${pl.id}')">
     <div class="pl-multithumb">
       ${thumbHtml}
       <div class="pl-multithumb-overlay"></div>
@@ -1670,6 +1684,9 @@ window.openVideo=async (id,push=true)=>{
   if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=skelRow(3);
   _suggPage=0; _suggList=[];
   if(_suggObserver){ _suggObserver.disconnect(); _suggObserver=null; }
+  // Close mini player when opening new video
+  const _mp=$('mini-player'); if(_mp&&_mp.style.display!=='none') closeMiniPlayer();
+
   // Reset article wrap
   const articleWrap = $('video-article-wrap');
   if(articleWrap){ articleWrap.style.display='none'; articleWrap.innerHTML=''; }
@@ -1705,6 +1722,8 @@ window.openVideo=async (id,push=true)=>{
   if(window.showPreroll) showPreroll(loadVideo);
   else loadVideo();
   $("watch-title").textContent=v.title||"";
+  _miniVideoId    = id;
+  _miniVideoTitle = v.title||"";
   $("watch-source").textContent=v.platform||v.source||"";
   $("watch-cat").textContent=v.category||"";
   $("watch-views").textContent=fmtViews((v.views||0)+1);
@@ -2453,6 +2472,80 @@ function sortNewest(arr, isPlaylist=false){
   });
 }
 
+// ── DRAMA DETAIL PAGE ────────────────────────────────────
+let _currentDramaPlId = null;
+
+window.openDramaDetail = (plId)=>{
+  const pl = playlists.find(p=>p.id===plId);
+  if(!pl) return;
+  _currentDramaPlId = plId;
+  NP.start();
+
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-drama'));
+  window.scrollTo(0,0);
+
+  const slug = playlistSlug(pl);
+  history.pushState({page:'drama',plId},'',`/drama/${slug}`);
+  updateMeta({
+    title: `${pl.name} | រោងកុនគ្មានមនុស្ស`,
+    desc : pl.description||`Watch ${pl.name} online free with Khmer dubbing.`,
+    url  : location.href
+  });
+
+  const vids = (pl.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean);
+  const first = vids[0];
+  const thumb = pl.thumbnail||(first?getThumb(first):'');
+
+  // Banner
+  const bannerImg = $('drama-banner-img');
+  if(bannerImg) bannerImg.style.backgroundImage = thumb?`url('${thumb}')`:'none';
+
+  // Poster
+  const poster = $('drama-poster');
+  if(poster) poster.innerHTML = thumb?`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;">`:'';
+
+  // Title & meta
+  $('drama-title').textContent = pl.name||'';
+  $('drama-meta').textContent  = `${vids.length} Episodes${pl.description?' · '+pl.description:''}`;
+
+  // Description
+  $('drama-desc').textContent = pl.description||`Watch all ${vids.length} episodes of ${pl.name} online free.`;
+
+  // Episodes list
+  const watchedIds = getHistory();
+  $('drama-episodes').innerHTML = vids.map((v,i)=>{
+    const epNum = i+1;
+    const url   = `/watch/${playlistSlug(pl)}/ep-${epNum}`;
+    const isWatched = watchedIds.includes(v.id);
+    return `<a href="${url}" onclick="event.preventDefault();openPlaylist('${pl.id}','${v.id}')"
+      style="display:flex;align-items:center;gap:.75rem;padding:.65rem .75rem;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:10px;text-decoration:none;transition:border-color .2s,background .2s;"
+      onmouseover="this.style.borderColor='rgba(242,125,38,.3)';this.style.background='rgba(242,125,38,.04)'"
+      onmouseout="this.style.borderColor='rgba(255,255,255,.05)';this.style.background='rgba(255,255,255,.02)'">
+      <div style="width:50px;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#111;flex-shrink:0;position:relative;">
+        <img src="${getThumb(v)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+        ${isWatched?`<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#22c55e;font-weight:900;">✓</div>`:''}
+      </div>
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:.78rem;font-weight:700;color:${isWatched?'#555':'#ccc'};">EP ${epNum}${v.title&&v.title!==pl.name?' — '+v.title.replace(pl.name,'').trim():''}</div>
+        <div style="font-size:.65rem;color:#444;margin-top:2px;">${v.duration||''}</div>
+      </div>
+      ${isWatched?`<div style="font-size:.65rem;color:#22c55e;font-weight:700;flex-shrink:0;">Watched</div>`:''}
+    </a>`;
+  }).join('');
+
+  NP.done();
+};
+
+window.playDrama = ()=>{
+  if(!_currentDramaPlId) return;
+  const pl = playlists.find(p=>p.id===_currentDramaPlId);
+  if(!pl||(pl.videos||[]).length===0) return;
+  // Find first unwatched episode
+  const watched = getHistory();
+  const firstUnwatched = (pl.videos||[]).find(id=>!watched.includes(id))||(pl.videos||[])[0];
+  if(firstUnwatched) openPlaylist(pl.id, firstUnwatched);
+};
+
 // ── FOR YOU PAGE ─────────────────────────────────────────
 // For You page state
 let _fyPool=[], _fyPage=0, _fyObserver=null;
@@ -2832,6 +2925,49 @@ window.toggleMobilePlaylist = ()=>{
     if(closeBtn) closeBtn.style.display = 'none';
     if(btn) btn.style.background = 'rgba(242,125,38,.06)';
   }
+};
+
+// ── MINI PLAYER ──────────────────────────────────────────
+let _miniVideoId   = null;
+let _miniVideoUrl  = null;
+let _miniVideoTitle= null;
+
+// Called when user navigates away from watch page
+function showMiniPlayer(embedUrl, title){
+  const mp    = $('mini-player');
+  const iframe= $('mini-iframe');
+  const mtitle= $('mini-title');
+  if(!mp || !iframe) return;
+
+  iframe.src      = embedUrl;
+  if(mtitle) mtitle.textContent = title||'';
+  mp.style.display= 'block';
+  // Animate in
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      mp.style.transform = 'translateY(0)';
+      mp.style.opacity   = '1';
+    });
+  });
+}
+
+window.closeMiniPlayer = ()=>{
+  const mp    = $('mini-player');
+  const iframe= $('mini-iframe');
+  if(!mp) return;
+  mp.style.transform = 'translateY(20px)';
+  mp.style.opacity   = '0';
+  setTimeout(()=>{
+    mp.style.display = 'none';
+    if(iframe) iframe.src = '';
+  }, 300);
+  _miniVideoId = null;
+};
+
+window.expandMiniPlayer = ()=>{
+  if(!_miniVideoId) return;
+  closeMiniPlayer();
+  openVideo(_miniVideoId);
 };
 
 // ── COOKIE CONSENT ───────────────────────────────────────
