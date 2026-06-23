@@ -123,6 +123,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/drama/:slug",
+      "destination": "/index.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
