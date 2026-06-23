@@ -704,3 +704,24 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 #mobile-playlist-toggle:active {
   background: rgba(242,125,38,.2) !important;
 }
+
+/* ── NEW Badge ── */
+.new-badge {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: #22c55e;
+  color: #000;
+  font-size: .55rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  animation: pulse-new 2s infinite;
+}
+@keyframes pulse-new {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
