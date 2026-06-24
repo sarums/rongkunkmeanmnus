@@ -80,6 +80,12 @@ function playlistSlug(pl){
   return s.length>=3 ? s : pl.id;
 }
 const fmtViews=n=>n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(1)+"K":String(n||0);
+function isNewVideo(v){
+  try{
+    const t=v.createdAt?.toDate?v.createdAt.toDate():v.createdAt?.seconds?new Date(v.createdAt.seconds*1000):null;
+    return t&&(Date.now()-t.getTime())<3*24*60*60*1000;
+  }catch(e){return false;}
+}
 function timeAgo(ts){
   if(!ts) return '';
   const date=ts?.toDate?ts.toDate():new Date(ts?.seconds?ts.seconds*1000:ts);
@@ -1204,7 +1210,7 @@ function buildCard(v){
       ${v.duration?`<div class="vcard-duration">${v.duration}</div>`:""}
       ${pl?`<div class="vcard-series">Series</div>`:""}
       ${epNum?`<div class="ep-badge ep-badge--${v.badgePos||'top-left'}">${epNum}</div>`:""}
-      ${(()=>{ const t=v.createdAt?.toDate?v.createdAt.toDate():v.createdAt?.seconds?new Date(v.createdAt.seconds*1000):null; return t&&(Date.now()-t.getTime())<3*86400000?'<div class="new-badge">NEW</div>':''; })()}
+      ${isNewVideo(v)?'<div class="new-badge">NEW</div>':''})()}
     </div>
     <div class="vcard-title">${v.title||""}</div>
     <div class="vcard-sub">${[
