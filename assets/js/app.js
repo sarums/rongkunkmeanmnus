@@ -513,12 +513,7 @@ const NP = {
 function showPage(id,push=true){
   if(id!=="watch"){
     previousPage=id;
-    // If leaving watch page and video is playing → show mini player
     const iframe = document.getElementById('player-iframe');
-    const watchActive = document.getElementById('page-watch')?.classList.contains('active');
-    if(iframe && watchActive && iframe.src && iframe.src!=='about:blank' && _miniVideoId){
-      showMiniPlayer(iframe.src, _miniVideoTitle);
-    }
     if(iframe) iframe.src='';
     // Clear overlay banner if any
     if(window.clearOverlayBanner) clearOverlayBanner();
@@ -576,8 +571,6 @@ async function silentRefresh(){
       videos    = newVideos;
       playlists = newPlaylists;
       sections  = newSections;
-      // Save fresh data to cache
-      saveCache({ categories, playlists, videos, sections });
       buildHero();
       buildSections();
       initRecommended();
@@ -840,90 +833,15 @@ window.toggleDesc=()=>{
 };
 
 // ── SESSION CACHE ─────────────────────────────────────────
-const CACHE_KEY = 'rkmn_cache_v3'; // v3 — forces refresh to fix episode badges
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
-
-function saveCache(data){
-  try{
-    // Convert Firestore Timestamps to milliseconds for JSON serialization
-    function serialize(obj){
-      if(Array.isArray(obj)) return obj.map(serialize);
-      if(obj && typeof obj === 'object'){
-        if(obj.toDate && typeof obj.toDate === 'function'){
-          return {_ts: obj.toDate().getTime()}; // serialize timestamp
-        }
-        const result = {};
-        for(const k in obj) result[k] = serialize(obj[k]);
-        return result;
-      }
-      return obj;
-    }
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-      ts: Date.now(),
-      data: serialize(data)
-    }));
-  } catch(e){ console.log('Cache save failed:', e.message); }
-}
-
-function loadCache(){
-  try{
-    const raw = sessionStorage.getItem(CACHE_KEY);
-    if(!raw) return null;
-    const {ts, data} = JSON.parse(raw);
-    // Expire after 5 minutes
-    if(Date.now() - ts > CACHE_TTL){ sessionStorage.removeItem(CACHE_KEY); return null; }
-    // Restore timestamps
-    function deserialize(obj){
-      if(Array.isArray(obj)) return obj.map(deserialize);
-      if(obj && typeof obj === 'object'){
-        if(obj._ts !== undefined){
-          // Restore as object with toDate() method
-          const d = new Date(obj._ts);
-          return { toDate: ()=>d, seconds: Math.floor(obj._ts/1000) };
-        }
-        const result = {};
-        for(const k in obj) result[k] = deserialize(obj[k]);
-        return result;
-      }
-      return obj;
-    }
-    return deserialize(data);
-  } catch(e){ return null; }
-}
-
-function applySettings(s){
-  if(s?.name){
-    siteName = s.name;
-    ["site-name","footer-name"].forEach(id=>{ if($(id)) $(id).textContent=s.name; });
-    document.title = s.name;
-    document.getElementById('og-site')?.setAttribute('content', s.name);
-    const yr = new Date().getFullYear();
-    const copy = `© ${yr} ${s.name}. All rights reserved.`;
-    ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{ if($(id)) $(id).textContent=copy; });
-  }
-  if(s?.footer && $("footer-desc")) $("footer-desc").textContent = s.footer;
-}
+// Cache disabled — always load fresh from Firestore
+function saveCache(data){}
+function loadCache(){ return null; }
 
 async function loadAll(){
   try{
-    // Try cache first — instant load
-    const cached = loadCache();
     // Load ads config in parallel (non-blocking)
     if(window.loadAdsConfig) window.loadAdsConfig();
-    if(cached){
-      categories = cached.categories||[];
-      playlists  = cached.playlists||[];
-      videos     = cached.videos||[];
-      sections   = cached.sections||[];
-      applySettings(cached.settings);
-      // Show UI immediately from cache
-      buildNav();buildHero();buildSections();
-      initRecommended();setupRecObserver();
-      routeFromUrl(false);
-      hideLoader();
-      // Refresh in background silently
-      setTimeout(()=>silentRefresh(), 2000);
-    } else {
+    {
       // No cache — fetch from Firebase
       const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
         getDocs(collection(db,"categories")),
@@ -1210,7 +1128,7 @@ function buildCard(v){
       ${v.duration?`<div class="vcard-duration">${v.duration}</div>`:""}
       ${pl?`<div class="vcard-series">Series</div>`:""}
       ${epNum?`<div class="ep-badge ep-badge--${v.badgePos||'top-left'}">${epNum}</div>`:""}
-      ${isNewVideo(v)?'<div class="new-badge">NEW</div>':''})()}
+)()}
     </div>
     <div class="vcard-title">${v.title||""}</div>
     <div class="vcard-sub">${[
@@ -1510,7 +1428,7 @@ function buildPlaylistCard(pl){
   const img=pl.thumbnail||(thumbVids[0]?getThumb(thumbVids[0]):`https://picsum.photos/seed/${pl.id}/800/450`);
   const thumbHtml=`<div class="pl-multithumb-single"><img src="${img}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${pl.id}/800/450'"></div>`;
 
-  return`<a class="vcard" href="/drama/${playlistSlug(pl)}" onclick="event.preventDefault();openDramaDetail('${pl.id}')">
+  return`<a class="vcard" href="${watchUrl}" onclick="event.preventDefault();openPlaylistById('${pl.id}')">
     <div class="pl-multithumb">
       ${thumbHtml}
       <div class="pl-multithumb-overlay"></div>
@@ -3076,5 +2994,11 @@ function hideCookieBanner(){
     }
   },{passive:true});
 })();
+
+// Clear any old cache on startup
+try{
+  Object.keys(sessionStorage).forEach(k=>{ if(k.startsWith('rkmn_cache')) sessionStorage.removeItem(k); });
+  Object.keys(localStorage).forEach(k=>{ if(k.startsWith('rkmn_cache')) localStorage.removeItem(k); });
+}catch(e){}
 
 loadAll();
