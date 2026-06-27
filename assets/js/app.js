@@ -1608,9 +1608,6 @@ window.openVideo=async (id,push=true)=>{
   if($("suggested-list-mobile")) $("suggested-list-mobile").innerHTML=skelRow(3);
   _suggPage=0; _suggList=[];
   if(_suggObserver){ _suggObserver.disconnect(); _suggObserver=null; }
-  // Close mini player when opening new video
-  const _mp=$('mini-player'); if(_mp&&_mp.style.display!=='none') closeMiniPlayer();
-
   // Reset article wrap
   const articleWrap = $('video-article-wrap');
   if(articleWrap){ articleWrap.style.display='none'; articleWrap.innerHTML=''; }
@@ -1646,8 +1643,7 @@ window.openVideo=async (id,push=true)=>{
   if(window.showPreroll) showPreroll(loadVideo);
   else loadVideo();
   $("watch-title").textContent=v.title||"";
-  _miniVideoId    = id;
-  _miniVideoTitle = v.title||"";
+
   $("watch-source").textContent=v.platform||v.source||"";
   $("watch-cat").textContent=v.category||"";
   $("watch-views").textContent=fmtViews((v.views||0)+1);
@@ -2223,10 +2219,7 @@ window.deleteComment=async(id)=>{
   }catch(e){showToast('Failed to delete','err');}
 };
 
-window.closeMiniPlayer = () => {
-  // Stop player
-  $('player-iframe').src = '';
-};
+// closeMiniPlayer defined below in MINI PLAYER section
 
 
 // ── KEYBOARD SHORTCUTS ──
@@ -2849,49 +2842,6 @@ window.toggleMobilePlaylist = ()=>{
     if(closeBtn) closeBtn.style.display = 'none';
     if(btn) btn.style.background = 'rgba(242,125,38,.06)';
   }
-};
-
-// ── MINI PLAYER ──────────────────────────────────────────
-let _miniVideoId   = null;
-let _miniVideoUrl  = null;
-let _miniVideoTitle= null;
-
-// Called when user navigates away from watch page
-function showMiniPlayer(embedUrl, title){
-  const mp    = $('mini-player');
-  const iframe= $('mini-iframe');
-  const mtitle= $('mini-title');
-  if(!mp || !iframe) return;
-
-  iframe.src      = embedUrl;
-  if(mtitle) mtitle.textContent = title||'';
-  mp.style.display= 'block';
-  // Animate in
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>{
-      mp.style.transform = 'translateY(0)';
-      mp.style.opacity   = '1';
-    });
-  });
-}
-
-window.closeMiniPlayer = ()=>{
-  const mp    = $('mini-player');
-  const iframe= $('mini-iframe');
-  if(!mp) return;
-  mp.style.transform = 'translateY(20px)';
-  mp.style.opacity   = '0';
-  setTimeout(()=>{
-    mp.style.display = 'none';
-    if(iframe) iframe.src = '';
-  }, 300);
-  _miniVideoId = null;
-};
-
-window.expandMiniPlayer = ()=>{
-  if(!_miniVideoId) return;
-  closeMiniPlayer();
-  openVideo(_miniVideoId);
 };
 
 // ── COOKIE CONSENT ───────────────────────────────────────
