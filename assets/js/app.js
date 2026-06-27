@@ -514,6 +514,11 @@ function showPage(id,push=true){
   if(id!=="watch"){
     previousPage=id;
     const iframe = document.getElementById('player-iframe');
+    // Show mini player when leaving watch page while video is playing
+    const watchActive = document.getElementById('page-watch')?.classList.contains('active');
+    if(iframe && watchActive && iframe.src && _miniVideoId){
+      showMiniPlayer(iframe.src, _miniVideoTitle||'');
+    }
     if(iframe) iframe.src='';
     // Clear overlay banner if any
     if(window.clearOverlayBanner) clearOverlayBanner();
@@ -2223,10 +2228,7 @@ window.deleteComment=async(id)=>{
   }catch(e){showToast('Failed to delete','err');}
 };
 
-window.closeMiniPlayer = () => {
-  // Stop player
-  $('player-iframe').src = '';
-};
+// closeMiniPlayer defined below in MINI PLAYER section
 
 
 // ── KEYBOARD SHORTCUTS ──
