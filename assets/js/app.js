@@ -516,10 +516,12 @@ function showPage(id,push=true){
     const iframe = document.getElementById('player-iframe');
     // Show mini player when leaving watch page while video is playing
     const watchActive = document.getElementById('page-watch')?.classList.contains('active');
-    if(iframe && watchActive && iframe.src && _miniVideoId){
-      showMiniPlayer(iframe.src, _miniVideoTitle||'');
+    if(watchActive && _miniVideoId){
+      showMiniPlayer(iframe?.src||'', _miniVideoTitle||'');
+      // Don't clear iframe.src — video moves to mini player
+    } else {
+      if(iframe) iframe.src='';
     }
-    if(iframe) iframe.src='';
     // Clear overlay banner if any
     if(window.clearOverlayBanner) clearOverlayBanner();
     // Clear pull-to-refresh timer
@@ -2860,15 +2862,21 @@ let _miniVideoTitle= null;
 
 // Called when user navigates away from watch page
 function showMiniPlayer(embedUrl, title){
-  const mp    = $('mini-player');
-  const iframe= $('mini-iframe');
-  const mtitle= $('mini-title');
-  if(!mp || !iframe) return;
+  const mp      = $('mini-player');
+  const mtitle  = $('mini-title');
+  const miniWrap= $('mini-iframe-wrap');
+  const mainIframe = $('player-iframe');
+  if(!mp || !mainIframe) return;
 
-  iframe.src      = embedUrl;
+  // MOVE the actual playing iframe into mini player
+  // This avoids reloading the video
+  if(miniWrap) miniWrap.appendChild(mainIframe);
+  mainIframe.style.width  = '100%';
+  mainIframe.style.height = '100%';
+  mainIframe.style.position = 'relative';
+
   if(mtitle) mtitle.textContent = title||'';
-  mp.style.display= 'block';
-  // Animate in
+  mp.style.display = 'block';
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
       mp.style.transform = 'translateY(0)';
@@ -2878,22 +2886,37 @@ function showMiniPlayer(embedUrl, title){
 }
 
 window.closeMiniPlayer = ()=>{
-  const mp    = $('mini-player');
-  const iframe= $('mini-iframe');
+  const mp         = $('mini-player');
+  const mainIframe = $('player-iframe');
+  const playerWrap = $('player-wrap');
   if(!mp) return;
+
+  // Move iframe back to player wrap (even if watch page not visible)
+  if(playerWrap && mainIframe) playerWrap.appendChild(mainIframe);
+  mainIframe.style.width  = '100%';
+  mainIframe.style.height = '100%';
+  mainIframe.style.position = '';
+
   mp.style.transform = 'translateY(20px)';
   mp.style.opacity   = '0';
-  setTimeout(()=>{
-    mp.style.display = 'none';
-    if(iframe) iframe.src = '';
-  }, 300);
+  setTimeout(()=>{ mp.style.display='none'; }, 300);
   _miniVideoId = null;
 };
 
 window.expandMiniPlayer = ()=>{
   if(!_miniVideoId) return;
-  closeMiniPlayer();
-  openVideo(_miniVideoId);
+  const id = _miniVideoId;
+  // Move iframe back first before opening watch page
+  const playerWrap = $('player-wrap');
+  const mainIframe = $('player-iframe');
+  if(playerWrap && mainIframe) playerWrap.appendChild(mainIframe);
+  // Hide mini player without stopping video
+  const mp = $('mini-player');
+  if(mp){ mp.style.transform='translateY(20px)'; mp.style.opacity='0'; setTimeout(()=>mp.style.display='none',300); }
+  _miniVideoId = null;
+  // Navigate to watch page without reloading video
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-watch'));
+  window.scrollTo(0,0);
 };
 
 // ── COOKIE CONSENT ───────────────────────────────────────
