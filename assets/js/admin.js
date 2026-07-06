@@ -1797,16 +1797,39 @@ window.generateSitemap = async ()=>{
       xml += '  </url>\n\n';
     });
 
+    // Blog posts
+    let blogCount = 0;
+    try{
+      const blogSnap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+      const blogPosts = blogSnap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+      blogPosts.forEach(p=>{
+        const slug    = p.slug||p.id;
+        const loc     = siteUrl+'/blog/'+slug;
+        const lastmod = p.updatedAt?.toDate?p.updatedAt.toDate().toISOString().split('T')[0]:
+                        p.createdAt?.toDate?p.createdAt.toDate().toISOString().split('T')[0]:today;
+        const title   = smEsc(p.title||'');
+        const desc    = smEsc((p.excerpt||p.title||'').replace(/<[^>]*>/g,'').slice(0,200));
+        xml += '  <url>\n';
+        xml += '    <loc>'+loc+'</loc>\n';
+        xml += '    <lastmod>'+lastmod+'</lastmod>\n';
+        xml += '    <changefreq>weekly</changefreq>\n';
+        xml += '    <priority>0.8</priority>\n';
+        xml += '  </url>\n\n';
+        blogCount++;
+      });
+    }catch(e){}
+
     xml += '</urlset>';
     _sitemapXml = xml;
 
     const totalVideos = epCount + singleVids.length;
-    const totalUrls   = statics.length + epCount + singleVids.length;
+    const totalUrls   = statics.length + epCount + singleVids.length + blogCount;
 
     if(stats && statsT){
       stats.style.display='block';
       statsT.innerHTML = 'Generated <strong style="color:var(--text)">'+totalUrls+' URLs</strong> — '
         +statics.length+' pages · '+epCount+' playlist eps · '+singleVids.length+' single videos · '
+        +blogCount+' blog posts · '
         +'<strong style="color:#22c55e">'+totalVideos+' &lt;video:video&gt; tags ✅</strong>';
     }
     if(preWrap && preview){
@@ -2424,6 +2447,75 @@ window.initPlaylistDrag = (plId)=>{
       _dragPlId   = null;
     });
   });
+};
+
+// ── GOOGLE DRIVE IMAGE UPLOAD ────────────────────────────
+// Folder ID for storing blog images — create this folder in your Google Drive
+// and paste the folder ID here
+const DRIVE_FOLDER_ID = 'YOUR_FOLDER_ID'; // ← paste your Google Drive folder ID here
+
+window.uploadImageToDrive = async (input, coverFieldId, previewId, statusId)=>{
+  const file = input.files[0];
+  if(!file) return;
+
+  const statusEl  = document.getElementById(statusId);
+  const previewEl = document.getElementById(previewId);
+  const imgEl     = document.getElementById(coverFieldId.replace('Cover','CoverImg').replace('beCo','beCoImg'));
+  const coverEl   = document.getElementById(coverFieldId);
+
+  if(statusEl) statusEl.textContent = '⏳ Uploading...';
+  if(previewEl) previewEl.style.display = 'flex';
+
+  try {
+    // Convert file to base64
+    const base64 = await new Promise((res,rej)=>{
+      const reader = new FileReader();
+      reader.onload  = ()=>res(reader.result.split(',')[1]);
+      reader.onerror = ()=>rej(new Error('Read failed'));
+      reader.readAsDataURL(file);
+    });
+
+    // Upload to Google Drive using Anthropic API (Claude in Claude)
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        mcp_servers: [{ type: 'url', url: 'https://drivemcp.googleapis.com/mcp/v1', name: 'gdrive' }],
+        messages: [{
+          role: 'user',
+          content: `Upload this image to Google Drive folder ID "${DRIVE_FOLDER_ID}". 
+          File name: ${file.name}
+          The image is base64 encoded: ${base64}
+          After uploading, make the file publicly accessible and return ONLY the direct image URL in this format:
+          https://drive.google.com/uc?export=view&id=FILE_ID`
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.find(c=>c.type==='text')?.text||'';
+
+    // Extract URL from response
+    const urlMatch = text.match(/https:\/\/drive\.google\.com\/uc\?export=view&id=[\w-]+/);
+    if(urlMatch){
+      const imgUrl = urlMatch[0];
+      if(coverEl) coverEl.value = imgUrl;
+      if(imgEl){ imgEl.src = imgUrl; }
+      if(statusEl) statusEl.textContent = '✅ Uploaded successfully!';
+      showToast('Image uploaded!', 'Cover image saved to Google Drive', 'ok');
+    } else {
+      throw new Error('Could not get image URL from Drive');
+    }
+  } catch(e){
+    if(statusEl) statusEl.textContent = '❌ Upload failed: ' + e.message;
+    showToast('Upload failed', e.message, 'err');
+    if(previewEl) previewEl.style.display = 'none';
+  }
+
+  // Reset file input
+  input.value = '';
 };
 
 // ── AUTO START ──
