@@ -100,6 +100,7 @@ async function getPlaylists(){
 }
 
 export default async function middleware(req){
+  // Let real users pass through to the SPA normally
   if(!isBot(req)) return;
 
   const {pathname}=new URL(req.url);
@@ -233,5 +234,5 @@ export default async function middleware(req){
 }
 
 export const config = {
-  matcher:['/watch/:path*','/blog','/blog/:path*','/drama/:path*','/'],
+  matcher:['/watch/:path*','/blog','/blog/:path*'],
 };
