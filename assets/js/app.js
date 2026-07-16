@@ -841,8 +841,7 @@ async function loadAll(){
   try{
     // Load ads config in parallel (non-blocking)
     if(window.loadAdsConfig) window.loadAdsConfig();
-    {
-      // No cache — fetch from Firebase
+    // Fetch from Firebase
       const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
         getDocs(collection(db,"categories")),
         getDocs(collection(db,"playlists")),
@@ -869,8 +868,6 @@ async function loadAll(){
         if($("footer-desc"))$("footer-desc").textContent=siteDefaults.footer;
       }
 
-      // Save to cache for next page load
-      saveCache({ categories, playlists, videos, sections, settings });
     }
 
     buildNav();buildHero();buildSections();
@@ -888,8 +885,7 @@ async function loadAll(){
     initCookieBanner();
     // Real-time listener — auto-update cards when videos change in Firestore
     startVideoListener();
-    // Background refresh cache silently after 10s (keeps data fresh)
-    setTimeout(refreshCacheBackground, 10000);
+
   }catch(err){
     console.error(err);
     showToast("Failed to load data","err");
@@ -898,42 +894,6 @@ async function loadAll(){
   }
 }
 
-// Refresh cache in background without blocking UI
-async function refreshCacheBackground(){
-  try{
-    const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
-      getDocs(collection(db,"categories")),
-      getDocs(collection(db,"playlists")),
-      getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
-      getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
-    ]);
-    const newCats = catSnap.docs.map(d=>({id:d.id,...d.data()}));
-    const newPls  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
-    const newVids = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
-    const newSecs = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
-    const stDoc   = await getDoc(doc(db,"settings","main")).catch(()=>null);
-    const settings = stDoc?.exists() ? stDoc.data() : null;
-
-    // Check if new videos added
-    const newCount = newVids.filter(nv=>!videos.find(v=>v.id===nv.id)).length;
-
-    // Update state
-    categories = newCats;
-    playlists  = newPls;
-    videos     = newVids;
-    sections   = newSecs;
-
-    // Save fresh cache
-    saveCache({ categories, playlists, videos, sections, settings });
-
-    // Show toast if new videos found
-    if(newCount > 0){
-      showUpdateToast(newCount);
-      buildSections();
-      buildHero();
-    }
-  } catch(e){}
-}
 
 function startVideoListener(){
   // Poll every 60s instead of onSnapshot to avoid corrupting browser history
