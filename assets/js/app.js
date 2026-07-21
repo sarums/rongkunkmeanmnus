@@ -857,8 +857,18 @@ async function loadAll(){
       const settings = stDoc?.exists() ? stDoc.data() : null;
 
       // Apply settings
-      if(settings){
-        applySettings(settings);
+      const s = settings;
+      if(s){
+        if(s.name){
+          siteName=s.name;
+          ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=s.name;});
+          document.title=s.name;
+          document.getElementById('og-site')?.setAttribute('content',s.name);
+          const yr=new Date().getFullYear();
+          const copy=`© ${yr} ${s.name}. All rights reserved.`;
+          ["footer-copy","slim-copy-watch","slim-copy-hist","slim-copy-cat","slim-copy-search"].forEach(id=>{if($(id))$(id).textContent=copy;});
+        }
+        if(s.footer&&$("footer-desc"))$("footer-desc").textContent=s.footer;
       } else {
         ["site-name","footer-name"].forEach(id=>{if($(id))$(id).textContent=siteDefaults.name;});
         const yr=new Date().getFullYear();
@@ -867,8 +877,6 @@ async function loadAll(){
         document.title=siteDefaults.name;
         if($("footer-desc"))$("footer-desc").textContent=siteDefaults.footer;
       }
-
-    }
 
     buildNav();buildHero();buildSections();
     initRecommended();
