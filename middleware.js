@@ -1,238 +1,84 @@
-const PROJECT_ID  = 'streamhub-ce717';
-const FIRESTORE   = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-const SITE_URL    = 'https://www.rongkunkmeanmnus.com';
-const SITE_NAME   = 'រោងកុនគ្មានមនុស្ស';
-const DEFAULT_IMG = `${SITE_URL}/assets/img/og-default.png`;
+const FIRESTORE = `https://firestore.googleapis.com/v1/projects/streamhub-ce717/databases/(default)/documents`;
+const SITE_URL  = 'https://www.rongkunkmeanmnus.com';
+const SITE_NAME = 'រោងកុនគ្មានមនុស្ស';
+const IMG       = `${SITE_URL}/assets/img/og-default.png`;
 
-const BOT_RE = /facebookexternalhit|facebot|twitterbot|telegrambot|whatsapp|linkedinbot|discordbot|slackbot|googlebot|bingbot|yandexbot|applebot|pinterest/i;
+// Only intercept known social/search bots
+const BOTS = /facebookexternalhit|facebot|twitterbot|telegrambot|whatsapp|googlebot|bingbot/i;
 
-function isBot(req){
-  return BOT_RE.test(req.headers.get('user-agent')||'');
-}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function slug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').slice(0,80); }
 
-// Fetch with timeout to prevent middleware timeout
-async function fetchWithTimeout(url, ms=4000){
-  const controller = new AbortController();
-  const timer = setTimeout(()=>controller.abort(), ms);
-  try{
-    const r = await fetch(url, {signal: controller.signal});
-    clearTimeout(timer);
-    return r;
-  }catch(e){
-    clearTimeout(timer);
-    throw e;
-  }
-}
-
-function slugify(s){
-  return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,80);
-}
-
-function esc(s){
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function buildHtml(title, desc, img, url, type, extra=''){
-  const t=esc(title||SITE_NAME), d=esc((desc||'').replace(/<[^>]*>/g,'').slice(0,300)||'Watch free drama online.'), i=img||DEFAULT_IMG, u=url||SITE_URL;
-  return `<!DOCTYPE html>
-<html lang="km">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${t}</title>
-<meta name="description" content="${d}">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="${type||'website'}">
-<meta property="og:title" content="${t}">
-<meta property="og:description" content="${d}">
-<meta property="og:image" content="${i}">
-<meta property="og:image:width" content="1280">
-<meta property="og:image:height" content="720">
-<meta property="og:url" content="${u}">
-<meta property="og:site_name" content="${SITE_NAME}">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${t}">
-<meta name="twitter:description" content="${d}">
-<meta name="twitter:image" content="${i}">
-<link rel="canonical" href="${u}">
-<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:20px;background:#0a0a0a;color:#e4e4e7;}h1{color:#f27d26;}a{color:#f27d26;}img{max-width:100%;border-radius:8px;margin:16px 0;}</style>
-</head>
-<body>
-<p><a href="${SITE_URL}">${SITE_NAME}</a> — Free Drama Streaming</p>
-<h1>${t}</h1>
-${img?`<img src="${i}" alt="${t}" width="800" height="450">`:''}
-<p>${d}</p>
-${extra}
-<p>Watch <strong>${t}</strong> online for free on <a href="${SITE_URL}">${SITE_NAME}</a>. Stream the best Chinese Drama and Khmer dubbed series with no subscription needed.</p>
-<p><a href="${u}">▶ Watch ${t} Now</a></p>
-<p><a href="${SITE_URL}">← Back to ${SITE_NAME}</a></p>
-</body>
-</html>`;
-}
-
-async function getVideo(id){
-  try{
-    const r=await fetchWithTimeout(`${FIRESTORE}/videos/${id}`);
-    if(!r.ok) return null;
-    const d=await r.json(), f=d.fields||{}, g=k=>f[k]?.stringValue||'';
-    const platform=g('platform')||g('source'), vid=g('videoId');
-    let img=g('customThumb')||g('thumbnail');
-    if(!img){
-      if(platform==='dailymotion') img=`https://www.dailymotion.com/thumbnail/video/${vid}`;
-      else if(platform==='youtube') img=`https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
-      else if(platform==='vimeo') img=`https://vumbnail.com/${vid}.jpg`;
-    }
-    return {title:g('title'), desc:g('description'), img};
-  }catch(e){return null;}
-}
-
-async function getPlaylists(){
-  try{
-    const r=await fetchWithTimeout(`${FIRESTORE}/playlists`);
-    if(!r.ok) return [];
-    const d=await r.json();
-    return (d.documents||[]).map(doc=>({
-      id   :doc.name.split('/').pop(),
-      name :doc.fields?.name?.stringValue||'',
-      videos:(doc.fields?.videos?.arrayValue?.values||[]).map(v=>v.stringValue),
-    }));
-  }catch(e){return [];}
+async function get(url){
+  try{ const r=await fetch(url,{signal:AbortSignal.timeout(3000)}); return r.ok?await r.json():null; }
+  catch(e){ return null; }
 }
 
 export default async function middleware(req){
-  // Let real users pass through to the SPA normally
-  if(!isBot(req)) return;
+  const ua = req.headers.get('user-agent')||'';
+  if(!BOTS.test(ua)) return; // real users → pass through to SPA
 
-  const {pathname}=new URL(req.url);
-  const pageUrl=SITE_URL+pathname;
-  const ok=(t,d,i,type)=>new Response(buildHtml(t,d,i,pageUrl,type),{headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'public,max-age=3600'}});
+  const path = new URL(req.url).pathname;
+  let title=SITE_NAME, desc='Watch free Khmer dubbed drama online.', img=IMG;
 
-  // /watch/PLAYLIST_ID_OR_SLUG/ep-N
-  if(pathname.startsWith('/watch/')){
-    const parts=pathname.slice(7).split('/');
-    let video=null, epLabel='';
-
-    if(parts.length>=2 && /^ep-\d+$/.test(parts[1])){
-      const epNum=parseInt(parts[1].replace('ep-',''))||1;
-      epLabel=` — Episode ${epNum}`;
-
-      // Try fetching playlist directly by ID first (fastest)
-      let pl = null;
-      try{
-        const directRes = await fetchWithTimeout(`${FIRESTORE}/playlists/${parts[0]}`);
-        if(directRes.ok){
-          const directDoc = await directRes.json();
-          if(directDoc.fields){
-            pl = {
-              id    : parts[0],
-              name  : directDoc.fields?.name?.stringValue||'',
-              videos: (directDoc.fields?.videos?.arrayValue?.values||[]).map(v=>v.stringValue),
-            };
+  try{
+    if(path.startsWith('/watch/')){
+      const parts = path.slice(7).split('/');
+      if(parts.length>=2 && /^ep-\d+$/.test(parts[1])){
+        const epNum = parseInt(parts[1].replace('ep-',''))||1;
+        // Fetch playlist directly by ID (fast)
+        const plDoc = await get(`${FIRESTORE}/playlists/${parts[0]}`);
+        if(plDoc?.fields){
+          const plName = plDoc.fields.name?.stringValue||'';
+          const videos = (plDoc.fields.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
+          const vidId  = videos[epNum-1];
+          if(vidId){
+            const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
+            if(vDoc?.fields){
+              const f=vDoc.fields, g=k=>f[k]?.stringValue||'';
+              const platform=g('platform')||g('source'), vid=g('videoId');
+              title = `${g('title')} — Episode ${epNum}`;
+              desc  = (g('description')||`Watch ${g('title')} Episode ${epNum} free on ${SITE_NAME}.`).replace(/<[^>]*>/g,'').slice(0,200);
+              img   = g('customThumb')||g('thumbnail')||
+                (platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${vid}`:
+                 platform==='youtube'?`https://img.youtube.com/vi/${vid}/hqdefault.jpg`:IMG);
+            }
           }
-        }
-      }catch(e){}
-
-      // Fallback: search all playlists by slug
-      if(!pl){
-        const pls = await getPlaylists();
-        pl = pls.find(p=>{
-          const s=slugify(p.name);
-          return p.id===parts[0] || (s.length>=3 && s===parts[0]);
-        });
-      }
-
-      if(pl){
-        const vidId=(pl.videos||[])[epNum-1];
-        if(vidId) video=await getVideo(vidId);
-      }
-    } else if(parts.length===1){
-      // Try as direct video ID first (fastest)
-      video=await getVideo(parts[0]);
-      // If not found try slug search
-      if(!video){
-        try{
-          const r=await fetchWithTimeout(`${FIRESTORE}/videos?pageSize=300`);
-          if(r.ok){
-            const d=await r.json();
-            const doc=(d.documents||[]).find(doc=>{
-              const id=doc.name.split('/').pop();
-              const title=doc.fields?.title?.stringValue||'';
-              const s=slugify(title);
-              return (s.length>=3&&s===parts[0])||id===parts[0];
-            });
-            if(doc) video=await getVideo(doc.name.split('/').pop());
-          }
-        }catch(e){}
-      }
-    }
-
-    const watchTitle = video?.title?`${video.title}${epLabel}`:SITE_NAME;
-    const watchDesc  = video?.desc||`Watch ${watchTitle} online free on ${SITE_NAME}. Stream the best Khmer dubbed Chinese drama for free. No subscription needed.`;
-    const watchExtra = `<p>Stream <strong>${esc(watchTitle)}</strong> with Khmer dubbing on ${SITE_NAME}. Enjoy the best Chinese Drama, Khmer Dubbed Series and entertainment videos online for free.</p>`;
-    return new Response(buildHtml(watchTitle, watchDesc, video?.img||DEFAULT_IMG, pageUrl, 'video.other', watchExtra),{
-      headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'public,max-age=3600','X-Robots-Tag':'index, follow'}
-    });
-  }
-
-  // /blog/slug
-  if(pathname.startsWith('/blog/')){
-    const slug=pathname.replace('/blog/','');
-    try{
-      const r=await fetchWithTimeout(`${FIRESTORE}/blog_posts?pageSize=200`);
-      if(r.ok){
-        const d=await r.json();
-        const doc=(d.documents||[]).find(doc=>{
-          const f=doc.fields||{};
-          return f.slug?.stringValue===slug||doc.name.split('/').pop()===slug;
-        });
-        if(doc){
-          const f=doc.fields||{};
-          return ok(
-            `${f.title?.stringValue||''} | ${SITE_NAME}`,
-            f.excerpt?.stringValue||'',
-            f.cover?.stringValue||DEFAULT_IMG,
-            'article'
-          );
+          if(plName) title = title||plName;
         }
       }
-    }catch(e){}
-    return ok(`Blog | ${SITE_NAME}`,'Read drama articles.',DEFAULT_IMG);
-  }
-
-  // /drama/slug — playlist detail page
-  if(pathname.startsWith('/drama/')){
-    const slug = pathname.replace('/drama/','');
-    const pls  = await getPlaylists();
-    const pl   = pls.find(p=>{
-      const s = slugify(p.name);
-      return p.id===slug||(s.length>=3&&s===slug);
-    });
-    if(pl){
-      // Get thumbnail from first video
-      const firstVidId = (pl.videos||[])[0];
-      let img = DEFAULT_IMG;
-      if(firstVidId){
-        const v = await getVideo(firstVidId);
-        if(v?.img) img = v.img;
+    } else if(path.startsWith('/blog/')){
+      const slug2 = path.replace('/blog/','');
+      const res = await get(`${FIRESTORE}/blog_posts?pageSize=100`);
+      const doc = (res?.documents||[]).find(d=>(d.fields?.slug?.stringValue||d.name.split('/').pop())===slug2);
+      if(doc?.fields){
+        title = doc.fields.title?.stringValue||SITE_NAME;
+        desc  = doc.fields.excerpt?.stringValue||desc;
+        img   = doc.fields.cover?.stringValue||IMG;
       }
-      return ok(
-        `${pl.name} | ${SITE_NAME}`,
-        `Watch all ${(pl.videos||[]).length} episodes of ${pl.name} online free on ${SITE_NAME}.`,
-        img,
-        'video.other'
-      );
     }
-  }
+  }catch(e){}
 
-  // /blog
-  if(pathname==='/blog'){
-    return ok(`Blog | ${SITE_NAME}`,'Drama reviews and more.',DEFAULT_IMG);
-  }
-
-  // home
-  return ok(`${SITE_NAME} - Watch Free Drama Online`,'Watch Chinese Drama free.',DEFAULT_IMG);
+  const t=esc(title), d=esc(desc), u=SITE_URL+path;
+  return new Response(`<!DOCTYPE html><html><head>
+<meta charset="UTF-8"><title>${t}</title>
+<meta name="description" content="${d}">
+<meta property="og:title" content="${t}">
+<meta property="og:description" content="${d}">
+<meta property="og:image" content="${img}">
+<meta property="og:url" content="${u}">
+<meta property="og:type" content="video.other">
+<meta property="og:site_name" content="${SITE_NAME}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${img}">
+<link rel="canonical" href="${u}">
+</head><body>
+<h1>${t}</h1><p>${d}</p>
+<img src="${img}" alt="${t}" width="800">
+<p>Watch on <a href="${SITE_URL}">${SITE_NAME}</a></p>
+</body></html>`,{
+    headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'public,max-age=3600'}
+  });
 }
 
-export const config = {
-  matcher:['/watch/:path*','/blog','/blog/:path*'],
-};
+export const config = { matcher:['/watch/:path*','/blog/:path*','/blog'] };
