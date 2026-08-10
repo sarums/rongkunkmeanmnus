@@ -70,15 +70,9 @@ window.addEventListener('storage', e=>{
 const $=id=>document.getElementById(id);
 function toSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,80); }
 // Returns best URL slug for a video — uses title if latin, else uses ID
-function videoSlug(v){
-  const s=toSlug(v.title||'');
-  return s.length>=3 ? s : v.id;
-}
-// Returns best URL slug for a playlist
-function playlistSlug(pl){
-  const s=toSlug(pl.name||'');
-  return s.length>=3 ? s : pl.id;
-}
+// Always use Firestore ID for URLs — unique, stable, indexable
+function videoSlug(v){ return v.id; }
+function playlistSlug(pl){ return pl.id; }
 const fmtViews=n=>n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(1)+"K":String(n||0);
 function isNewVideo(v){
   try{
@@ -596,25 +590,24 @@ function routeFromUrl(push=false){
   if(path.startsWith("/watch/")){
     const parts=path.slice(7).split("/"); // remove '/watch/'
     if(parts.length>=2){
-      // playlist video: /watch/playlist-slug/ep-N
-      const plSlug=parts[0];
-      const epRaw=parts[1]||'';
-      // Must be exactly 'ep-N' format where N is digits only
+      // playlist video: /watch/PLAYLIST_ID/ep-N
+      const plId  = parts[0];
+      const epRaw = parts[1]||'';
       if(!/^ep-\d+$/.test(epRaw)){ show404(); return; }
-      const epNum=parseInt(epRaw.replace('ep-',''))||1;
-      const pl=playlists.find(p=>playlistSlug(p)===plSlug||toSlug(p.name)===plSlug);
+      const epNum = parseInt(epRaw.replace('ep-',''))||1;
+      // Match by Firestore ID directly (fast and reliable)
+      const pl = playlists.find(p=>p.id===plId);
       if(pl&&(pl.videos||[]).length){
-        // No fallback — episode must exist exactly
         const vidId=pl.videos[epNum-1];
-        if(!vidId){ show404(); return; } // episode number out of range
+        if(!vidId){ show404(); return; }
         const vid=videos.find(v=>v.id===vidId);
         if(vid){ openVideo(vid.id,false); return; }
       }
     }
     if(parts.length===1){
-      // single video: /watch/video-slug (or /watch/id as fallback)
-      const vSlug=parts[0];
-      const vid=videos.find(v=>videoSlug(v)===vSlug||toSlug(v.title)===vSlug||v.id===vSlug);
+      // single video: /watch/VIDEO_ID
+      const vidId = parts[0];
+      const vid   = videos.find(v=>v.id===vidId);
       if(vid){ openVideo(vid.id,false); return; }
     }
     show404(); return;  // /watch/ URL didn't match any video or playlist
