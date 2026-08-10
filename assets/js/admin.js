@@ -1671,8 +1671,9 @@ let _sitemapXml = '';
 
 // slug helpers — mirrors app.js
 function smToSlug(s){ return (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,80); }
-function smPlaylistSlug(pl){ const s=smToSlug(pl.name||''); return s.length>=3?s:pl.id; }
-function smVideoSlug(v){ const s=smToSlug(v.title||''); return s.length>=3?s:v.id; }
+// Always use Firestore ID for stable, unique, indexable URLs
+function smPlaylistSlug(pl){ return pl.id; }
+function smVideoSlug(v){ return v.id; }
 function smGetThumb(v){
   if(v.customThumb||v.thumbnail) return v.customThumb||v.thumbnail;
   const src=v.platform||v.source||'';
