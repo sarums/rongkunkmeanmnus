@@ -24,27 +24,43 @@ export default async function middleware(req){
   try{
     if(path.startsWith('/watch/')){
       const parts = path.slice(7).split('/');
-      if(parts.length>=2 && /^ep-\d+$/.test(parts[1])){
-        const epNum = parseInt(parts[1].replace('ep-',''))||1;
-        // Fetch playlist directly by ID (fast)
-        const plDoc = await get(`${FIRESTORE}/playlists/${parts[0]}`);
-        if(plDoc?.fields){
-          const plName = plDoc.fields.name?.stringValue||'';
-          const videos = (plDoc.fields.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
-          const vidId  = videos[epNum-1];
-          if(vidId){
-            const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
-            if(vDoc?.fields){
-              const f=vDoc.fields, g=k=>f[k]?.stringValue||'';
-              const platform=g('platform')||g('source'), vid=g('videoId');
-              title = `${g('title')} — Episode ${epNum}`;
-              desc  = (g('description')||`Watch ${g('title')} Episode ${epNum} free on ${SITE_NAME}.`).replace(/<[^>]*>/g,'').slice(0,200);
-              img   = g('customThumb')||g('thumbnail')||
-                (platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${vid}`:
-                 platform==='youtube'?`https://img.youtube.com/vi/${vid}/hqdefault.jpg`:IMG);
-            }
+      // Try as playlist first (with or without ep number)
+      const plDoc = await get(`${FIRESTORE}/playlists/${parts[0]}`);
+      if(plDoc?.fields){
+        // It's a playlist
+        const plName = plDoc.fields.name?.stringValue||'';
+        const vids   = (plDoc.fields.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
+        let epNum = 1;
+        if(parts.length>=2 && /^ep-\d+$/.test(parts[1])){
+          epNum = parseInt(parts[1].replace('ep-',''))||1;
+        }
+        const vidId = vids[epNum-1];
+        if(vidId){
+          const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
+          if(vDoc?.fields){
+            const f=vDoc.fields, g=k=>f[k]?.stringValue||'';
+            const platform=g('platform')||g('source'), vid=g('videoId');
+            title = parts.length>=2
+              ? `${g('title')} — Episode ${epNum}`
+              : `${plName} — Watch Free`;
+            desc  = (g('description')||`Watch ${plName} Episode ${epNum} free on ${SITE_NAME}.`).replace(/<[^>]*>/g,'').slice(0,200);
+            img   = g('customThumb')||g('thumbnail')||
+              (platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${vid}`:
+               platform==='youtube'?`https://img.youtube.com/vi/${vid}/hqdefault.jpg`:IMG);
           }
-          if(plName) title = title||plName;
+        }
+        if(!title) title = plName;
+      } else if(parts.length===1){
+        // Not a playlist — try as single video ID
+        const vDoc = await get(`${FIRESTORE}/videos/${parts[0]}`);
+        if(vDoc?.fields){
+          const f=vDoc.fields, g=k=>f[k]?.stringValue||'';
+          const platform=g('platform')||g('source'), vid=g('videoId');
+          title = g('title')||SITE_NAME;
+          desc  = (g('description')||`Watch ${title} free on ${SITE_NAME}.`).replace(/<[^>]*>/g,'').slice(0,200);
+          img   = g('customThumb')||g('thumbnail')||
+            (platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${vid}`:
+             platform==='youtube'?`https://img.youtube.com/vi/${vid}/hqdefault.jpg`:IMG);
         }
       }
     } else if(path.startsWith('/blog/')){
