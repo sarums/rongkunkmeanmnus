@@ -589,25 +589,32 @@ function routeFromUrl(push=false){
   // /watch/playlist-slug/ep-N  or  /watch/video-slug
   if(path.startsWith("/watch/")){
     const parts=path.slice(7).split("/"); // remove '/watch/'
-    if(parts.length>=2){
-      // playlist video: /watch/PLAYLIST_ID/ep-N
-      const plId  = parts[0];
-      const epRaw = parts[1]||'';
-      if(!/^ep-\d+$/.test(epRaw)){ show404(); return; }
-      const epNum = parseInt(epRaw.replace('ep-',''))||1;
-      // Match by Firestore ID directly (fast and reliable)
-      const pl = playlists.find(p=>p.id===plId);
+    const idPart = parts[0];
+
+    if(parts.length>=2 && /^ep-\d+$/.test(parts[1])){
+      // /watch/PLAYLIST_ID/ep-N → play episode N of playlist
+      const epNum = parseInt(parts[1].replace('ep-',''))||1;
+      const pl = playlists.find(p=>p.id===idPart);
       if(pl&&(pl.videos||[]).length){
         const vidId=pl.videos[epNum-1];
         if(!vidId){ show404(); return; }
         const vid=videos.find(v=>v.id===vidId);
         if(vid){ openVideo(vid.id,false); return; }
       }
+      show404(); return;
     }
+
     if(parts.length===1){
-      // single video: /watch/VIDEO_ID
-      const vidId = parts[0];
-      const vid   = videos.find(v=>v.id===vidId);
+      // /watch/ID → check if it's a playlist first, then single video
+      const pl = playlists.find(p=>p.id===idPart);
+      if(pl&&(pl.videos||[]).length){
+        // It's a playlist → play first episode
+        const vidId = pl.videos[0];
+        const vid   = videos.find(v=>v.id===vidId);
+        if(vid){ openVideo(vid.id,false); return; }
+      }
+      // It's a single video
+      const vid = videos.find(v=>v.id===idPart);
       if(vid){ openVideo(vid.id,false); return; }
     }
     show404(); return;  // /watch/ URL didn't match any video or playlist
@@ -1583,14 +1590,16 @@ window.openVideo=async (id,push=true)=>{
 
   const v=videos.find(x=>x.id===id);if(!v)return;
 
-  // Update URL — pushState so back button works properly
+  // Update URL — always use Firestore IDs for stable unique URLs
   const pl2=playlists.find(p=>(p.videos||[]).includes(id));
   if(push){
     if(pl2){
       const epNum=(pl2.videos||[]).indexOf(id)+1;
-      history.pushState({page:'watch',videoId:id},'',`/watch/${playlistSlug(pl2)}/ep-${epNum}`);
+      // /watch/PLAYLIST_ID/ep-N
+      history.pushState({page:'watch',videoId:id},'',`/watch/${pl2.id}/ep-${epNum}`);
     } else {
-      history.pushState({page:'watch',videoId:id},'',`/watch/${videoSlug(v)}`);
+      // /watch/VIDEO_ID
+      history.pushState({page:'watch',videoId:id},'',`/watch/${v.id}`);
     }
   }
 
@@ -1912,20 +1921,24 @@ window.shareAction=(type)=>{
   const title   = document.title;
   $("share-panel")?.classList.remove("open");
 
-  // Resolve current video's Firestore ID from the URL (playlist ep or single video)
+  // Resolve current video ID from URL (using Firestore IDs)
   let currentVidId = null;
   const path = location.pathname;
   if(path.startsWith('/watch/')){
     const parts = path.slice(7).split('/');
     if(parts.length>=2){
-      // /watch/playlist-slug/ep-N
-      const pl = playlists.find(p=>playlistSlug(p)===parts[0]||toSlug(p.name)===parts[0]);
+      // /watch/PLAYLIST_ID/ep-N
+      const pl = playlists.find(p=>p.id===parts[0]);
       const epNum = parseInt((parts[1]||'').replace('ep-',''))||1;
       if(pl && pl.videos && pl.videos[epNum-1]) currentVidId = pl.videos[epNum-1];
     } else if(parts.length===1){
-      // /watch/video-slug
-      const v = videos.find(x=>videoSlug(x)===parts[0]||toSlug(x.title)===parts[0]||x.id===parts[0]);
-      if(v) currentVidId = v.id;
+      // /watch/VIDEO_ID or /watch/PLAYLIST_ID (ep-1)
+      const pl = playlists.find(p=>p.id===parts[0]);
+      if(pl && pl.videos && pl.videos[0]) currentVidId = pl.videos[0];
+      else {
+        const v = videos.find(x=>x.id===parts[0]);
+        if(v) currentVidId = v.id;
+      }
     }
   }
 
