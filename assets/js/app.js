@@ -605,17 +605,28 @@ function routeFromUrl(push=false){
     }
 
     if(parts.length===1){
-      // /watch/ID → check if it's a playlist first, then single video
+      // /watch/ID → could be playlist ID or video ID
+
+      // 1. Check if it's a playlist ID → 404 (must use /ep-N)
       const pl = playlists.find(p=>p.id===idPart);
-      if(pl&&(pl.videos||[]).length){
-        // It's a playlist → play first episode
-        const vidId = pl.videos[0];
-        const vid   = videos.find(v=>v.id===vidId);
-        if(vid){ openVideo(vid.id,false); return; }
-      }
-      // It's a single video
+      if(pl){ show404(); return; }
+
+      // 2. Check if it's a video ID
       const vid = videos.find(v=>v.id===idPart);
-      if(vid){ openVideo(vid.id,false); return; }
+      if(vid){
+        // Check if this video belongs to a playlist → redirect to playlist URL
+        const ownerPl = playlists.find(p=>(p.videos||[]).includes(idPart));
+        if(ownerPl){
+          const epNum = (ownerPl.videos||[]).indexOf(idPart)+1;
+          // Redirect to proper playlist URL
+          history.replaceState(
+            {page:'watch',videoId:idPart},'',
+            `/watch/${ownerPl.id}/ep-${epNum}`
+          );
+        }
+        openVideo(vid.id,false);
+        return;
+      }
     }
     show404(); return;  // /watch/ URL didn't match any video or playlist
   }
@@ -1598,7 +1609,7 @@ window.openVideo=async (id,push=true)=>{
       // /watch/PLAYLIST_ID/ep-N
       history.pushState({page:'watch',videoId:id},'',`/watch/${pl2.id}/ep-${epNum}`);
     } else {
-      // /watch/VIDEO_ID
+      // /watch/VIDEO_ID — clean, no title in URL
       history.pushState({page:'watch',videoId:id},'',`/watch/${v.id}`);
     }
   }
