@@ -24,44 +24,58 @@ export default async function middleware(req){
   try{
     if(path.startsWith('/watch/')){
       const parts = path.slice(7).split('/');
-      // Try as playlist first (with or without ep number)
-      const plDoc = await get(`${FIRESTORE}/playlists/${parts[0]}`);
-      if(plDoc?.fields){
-        // It's a playlist
-        const plName = plDoc.fields.name?.stringValue||'';
-        const vids   = (plDoc.fields.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
-        let epNum = 1;
-        if(parts.length>=2 && /^ep-\d+$/.test(parts[1])){
-          epNum = parseInt(parts[1].replace('ep-',''))||1;
-        }
-        const vidId = vids[epNum-1];
-        if(vidId){
-          const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
-          if(vDoc?.fields){
-            const f=vDoc.fields, g=k=>f[k]?.stringValue||'';
-            const platform=g('platform')||g('source'), vid=g('videoId');
-            title = parts.length>=2
-              ? `${g('title')} — Episode ${epNum}`
-              : `${plName} — Watch Free`;
-            desc  = (g('description')||`Watch ${plName} Episode ${epNum} free on ${SITE_NAME}.`).replace(/<[^>]*>/g,'').slice(0,200);
-            img   = g('customThumb')||g('thumbnail')||
-              (platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${vid}`:
-               platform==='youtube'?`https://img.youtube.com/vi/${vid}/hqdefault.jpg`:IMG);
+      if(parts.length>=2 && /^ep-\d+$/.test(parts[1])){
+        // /watch/PLAYLIST_ID/ep-N
+        const epNum  = parseInt(parts[1].replace('ep-',''))||1;
+        const plDoc  = await get(`${FIRESTORE}/playlists/${parts[0]}`);
+        if(plDoc?.fields){
+          const plName = plDoc.fields.name?.stringValue||'';
+          const vids   = (plDoc.fields.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
+          const vidId  = vids[epNum-1];
+          if(vidId){
+            const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
+            if(vDoc?.fields){
+              const f=vDoc.fields, g=k=>f[k]?.stringValue||'';
+              const platform=g('platform')||g('source'), vid=g('videoId');
+              title = `${plName} — Episode ${epNum}`;
+              desc  = (g('description')||`Watch ${plName} Episode ${epNum} free on ${SITE_NAME}.`).replace(/<[^>]*>/g,'').slice(0,200);
+              img   = g('customThumb')||g('thumbnail')||
+                (platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${vid}`:
+                 platform==='youtube'?`https://img.youtube.com/vi/${vid}/hqdefault.jpg`:IMG);
+            }
           }
         }
-        if(!title) title = plName;
       } else if(parts.length===1){
-        // Not a playlist — try as single video ID
+        // /watch/VIDEO_ID — check if video belongs to playlist
         const vDoc = await get(`${FIRESTORE}/videos/${parts[0]}`);
         if(vDoc?.fields){
           const f=vDoc.fields, g=k=>f[k]?.stringValue||'';
           const platform=g('platform')||g('source'), vid=g('videoId');
-          title = g('title')||SITE_NAME;
+          const vTitle = g('title');
+
+          // Find which playlist this video belongs to
+          const plsData = await get(`${FIRESTORE}/playlists`);
+          let epNum = 0, plName = '';
+          for(const plDoc of (plsData?.documents||[])){
+            const pf   = plDoc.fields||{};
+            const vids = (pf.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
+            const idx  = vids.indexOf(parts[0]);
+            if(idx!==-1){
+              epNum  = idx+1;
+              plName = pf.name?.stringValue||'';
+              break;
+            }
+          }
+
+          title = epNum>0
+            ? `${plName} — Episode ${epNum}`
+            : vTitle||SITE_NAME;
           desc  = (g('description')||`Watch ${title} free on ${SITE_NAME}.`).replace(/<[^>]*>/g,'').slice(0,200);
           img   = g('customThumb')||g('thumbnail')||
             (platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${vid}`:
              platform==='youtube'?`https://img.youtube.com/vi/${vid}/hqdefault.jpg`:IMG);
         }
+        // Playlist ID without ep → returns default OG (users get 404)
       }
     } else if(path.startsWith('/blog/')){
       const slug2 = path.replace('/blog/','');
