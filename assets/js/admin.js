@@ -1801,8 +1801,10 @@ window.generateSitemap = async ()=>{
     // Blog posts
     let blogCount = 0;
     try{
-      const blogSnap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
-      const blogPosts = blogSnap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+      const blogSnap = await getDocs(collection(db,'blog_posts'));
+      const blogPosts = blogSnap.docs
+        .map(d=>({id:d.id,...d.data()}))
+        .filter(p=>!p.status || p.status==='published' || p.status==='public');
       blogPosts.forEach(p=>{
         const slug    = p.slug||p.id;
         const loc     = siteUrl+'/blog/'+slug;
@@ -1818,7 +1820,8 @@ window.generateSitemap = async ()=>{
         xml += '  </url>\n\n';
         blogCount++;
       });
-    }catch(e){}
+      console.log('Blog posts found:', blogPosts.length);
+    }catch(e){ console.error('Blog sitemap error:', e); }
 
     xml += '</urlset>';
     _sitemapXml = xml;
