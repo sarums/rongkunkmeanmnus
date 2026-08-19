@@ -33,7 +33,7 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 // ── State ──
-let videos=[],playlists=[],categories=[],sections=[];
+let videos=[],playlists=[],categories=[],sections=[],allBlogPosts=[];
 let heroVideos=[],heroIndex=0,heroTimer=null;
 let playlistQueue=[],plQueueIdx=0;
 let previousPage="home",lastScrollY=0,searchOpen=false,mobileMenuOpen=false;
@@ -863,6 +863,11 @@ async function loadAll(){
       playlists  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
       videos     = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
       sections   = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
+      // Load blog posts for SEO URL linking
+      try{
+        const blogSnap2 = await getDocs(collection(db,'blog_posts'));
+        allBlogPosts = blogSnap2.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+      }catch(e){ allBlogPosts=[]; }
 
       const stDoc = await getDoc(doc(db,"settings","main")).catch(()=>null);
       const settings = stDoc?.exists() ? stDoc.data() : null;
@@ -1096,7 +1101,15 @@ function buildCard(v){
   const epNum=pl?(pl.videos||[]).indexOf(v.id)+1:0;
   const watchUrl=pl?`/watch/${playlistSlug(pl)}/ep-${epNum}`:`/watch/${videoSlug(v)}`;
   const click=pl?`openPlaylist('${pl.id}','${v.id}')`:`openVideo('${v.id}')`;
-  return`<a class="vcard" data-id="${v.id}" href="${watchUrl}" onclick="event.preventDefault();${click}">
+
+  // If playlist has a linked article → use blog URL as primary href for SEO
+  // onclick still plays the video normally
+  const blogArticle = v.articleId
+    ? (() => { const p = allBlogPosts?.find?.(p=>p.id===v.articleId||p.slug===v.articleId); return p?`/blog/${p.slug||p.id}`:null; })()
+    : null;
+  const primaryUrl = blogArticle || watchUrl;
+
+  return`<a class="vcard" data-id="${v.id}" href="${primaryUrl}" onclick="event.preventDefault();${click}">
     <div class="vcard-thumb">
       <img src="${getThumb(v)}" alt="${(v.title||"").replace(/"/g,"")}" loading="lazy"
         onerror="this.src='https://picsum.photos/seed/${v.id}x/800/450'">
@@ -2717,6 +2730,59 @@ window.showBlogPost = async function showBlogPost(slug){
           </div>
           <h1 style="font-size:1.4rem;font-weight:900;color:#e4e4e7;line-height:1.35;margin-bottom:1rem;">${post.title||''}</h1>
           ${post.excerpt?`<p style="font-size:.9rem;color:#888;line-height:1.7;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.06);">${post.excerpt}</p>`:''}
+
+          <!-- Video Player Section -->
+          ${(()=>{
+            // Find playlist linked to this article
+            const linkedPl = playlists.find(pl=>{
+              // Check if any video in this playlist has this articleId
+              return (pl.videos||[]).some(vid=>{
+                const v = videos.find(x=>x.id===vid);
+                return v && v.articleId && (v.articleId===post.id||v.articleId===(post.slug||post.id));
+              });
+            });
+            // Also check relatedVideos
+            const firstRelVid = post.relatedVideos?.[0] 
+              ? videos.find(v=>v.id===post.relatedVideos[0]) 
+              : null;
+            const targetPl = linkedPl || (firstRelVid ? playlists.find(p=>(p.videos||[]).includes(firstRelVid?.id)) : null);
+            const targetVid = targetPl ? videos.find(v=>v.id===(targetPl.videos||[])[0]) : firstRelVid;
+
+            if(!targetVid) return '';
+
+            const embedUrl = getEmbedUrl(targetVid);
+            const plVids = targetPl ? (targetPl.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean) : [];
+
+            return `
+            <div style="margin-bottom:1.5rem;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#111;">
+              <!-- Player -->
+              <div style="position:relative;aspect-ratio:16/9;background:#000;">
+                <iframe id="blog-player-iframe" src="${embedUrl}" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"
+                  style="width:100%;height:100%;"></iframe>
+              </div>
+              <!-- Episode selector -->
+              ${plVids.length>1?`
+              <div style="padding:.75rem 1rem;border-top:1px solid rgba(255,255,255,.06);">
+                <div style="font-size:.7rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">
+                  ${targetPl?.name||''} · ${plVids.length} Episodes
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  ${plVids.map((v,i)=>`
+                    <button onclick="document.getElementById('blog-player-iframe').src='${getEmbedUrl(v)}';
+                      document.querySelectorAll('.blog-ep-btn').forEach(b=>b.style.background='rgba(255,255,255,.05)');
+                      this.style.background='rgba(242,125,38,.2)';this.style.borderColor='rgba(242,125,38,.5)';"
+                      class="blog-ep-btn"
+                      style="padding:4px 10px;background:${i===0?'rgba(242,125,38,.2)':'rgba(255,255,255,.05)'};
+                        border:1px solid ${i===0?'rgba(242,125,38,.5)':'rgba(255,255,255,.08)'};
+                        border-radius:6px;color:${i===0?'#f27d26':'#888'};font-size:.72rem;font-weight:700;
+                        cursor:pointer;font-family:inherit;transition:all .2s;">
+                      EP ${i+1}
+                    </button>`).join('')}
+                </div>
+              </div>`:''} 
+            </div>`;
+          })()}
+
           <div class="blog-post-content">${post.content||''}</div>
 
           <!-- Below Article Videos -->
