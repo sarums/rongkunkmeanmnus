@@ -1802,9 +1802,8 @@ window.generateSitemap = async ()=>{
     let blogCount = 0;
     try{
       const blogSnap = await getDocs(collection(db,'blog_posts'));
-      const blogPosts = blogSnap.docs
-        .map(d=>({id:d.id,...d.data()}))
-        .filter(p=>!p.status || p.status==='published' || p.status==='public');
+      // Include ALL blog posts regardless of status
+      const blogPosts = blogSnap.docs.map(d=>({id:d.id,...d.data()}));
       blogPosts.forEach(p=>{
         const slug    = p.slug||p.id;
         const loc     = siteUrl+'/blog/'+slug;
@@ -1816,7 +1815,7 @@ window.generateSitemap = async ()=>{
         xml += '    <loc>'+loc+'</loc>\n';
         xml += '    <lastmod>'+lastmod+'</lastmod>\n';
         xml += '    <changefreq>weekly</changefreq>\n';
-        xml += '    <priority>0.8</priority>\n';
+        xml += '    <priority>0.9</priority>\n'; // high priority - main indexable pages
         xml += '  </url>\n\n';
         blogCount++;
       });
