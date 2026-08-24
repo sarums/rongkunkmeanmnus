@@ -40,6 +40,7 @@ export default async function handler(req){
 
   // Bots → serve full article content for Google indexing
   let title   = `Blog | ${SITE_NAME}`;
+  let relatedVideoData = null;
   let desc    = 'Drama reviews, episode recaps and more from រោងកុនគ្មានមនុស្ស.';
   let img     = IMG;
   let content = '';
@@ -63,14 +64,77 @@ export default async function handler(req){
       desc     = g('excerpt') || desc;
       img      = g('cover')   || IMG;
       category = g('category')|| '';
-      // Strip HTML tags from content for Google to read as plain text
       content  = (g('content')||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+
+      // Get linked video for schema markup
+      const relVids = f.relatedVideos?.arrayValue?.values||[];
+      if(relVids.length>0){
+        const firstVidId = relVids[0].stringValue;
+        const vDoc = await fetchFS(`videos/${firstVidId}`);
+        if(vDoc?.fields){
+          const vf = vDoc.fields;
+          const vg = k=>vf[k]?.stringValue||'';
+          const platform = vg('platform')||vg('source');
+          const vid = vg('videoId');
+          const embedUrl = platform==='dailymotion'
+            ? `https://www.dailymotion.com/embed/video/${vid}`
+            : platform==='youtube'
+            ? `https://www.youtube.com/embed/${vid}`
+            : '';
+          const thumb = vg('customThumb')||vg('thumbnail')||
+            (platform==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${vid}`:
+             platform==='youtube'?`https://img.youtube.com/vi/${vid}/hqdefault.jpg`:IMG);
+          if(!img||img===IMG) img = thumb;
+          relatedVideoData = {
+            title    : vg('title'),
+            embedUrl : embedUrl,
+            duration : vg('duration'),
+            thumbnail: thumb,
+          };
+        }
+      }
     }
   }
 
   const t = esc(title);
   const d = esc(desc.slice(0,200));
   const u = pageUrl;
+
+  // Build schema markup
+  let videoSchema = '';
+  if(relatedVideoData){
+    const rv = relatedVideoData;
+    videoSchema = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": rv.title||title,
+      "description": desc,
+      "thumbnailUrl": img,
+      "uploadDate": new Date().toISOString(),
+      "embedUrl": rv.embedUrl||'',
+      "duration": rv.duration||'',
+      "publisher": {
+        "@type": "Organization",
+        "name": SITE_NAME,
+        "url": SITE_URL
+      }
+    });
+  }
+
+  // Article schema
+  const articleSchema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": title,
+    "description": desc,
+    "image": img,
+    "url": u,
+    "publisher": {
+      "@type": "Organization",
+      "name": SITE_NAME,
+      "url": SITE_URL
+    }
+  });
 
   const html = `<!DOCTYPE html>
 <html lang="km">
@@ -93,6 +157,8 @@ export default async function handler(req){
 <meta name="twitter:description" content="${d}">
 <meta name="twitter:image" content="${img}">
 <link rel="canonical" href="${u}">
+<script type="application/ld+json">${articleSchema}</script>
+${videoSchema?`<script type="application/ld+json">${videoSchema}</script>`:''}
 <style>
   body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:20px;background:#0a0a0a;color:#e4e4e7;}
   h1{color:#f27d26;font-size:1.8rem;line-height:1.3;}
