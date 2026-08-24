@@ -1,0 +1,128 @@
+// Vercel Edge Function — handles /blog/* for both bots and users
+// Bots get proper OG meta tags + article content (for Google indexing)
+// Real users get the normal SPA (index.html)
+
+const FIRESTORE = `https://firestore.googleapis.com/v1/projects/streamhub-ce717/databases/(default)/documents`;
+const SITE_URL  = 'https://www.rongkunkmeanmnus.com';
+const SITE_NAME = 'រោងកុនគ្មានមនុស្ស';
+const IMG       = `${SITE_URL}/assets/img/og-default.png`;
+
+const BOTS = /facebookexternalhit|facebot|twitterbot|telegrambot|whatsapp|googlebot|bingbot|yandexbot|applebot|pinterest|linkedinbot|discordbot/i;
+
+function esc(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function fetchFS(path, ms=5000){
+  try{
+    const r = await fetch(`${FIRESTORE}/${path}`, {signal: AbortSignal.timeout(ms)});
+    return r.ok ? await r.json() : null;
+  }catch(e){ return null; }
+}
+
+export default async function handler(req){
+  const url  = new URL(req.url);
+  const path = url.pathname;
+  const ua   = req.headers.get('user-agent')||'';
+  const bot  = BOTS.test(ua);
+
+  // Real users → serve SPA index.html
+  if(!bot){
+    const spa = await fetch(`${SITE_URL}/index.html`);
+    const html = await spa.text();
+    return new Response(html,{
+      headers:{
+        'Content-Type':'text/html;charset=utf-8',
+        'Cache-Control':'no-store',
+      }
+    });
+  }
+
+  // Bots → serve full article content for Google indexing
+  let title   = `Blog | ${SITE_NAME}`;
+  let desc    = 'Drama reviews, episode recaps and more from រោងកុនគ្មានមនុស្ស.';
+  let img     = IMG;
+  let content = '';
+  let category= '';
+  const pageUrl = SITE_URL + path;
+
+  if(path.startsWith('/blog/') && path.length > 6){
+    const slug = path.replace('/blog/','').split('/')[0];
+
+    // Fetch all blog posts and find by slug or ID
+    const res = await fetchFS('blog_posts?pageSize=200');
+    const doc = (res?.documents||[]).find(d=>{
+      const f = d.fields||{};
+      return (f.slug?.stringValue||d.name.split('/').pop()) === slug;
+    });
+
+    if(doc?.fields){
+      const f = doc.fields;
+      const g = k => f[k]?.stringValue||'';
+      title    = g('title') ? `${g('title')} | ${SITE_NAME}` : title;
+      desc     = g('excerpt') || desc;
+      img      = g('cover')   || IMG;
+      category = g('category')|| '';
+      // Strip HTML tags from content for Google to read as plain text
+      content  = (g('content')||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+    }
+  }
+
+  const t = esc(title);
+  const d = esc(desc.slice(0,200));
+  const u = pageUrl;
+
+  const html = `<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${t}</title>
+<meta name="description" content="${d}">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="${t}">
+<meta property="og:description" content="${d}">
+<meta property="og:image" content="${img}">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="720">
+<meta property="og:url" content="${u}">
+<meta property="og:site_name" content="${SITE_NAME}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${t}">
+<meta name="twitter:description" content="${d}">
+<meta name="twitter:image" content="${img}">
+<link rel="canonical" href="${u}">
+<style>
+  body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:20px;background:#0a0a0a;color:#e4e4e7;}
+  h1{color:#f27d26;font-size:1.8rem;line-height:1.3;}
+  h2{color:#e4e4e7;font-size:1.3rem;margin-top:1.5rem;}
+  p{color:#999;line-height:1.8;}
+  a{color:#f27d26;}
+  .cat{background:#f27d26;color:#000;padding:3px 10px;border-radius:4px;font-size:.8rem;font-weight:700;}
+  img{max-width:100%;border-radius:8px;margin:16px 0;}
+</style>
+</head>
+<body>
+<p><a href="${SITE_URL}">${SITE_NAME}</a> — Free Khmer Dubbed Drama</p>
+${category?`<span class="cat">${esc(category)}</span>`:''}
+<h1>${t}</h1>
+${img!==IMG?`<img src="${img}" alt="${t}" width="800" height="450">`:''}
+<p><strong>${d}</strong></p>
+${content?`<article><p>${esc(content).replace(/\n/g,'</p><p>')}</p></article>`:''}
+<hr>
+<p>Watch free Chinese Drama and Khmer dubbed series on <a href="${SITE_URL}">${SITE_NAME}</a>. 
+Stream the best drama online for free — no subscription, no account needed.</p>
+<p><a href="${SITE_URL}/blog">← More Articles</a></p>
+</body>
+</html>`;
+
+  return new Response(html,{
+    headers:{
+      'Content-Type':'text/html;charset=utf-8',
+      'Cache-Control':'public,max-age=3600',
+    }
+  });
+}
+
+export const config = { runtime: 'edge' };
