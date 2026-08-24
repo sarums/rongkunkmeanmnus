@@ -19,7 +19,7 @@ export default async function middleware(req){
   if(!BOTS.test(ua)) return; // real users → pass through to SPA
 
   const path = new URL(req.url).pathname;
-  let title=SITE_NAME, desc='Watch free Khmer dubbed drama online.', img=IMG;
+  let title=SITE_NAME, desc='Watch free Khmer dubbed drama online.', img=IMG, extraContent='';
 
   try{
     if(path.startsWith('/watch/')){
@@ -79,34 +79,54 @@ export default async function middleware(req){
       }
     } else if(path.startsWith('/blog/')){
       const slug2 = path.replace('/blog/','');
-      const res = await get(`${FIRESTORE}/blog_posts?pageSize=100`);
-      const doc = (res?.documents||[]).find(d=>(d.fields?.slug?.stringValue||d.name.split('/').pop())===slug2);
+      const res = await get(`${FIRESTORE}/blog_posts?pageSize=200`);
+      const doc = (res?.documents||[]).find(d=>{
+        const f=d.fields||{};
+        return (f.slug?.stringValue||d.name.split('/').pop())===slug2;
+      });
       if(doc?.fields){
-        title = doc.fields.title?.stringValue||SITE_NAME;
-        desc  = doc.fields.excerpt?.stringValue||desc;
-        img   = doc.fields.cover?.stringValue||IMG;
+        const f=doc.fields;
+        title   = f.title?.stringValue||SITE_NAME;
+        desc    = f.excerpt?.stringValue||desc;
+        img     = f.cover?.stringValue||IMG;
+        // Include article content for Google to index
+        const rawContent = (f.content?.stringValue||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,2000);
+        extraContent = rawContent;
       }
     }
   }catch(e){}
 
   const t=esc(title), d=esc(desc), u=SITE_URL+path;
-  return new Response(`<!DOCTYPE html><html><head>
-<meta charset="UTF-8"><title>${t}</title>
+  return new Response(`<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${t}</title>
 <meta name="description" content="${d}">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="${path.startsWith('/blog/')?'article':'video.other'}">
 <meta property="og:title" content="${t}">
 <meta property="og:description" content="${d}">
 <meta property="og:image" content="${img}">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="720">
 <meta property="og:url" content="${u}">
-<meta property="og:type" content="video.other">
 <meta property="og:site_name" content="${SITE_NAME}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${t}">
+<meta name="twitter:description" content="${d}">
 <meta name="twitter:image" content="${img}">
 <link rel="canonical" href="${u}">
-</head><body>
-<h1>${t}</h1><p>${d}</p>
-<img src="${img}" alt="${t}" width="800">
-<p>Watch on <a href="${SITE_URL}">${SITE_NAME}</a></p>
-</body></html>`,{
+</head>
+<body>
+<h1>${t}</h1>
+${img&&img!==IMG?`<img src="${img}" alt="${t}" width="800" height="450">`:''}
+<p>${d}</p>
+${extraContent?`<article>${extraContent}</article>`:''}
+<p>Watch free Chinese Drama and Khmer dubbed series on <a href="${SITE_URL}">${SITE_NAME}</a>. No subscription needed.</p>
+</body>
+</html>`,{
     headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'public,max-age=3600'}
   });
 }
