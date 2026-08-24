@@ -29,7 +29,7 @@ function getImg(f){
   return IMG;
 }
 
-function ogPage(title, desc, img, url){
+function ogPage(title, desc, img, url, schema=''){
   const t=esc(title||SITE_NAME);
   const d=esc((desc||'Watch free drama online.').replace(/<[^>]*>/g,'').slice(0,200));
   const i=img||IMG;
@@ -54,6 +54,7 @@ function ogPage(title, desc, img, url){
 <meta name="twitter:description" content="${d}">
 <meta name="twitter:image" content="${i}">
 <link rel="canonical" href="${url}">
+${schema?`<script type="application/ld+json">${schema}</script>`:''}
 </head>
 <body>
 <h1>${t}</h1>
@@ -124,7 +125,22 @@ export default async function handler(req){
     }
   }catch(e){}
 
-  return new Response(ogPage(title, desc, img, pageUrl),{
+  // Video schema markup for Google rich results
+  const videoSchema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": title||SITE_NAME,
+    "description": (desc||'').replace(/<[^>]*>/g,'').slice(0,200),
+    "thumbnailUrl": img||IMG,
+    "uploadDate": new Date().toISOString(),
+    "publisher": {
+      "@type": "Organization",
+      "name": SITE_NAME,
+      "url": SITE_URL
+    }
+  });
+
+  return new Response(ogPage(title, desc, img, pageUrl, videoSchema),{
     headers:{
       'Content-Type':'text/html;charset=utf-8',
       'Cache-Control':'public,max-age=3600',
