@@ -75,6 +75,18 @@
   ],
   "rewrites": [
     {
+      "source": "/watch/:path*",
+      "destination": "/api/watch"
+    },
+    {
+      "source": "/blog/:path*",
+      "destination": "/api/blog"
+    },
+    {
+      "source": "/blog",
+      "destination": "/api/blog"
+    },
+    {
       "source": "/admin",
       "destination": "/admin/index.html"
     },
@@ -109,22 +121,6 @@
     {
       "source": "/donate",
       "destination": "/pages/donate.html"
-    },
-    {
-      "source": "/drama/:slug",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/watch/:path*",
-      "destination": "/api/watch"
-    },
-    {
-      "source": "/blog/:path*",
-      "destination": "/api/blog"
-    },
-    {
-      "source": "/blog",
-      "destination": "/api/blog"
     },
     {
       "source": "/((?!api/).*)",
