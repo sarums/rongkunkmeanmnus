@@ -732,8 +732,19 @@
             <input type="text" class="finput" id="blogSlug" placeholder="e.g. top-10-chinese-dramas-2024">
           </div>
           <div class="fg full" style="margin-bottom:.75rem;">
-            <label class="flabel">Cover Image URL (optional)</label>
-            <input type="text" class="finput" id="blogCover" placeholder="https://...image.jpg">
+            <label class="flabel">Cover Image <span style="color:#555;font-weight:500">(optional)</span></label>
+            <div style="display:flex;gap:.5rem;align-items:center;">
+              <input type="text" class="finput" id="blogCover" placeholder="https://... or upload →" style="flex:1;">
+              <label style="padding:.5rem .85rem;background:rgba(242,125,38,.1);border:1px solid rgba(242,125,38,.25);border-radius:8px;color:#f27d26;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:4px;"
+                onmouseover="this.style.background='rgba(242,125,38,.2)'" onmouseout="this.style.background='rgba(242,125,38,.1)'">
+                📁 Upload
+                <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToDrive(this,'blogCover','blogCoverPreview','blogCoverStatus')">
+              </label>
+            </div>
+            <div id="blogCoverPreview" style="margin-top:.5rem;display:none;align-items:center;gap:.75rem;">
+              <img id="blogCoverImg" src="" style="width:80px;aspect-ratio:16/9;border-radius:6px;object-fit:cover;border:1px solid var(--border2);">
+              <span id="blogCoverStatus" style="font-size:.72rem;color:#22c55e;font-weight:600;"></span>
+            </div>
           </div>
           <div class="fg full" style="margin-bottom:.75rem;">
             <label class="flabel">Category</label>
@@ -1016,27 +1027,18 @@
         <svg viewBox="0 0 24 24" fill="#fff" width="22" height="22"><polygon points="5,3 19,12 5,21"/></svg>
       </div>
       <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:-.02em;">RKMN <span style="color:#f27d26">ADMIN</span></div>
-      <div style="font-size:.78rem;color:#555;margin-top:4px;">Enter password to continue</div>
+      <div style="font-size:.78rem;color:#555;margin-top:4px;">Sign in with your Google account</div>
     </div>
     <div id="loginError" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#ef4444;border-radius:10px;padding:10px 14px;font-size:.8rem;font-weight:600;margin-bottom:1rem;text-align:center;">
-      ❌ Incorrect password. Try again.
-    </div>
-    <div style="margin-bottom:1rem;">
-      <label style="font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#555;display:block;margin-bottom:6px;">Password</label>
-      <div style="position:relative;">
-        <input type="password" id="loginPwInput" placeholder="Enter admin password"
-          style="width:100%;background:#181818;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 44px 12px 14px;color:#fff;font-size:.9rem;outline:none;transition:border-color .2s;font-family:inherit;"
-          onkeydown="if(event.key==='Enter')doLogin()"
-          onfocus="this.style.borderColor='#f27d26'" onblur="this.style.borderColor='rgba(255,255,255,.12)'">
-        <button onclick="togglePwVis()" id="pwVisBtn" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:.85rem;padding:0;">👁</button>
-      </div>
+      ❌ Access denied.
     </div>
     <button onclick="doLogin()" id="loginBtn"
-      style="width:100%;padding:12px;background:#f27d26;color:#000;font-weight:900;font-size:.9rem;border:none;border-radius:10px;cursor:pointer;transition:all .2s;font-family:inherit;">
-      Login →
+      style="width:100%;padding:14px;background:#fff;color:#333;font-weight:800;font-size:.95rem;border:none;border-radius:10px;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.2 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z"/><path fill="#FBBC05" d="M24 46c5.8 0 10.7-1.9 14.3-5.2l-6.6-5.4C29.7 37 27 38 24 38c-5.8 0-10.7-3.9-12.5-9.3l-7 5.4C8.1 41.8 15.5 46 24 46z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.9 2.9-2.8 5.3-5.3 7l6.6 5.4C41.3 37.7 45 31.4 45 24c0-1.3-.2-2.7-.5-4z"/></svg>
+      Sign in with Google
     </button>
     <p style="text-align:center;font-size:.68rem;color:#333;margin-top:1.25rem;">
-      Forgot password? Check Admin → Settings
+      Only authorized admin accounts can access this panel
     </p>
   </div>
 </div>
