@@ -3,6 +3,9 @@ import {
   getFirestore, collection, addDoc, getDocs, deleteDoc,
   doc, query, orderBy, where, updateDoc, serverTimestamp, getDoc, setDoc, increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAnXxuc92620WOz_bVkovnUEQ_LL4YFPp8",
@@ -13,7 +16,9 @@ const firebaseConfig = {
   appId: "1:223272731262:web:d17866d4a12f610c864e2f"
 };
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@gmail.com'; // ← Replace with your Google email
 
 // ── CACHE BUSTER ─────────────────────────────────────────
 // Clears the site's sessionStorage cache so users see fresh data immediately
@@ -66,45 +71,49 @@ window.togglePwVis = ()=>{
   btn.textContent = inp.type === 'password' ? '👁' : '🙈';
 };
 
+// Google Sign-In
 window.doLogin = async ()=>{
-  const inp = document.getElementById('loginPwInput');
   const btn = document.getElementById('loginBtn');
   const err = document.getElementById('loginError');
-  const pw  = inp?.value.trim();
-  if(!pw) return;
-
-  btn.disabled = true;
-  btn.textContent = 'Checking...';
-  err.style.display = 'none';
-
-  try {
-    const snap = await getDoc(doc(db,'settings','main'));
-    const correctPw = snap.exists() ? (snap.data().password || 'streamhub2024') : 'streamhub2024';
-    if(pw === correctPw){
-      sessionStorage.setItem(SESSION_KEY, '1');
-      hideLoginScreen();
-      loadAll();
-    } else {
+  try{
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+    err.style.display = 'none';
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const email = result.user.email;
+    if(email !== ADMIN_EMAIL){
+      await signOut(auth);
+      err.textContent = '❌ Access denied. Only admin can login.';
       err.style.display = 'block';
-      inp.value = '';
-      inp.focus();
+      btn.disabled = false;
+      btn.textContent = 'Sign in with Google';
+      return;
     }
-  } catch(e){
-    if(pw === 'streamhub2024'){
-      sessionStorage.setItem(SESSION_KEY, '1');
-      hideLoginScreen();
-      loadAll();
-    } else {
-      err.style.display = 'block';
-      inp.value = '';
-      inp.focus();
-    }
+    sessionStorage.setItem(SESSION_KEY, '1');
+    hideLoginScreen();
+    loadAll();
+  }catch(e){
+    err.textContent = '❌ Sign in failed: ' + e.message;
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Sign in with Google';
   }
-  btn.disabled = false;
-  btn.textContent = 'Login →';
 };
 
-window.doLogout = ()=>{ sessionStorage.removeItem(SESSION_KEY); location.reload(); };
+window.doLogout = async ()=>{
+  await signOut(auth);
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+};
+
+// Auto-login if already signed in
+onAuthStateChanged(auth, user=>{
+  if(user && user.email===ADMIN_EMAIL && sessionStorage.getItem(SESSION_KEY)){
+    hideLoginScreen();
+    loadAll();
+  }
+});
 
 // ── STATE ─────────────────────────────────────────────
 let allVideos=[], allPlaylists=[], allCategories=[];
