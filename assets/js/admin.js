@@ -18,7 +18,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
 const auth = getAuth(app);
-const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@gmail.com'; // ← Replace with your Google email
+const ADMIN_EMAIL = 'soksarum.mii@gmail.com'; // ← Replace with your Google email
 
 // ── CACHE BUSTER ─────────────────────────────────────────
 // Clears the site's sessionStorage cache so users see fresh data immediately
