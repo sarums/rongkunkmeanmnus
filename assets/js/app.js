@@ -2773,46 +2773,42 @@ window.showBlogPost = async function showBlogPost(slug){
                 <iframe id="blog-player-iframe" src="${embedUrl}" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"
                   style="width:100%;height:100%;"></iframe>
               </div>
-              <!-- Episode selector — thumbnail cards like computer view -->
-              ${plVids.length>1?`
+              <!-- Episode selector — EP buttons, horizontal scroll -->
+              ${plVids.length>0?`
               <div style="border-top:1px solid rgba(255,255,255,.06);">
                 <!-- Header -->
                 <div style="padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;">
-                  <div style="font-size:.72rem;font-weight:800;color:#e4e4e7;">${targetPl?.name||''}</div>
+                  <div style="font-size:.75rem;font-weight:800;color:#e4e4e7;">${targetPl?.name||''}</div>
                   <div style="font-size:.65rem;color:#555;">${plVids.length} Episodes</div>
                 </div>
-                <!-- Episode thumbnail cards — horizontal scroll on mobile, grid on desktop -->
-                <div style="overflow-x:auto;padding:0 1rem .75rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-                  <div style="display:flex;gap:8px;width:max-content;">
+                <!-- EP buttons — horizontal scroll, works on mobile and desktop -->
+                <div style="overflow-x:auto;padding:0 1rem .85rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;scrollbar-height:none;">
+                  <div style="display:flex;gap:6px;width:max-content;">
                     ${plVids.map((v,i)=>`
-                      <div id="blog-ep-${i}" onclick="
-                        document.getElementById('blog-player-iframe').src='${getEmbedUrl(v)}';
-                        document.querySelectorAll('[id^=blog-ep-]').forEach(el=>{
-                          el.style.borderColor='transparent';
-                          el.querySelector('.ep-title-label').style.color='#888';
-                        });
-                        this.style.borderColor='#f27d26';
-                        this.querySelector('.ep-title-label').style.color='#f27d26';
-                        this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
-                        style="flex-shrink:0;width:130px;cursor:pointer;border:2px solid ${i===0?'#f27d26':'transparent'};
-                          border-radius:8px;overflow:hidden;background:#1a1a1a;transition:border-color .2s;">
-                        <!-- Thumbnail -->
-                        <div style="position:relative;aspect-ratio:16/9;background:#111;">
-                          <img src="${getThumb(v)}" style="width:100%;height:100%;object-fit:cover;"
-                            onerror="this.src='https://picsum.photos/seed/${v.id}/260/146'">
-                          <div style="position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.8);
-                            color:#fff;font-size:.55rem;font-weight:800;padding:1px 5px;border-radius:3px;">
-                            EP ${i+1}
-                          </div>
-                        </div>
-                        <!-- Title -->
-                        <div style="padding:4px 6px;">
-                          <div class="ep-title-label" style="font-size:.65rem;font-weight:700;
-                            color:${i===0?'#f27d26':'#888'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                            ${v.title&&v.title!==targetPl?.name?v.title:`Episode ${i+1}`}
-                          </div>
-                        </div>
-                      </div>`).join('')}
+                      <button
+                        id="blog-ep-btn-${i}"
+                        onclick="
+                          document.getElementById('blog-player-iframe').src='${getEmbedUrl(v)}';
+                          document.querySelectorAll('[id^=blog-ep-btn-]').forEach(b=>{
+                            b.style.background='rgba(255,255,255,.05)';
+                            b.style.color='#888';
+                            b.style.borderColor='rgba(255,255,255,.08)';
+                          });
+                          this.style.background='rgba(242,125,38,.2)';
+                          this.style.color='#f27d26';
+                          this.style.borderColor='rgba(242,125,38,.5)';
+                          this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
+                        style="flex-shrink:0;padding:5px 12px;
+                          background:${i===0?'rgba(242,125,38,.2)':'rgba(255,255,255,.05)'};
+                          border:1px solid ${i===0?'rgba(242,125,38,.5)':'rgba(255,255,255,.08)'};
+                          border-radius:6px;
+                          color:${i===0?'#f27d26':'#888'};
+                          font-size:.75rem;font-weight:700;
+                          cursor:pointer;font-family:inherit;
+                          white-space:nowrap;
+                          transition:all .15s;">
+                        EP ${i+1}
+                      </button>`).join('')}
                   </div>
                 </div>
               </div>`:''} 
