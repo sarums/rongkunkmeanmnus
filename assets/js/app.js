@@ -2744,11 +2744,21 @@ window.showBlogPost = async function showBlogPost(slug){
                 return v && v.articleId && (v.articleId===post.id||v.articleId===(post.slug||post.id));
               });
             });
-            // Also check relatedVideos
-            const firstRelVid = post.relatedVideos?.[0] 
-              ? videos.find(v=>v.id===post.relatedVideos[0]) 
+            // Also check relatedVideos array
+            const firstRelVid = post.relatedVideos?.[0]
+              ? videos.find(v=>v.id===post.relatedVideos[0])
               : null;
-            const targetPl = linkedPl || (firstRelVid ? playlists.find(p=>(p.videos||[]).includes(firstRelVid?.id)) : null);
+
+            // Fallback: match playlist by name similarity with article title
+            const postTitle = (post.title||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim();
+            const nameMatchPl = !linkedPl && !firstRelVid ? playlists.find(pl=>{
+              const plName = (pl.name||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim();
+              return postTitle.length>3 && (plName.includes(postTitle.slice(0,15)) || postTitle.includes(plName.slice(0,15)));
+            }) : null;
+
+            const targetPl = linkedPl 
+              || (firstRelVid ? playlists.find(p=>(p.videos||[]).includes(firstRelVid?.id)) : null)
+              || nameMatchPl;
             const targetVid = targetPl ? videos.find(v=>v.id===(targetPl.videos||[])[0]) : firstRelVid;
 
             if(!targetVid) return '';
