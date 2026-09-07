@@ -1640,7 +1640,8 @@ window.openVideo=async (id,push=true)=>{
 
   $("watch-source").textContent=v.platform||v.source||"";
   $("watch-cat").textContent=v.category||"";
-  $("watch-views").textContent=fmtViews((v.views||0)+1);
+  const viewCount=(v.views||0)+1;
+  $("watch-views").textContent=viewCount>1?fmtViews(viewCount)+' views':'';
   $("watch-date").textContent=v.createdAt?.toDate?v.createdAt.toDate().toLocaleDateString():"—";
   // If article linked → hide description area (article shown below playlist)
   if(v.articleId){
@@ -1996,8 +1997,8 @@ async function loadReactions(vid){
   try{
     const snap=await getDoc(doc(db,'videos',vid));
     const data=snap.data()||{};
-    $('like-count').textContent=data.likes||0;
-    $('dislike-count').textContent=data.dislikes||0;
+    $('like-count').textContent=data.likes>0?data.likes:'';
+    $('dislike-count').textContent=data.dislikes>0?data.dislikes:''
   }catch(e){}
 }
 
@@ -2023,8 +2024,10 @@ window.reactVideo=async(type)=>{
       // Refresh counts
       const snap=await getDoc(doc(db,'videos',vid));
       const data=snap.data()||{};
-      $('like-count').textContent=Math.max(0,data.likes||0);
-      $('dislike-count').textContent=Math.max(0,data.dislikes||0);
+      const lc=Math.max(0,data.likes||0);
+      const dc=Math.max(0,data.dislikes||0);
+      $('like-count').textContent=lc>0?lc:'';
+      $('dislike-count').textContent=dc>0?dc:'';
     }catch(e){}
   }
 };
