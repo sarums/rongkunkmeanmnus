@@ -2653,6 +2653,95 @@ function blogMd(text){
   return t;
 }
 
+// ── BLOG VIDEO PLAYER ────────────────────────────────────
+function renderBlogVideoPlayer(post){
+  const container = document.getElementById('blog-video-section');
+  if(!container) return;
+
+  // Find linked playlist
+  let targetPl = null;
+  let targetVid = null;
+
+  // Method 1: relatedVideos in post
+  if(post.relatedVideos && post.relatedVideos.length>0){
+    const vid = videos.find(v=>v.id===post.relatedVideos[0]);
+    if(vid){
+      targetVid = vid;
+      targetPl  = playlists.find(p=>(p.videos||[]).includes(vid.id));
+    }
+  }
+
+  // Method 2: video has articleId matching this post
+  if(!targetPl){
+    const linked = videos.find(v=>v.articleId&&(v.articleId===post.id||v.articleId===(post.slug||post.id)));
+    if(linked){
+      targetVid = linked;
+      targetPl  = playlists.find(p=>(p.videos||[]).includes(linked.id));
+    }
+  }
+
+  // Method 3: match playlist name to article title
+  if(!targetPl){
+    const postTitle = (post.title||'').toLowerCase().replace(/[^\w\s]/g,'').trim().slice(0,20);
+    targetPl = playlists.find(p=>{
+      const plName = (p.name||'').toLowerCase().replace(/[^\w\s]/g,'').trim();
+      return postTitle.length>3 && (plName.includes(postTitle)||postTitle.includes(plName.slice(0,15)));
+    });
+    if(targetPl) targetVid = videos.find(v=>v.id===(targetPl.videos||[])[0]);
+  }
+
+  if(!targetVid){ container.innerHTML=''; return; }
+
+  const plVids = targetPl ? (targetPl.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean) : [targetVid];
+  const embedUrl = getEmbedUrl(targetVid);
+
+  container.innerHTML = `
+    <div style="border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#111;">
+      <!-- Player -->
+      <div style="position:relative;aspect-ratio:16/9;background:#000;">
+        <iframe id="blog-player-iframe" src="${embedUrl}" frameborder="0" allowfullscreen
+          allow="autoplay; encrypted-media"
+          style="width:100%;height:100%;position:absolute;inset:0;"></iframe>
+      </div>
+      <!-- Episode header -->
+      <div style="padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.06);">
+        <div style="font-size:.75rem;font-weight:800;color:#e4e4e7;">${targetPl?targetPl.name:targetVid.title}</div>
+        <div style="font-size:.65rem;color:#555;">${plVids.length} Episode${plVids.length>1?'s':''}</div>
+      </div>
+      <!-- EP buttons scroll -->
+      ${plVids.length>1?`
+      <div style="overflow-x:auto;padding:0 1rem .85rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+        <div style="display:flex;gap:5px;padding:2px;">
+          ${plVids.map((v,i)=>`
+            <button id="blog-ep-btn-${i}"
+              onclick="
+                document.getElementById('blog-player-iframe').src='${getEmbedUrl(v)}';
+                document.querySelectorAll('[id^=blog-ep-btn-]').forEach(b=>{
+                  b.style.background='rgba(255,255,255,.05)';
+                  b.style.color='#666';
+                  b.style.borderColor='rgba(255,255,255,.06)';
+                });
+                this.style.background='#f27d26';
+                this.style.color='#000';
+                this.style.borderColor='#f27d26';
+                this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
+              style="flex-shrink:0;min-width:40px;padding:5px 8px;
+                background:${i===0?'#f27d26':'rgba(255,255,255,.05)'};
+                border:1px solid ${i===0?'#f27d26':'rgba(255,255,255,.06)'};
+                border-radius:8px;
+                color:${i===0?'#000':'#666'};
+                font-size:.7rem;font-weight:${i===0?900:600};
+                cursor:pointer;font-family:inherit;
+                text-align:center;line-height:1.3;
+                transition:all .15s;">
+              <div style="font-size:.5rem;opacity:.8;">EP</div>
+              <div>${i+1}</div>
+            </button>`).join('')}
+        </div>
+      </div>`:''}
+    </div>`;
+}
+
 window.showBlogPage = async function showBlogPage(){
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog'));
@@ -2735,96 +2824,9 @@ window.showBlogPost = async function showBlogPost(slug){
           ${post.excerpt?`<p style="font-size:.9rem;color:#888;line-height:1.7;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.06);">${post.excerpt}</p>`:''}
 
           <!-- Video Player Section -->
-          ${(()=>{
-            // Find playlist linked to this article
-            const linkedPl = playlists.find(pl=>{
-              // Check if any video in this playlist has this articleId
-              return (pl.videos||[]).some(vid=>{
-                const v = videos.find(x=>x.id===vid);
-                return v && v.articleId && (v.articleId===post.id||v.articleId===(post.slug||post.id));
-              });
-            });
-            // Also check relatedVideos array
-            const firstRelVid = post.relatedVideos?.[0]
-              ? videos.find(v=>v.id===post.relatedVideos[0])
-              : null;
+          <div id="blog-video-section" style="margin-bottom:1.5rem;"></div>
 
-            // Fallback: match playlist by name similarity with article title
-            const postTitle = (post.title||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim();
-            const nameMatchPl = !linkedPl && !firstRelVid ? playlists.find(pl=>{
-              const plName = (pl.name||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim();
-              return postTitle.length>3 && (plName.includes(postTitle.slice(0,15)) || postTitle.includes(plName.slice(0,15)));
-            }) : null;
-
-            const targetPl = linkedPl 
-              || (firstRelVid ? playlists.find(p=>(p.videos||[]).includes(firstRelVid?.id)) : null)
-              || nameMatchPl;
-            const targetVid = targetPl ? videos.find(v=>v.id===(targetPl.videos||[])[0]) : firstRelVid;
-
-            if(!targetVid) return '';
-
-            const embedUrl = getEmbedUrl(targetVid);
-            const plVids = targetPl ? (targetPl.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean) : [];
-
-            return `
-            <div style="margin-bottom:1.5rem;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#111;">
-              <!-- Player -->
-              <div style="position:relative;aspect-ratio:16/9;background:#000;">
-                <iframe id="blog-player-iframe" src="${embedUrl}" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"
-                  style="width:100%;height:100%;"></iframe>
-              </div>
-              <!-- Episode selector — EP buttons, horizontal scroll -->
-              ${plVids.length>0?`
-              <div style="border-top:1px solid rgba(255,255,255,.06);">
-                <!-- Header -->
-                <div style="padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;">
-                  <div style="font-size:.75rem;font-weight:800;color:#e4e4e7;">${targetPl?.name||''}</div>
-                  <div style="font-size:.65rem;color:#555;">${plVids.length} Episodes</div>
-                </div>
-                <!-- EP buttons — improved compact scroll design -->
-                <div style="overflow-x:auto;padding:0 1rem .85rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-                  <div style="display:flex;gap:5px;width:max-content;padding:2px;">
-                    ${plVids.map((v,i)=>`
-                      <button
-                        id="blog-ep-btn-${i}"
-                        onclick="
-                          document.getElementById('blog-player-iframe').src='${getEmbedUrl(v)}';
-                          document.querySelectorAll('[id^=blog-ep-btn-]').forEach(b=>{
-                            b.style.background='rgba(255,255,255,.05)';
-                            b.style.color='#666';
-                            b.style.borderColor='rgba(255,255,255,.06)';
-                            b.style.fontWeight='600';
-                          });
-                          this.style.background='#f27d26';
-                          this.style.color='#000';
-                          this.style.borderColor='#f27d26';
-                          this.style.fontWeight='900';
-                          this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
-                        style="flex-shrink:0;
-                          min-width:42px;
-                          padding:6px 10px;
-                          background:${i===0?'#f27d26':'rgba(255,255,255,.05)'};
-                          border:1px solid ${i===0?'#f27d26':'rgba(255,255,255,.06)'};
-                          border-radius:8px;
-                          color:${i===0?'#000':'#666'};
-                          font-size:.72rem;
-                          font-weight:${i===0?900:600};
-                          cursor:pointer;
-                          font-family:inherit;
-                          white-space:nowrap;
-                          text-align:center;
-                          transition:all .15s;
-                          line-height:1.2;">
-                        <div style="font-size:.55rem;opacity:.7;margin-bottom:1px;">EP</div>
-                        <div>${i+1}</div>
-                      </button>`).join('')}
-                  </div>
-                </div>
-              </div>`:''} 
-            </div>`;
-          })()}
-
-          <div class="blog-post-content">${post.content||''}</div>
+                    <div class="blog-post-content">${post.content||''}</div>
 
           <!-- Below Article Videos -->
           ${relVids.length?`
@@ -2908,6 +2910,8 @@ window.showBlogPost = async function showBlogPost(slug){
       </div>`;
   } catch(e){ wrap.innerHTML='<div style="color:#555;padding:2rem;">Could not load article.</div>'; }
   NP.done();
+  // Render video player after DOM is ready
+  if(typeof post !== 'undefined' && post) setTimeout(()=>renderBlogVideoPlayer(post), 100);
 }
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
