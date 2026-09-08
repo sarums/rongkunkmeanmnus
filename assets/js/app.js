@@ -2656,7 +2656,12 @@ function blogMd(text){
 // ── BLOG VIDEO PLAYER ────────────────────────────────────
 function renderBlogVideoPlayer(post){
   const container = document.getElementById('blog-video-section');
-  if(!container) return;
+  console.log('[BLOG VIDEO] container:', container);
+  console.log('[BLOG VIDEO] post:', post?.id, post?.title);
+  console.log('[BLOG VIDEO] relatedVideos:', post?.relatedVideos);
+  console.log('[BLOG VIDEO] videos count:', videos.length);
+  console.log('[BLOG VIDEO] playlists count:', playlists.length);
+  if(!container){ console.log('[BLOG VIDEO] NO CONTAINER FOUND'); return; }
 
   // Find linked playlist
   let targetPl = null;
@@ -2682,15 +2687,19 @@ function renderBlogVideoPlayer(post){
 
   // Method 3: match playlist name to article title
   if(!targetPl){
-    const postTitle = (post.title||'').toLowerCase().replace(/[^\w\s]/g,'').trim().slice(0,20);
+    const postTitle = (post.title||'').toLowerCase().replace(/[^a-z0-9 ]/g,'').trim().slice(0,20);
+    console.log('[BLOG VIDEO] trying title match:', postTitle);
     targetPl = playlists.find(p=>{
-      const plName = (p.name||'').toLowerCase().replace(/[^\w\s]/g,'').trim();
+      const plName = (p.name||'').toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+      console.log('[BLOG VIDEO] checking playlist:', plName);
       return postTitle.length>3 && (plName.includes(postTitle)||postTitle.includes(plName.slice(0,15)));
     });
     if(targetPl) targetVid = videos.find(v=>v.id===(targetPl.videos||[])[0]);
   }
 
-  if(!targetVid){ container.innerHTML=''; return; }
+  console.log('[BLOG VIDEO] targetPl:', targetPl?.name);
+  console.log('[BLOG VIDEO] targetVid:', targetVid?.title);
+  if(!targetVid){ console.log('[BLOG VIDEO] NO VIDEO FOUND - nothing to show'); container.innerHTML=''; return; }
 
   const plVids = targetPl ? (targetPl.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean) : [targetVid];
   const embedUrl = getEmbedUrl(targetVid);
