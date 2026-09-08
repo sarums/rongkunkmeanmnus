@@ -2781,9 +2781,9 @@ window.showBlogPost = async function showBlogPost(slug){
                   <div style="font-size:.75rem;font-weight:800;color:#e4e4e7;">${targetPl?.name||''}</div>
                   <div style="font-size:.65rem;color:#555;">${plVids.length} Episodes</div>
                 </div>
-                <!-- EP buttons — horizontal scroll, works on mobile and desktop -->
-                <div style="overflow-x:auto;padding:0 1rem .85rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;scrollbar-height:none;">
-                  <div style="display:flex;gap:6px;width:max-content;">
+                <!-- EP buttons — improved compact scroll design -->
+                <div style="overflow-x:auto;padding:0 1rem .85rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                  <div style="display:flex;gap:5px;width:max-content;padding:2px;">
                     ${plVids.map((v,i)=>`
                       <button
                         id="blog-ep-btn-${i}"
@@ -2791,23 +2791,32 @@ window.showBlogPost = async function showBlogPost(slug){
                           document.getElementById('blog-player-iframe').src='${getEmbedUrl(v)}';
                           document.querySelectorAll('[id^=blog-ep-btn-]').forEach(b=>{
                             b.style.background='rgba(255,255,255,.05)';
-                            b.style.color='#888';
-                            b.style.borderColor='rgba(255,255,255,.08)';
+                            b.style.color='#666';
+                            b.style.borderColor='rgba(255,255,255,.06)';
+                            b.style.fontWeight='600';
                           });
-                          this.style.background='rgba(242,125,38,.2)';
-                          this.style.color='#f27d26';
-                          this.style.borderColor='rgba(242,125,38,.5)';
+                          this.style.background='#f27d26';
+                          this.style.color='#000';
+                          this.style.borderColor='#f27d26';
+                          this.style.fontWeight='900';
                           this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
-                        style="flex-shrink:0;padding:5px 12px;
-                          background:${i===0?'rgba(242,125,38,.2)':'rgba(255,255,255,.05)'};
-                          border:1px solid ${i===0?'rgba(242,125,38,.5)':'rgba(255,255,255,.08)'};
-                          border-radius:6px;
-                          color:${i===0?'#f27d26':'#888'};
-                          font-size:.75rem;font-weight:700;
-                          cursor:pointer;font-family:inherit;
+                        style="flex-shrink:0;
+                          min-width:42px;
+                          padding:6px 10px;
+                          background:${i===0?'#f27d26':'rgba(255,255,255,.05)'};
+                          border:1px solid ${i===0?'#f27d26':'rgba(255,255,255,.06)'};
+                          border-radius:8px;
+                          color:${i===0?'#000':'#666'};
+                          font-size:.72rem;
+                          font-weight:${i===0?900:600};
+                          cursor:pointer;
+                          font-family:inherit;
                           white-space:nowrap;
-                          transition:all .15s;">
-                        EP ${i+1}
+                          text-align:center;
+                          transition:all .15s;
+                          line-height:1.2;">
+                        <div style="font-size:.55rem;opacity:.7;margin-bottom:1px;">EP</div>
+                        <div>${i+1}</div>
                       </button>`).join('')}
                   </div>
                 </div>
