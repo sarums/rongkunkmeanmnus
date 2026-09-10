@@ -2661,7 +2661,15 @@ function renderBlogVideoPlayer(post){
   console.log('[BLOG VIDEO] relatedVideos:', post?.relatedVideos);
   console.log('[BLOG VIDEO] videos count:', videos.length);
   console.log('[BLOG VIDEO] playlists count:', playlists.length);
-  if(!container){ console.log('[BLOG VIDEO] NO CONTAINER FOUND'); return; }
+  console.log('[BLOG VIDEO] window width:', window.innerWidth);
+  if(!container){ 
+    console.log('[BLOG VIDEO] NO CONTAINER - trying again in 500ms');
+    setTimeout(()=>renderBlogVideoPlayer(post), 500);
+    return; 
+  }
+  // Force container visible
+  container.style.display = 'block';
+  container.style.width = '100%';
 
   // Find linked playlist
   let targetPl = null;
