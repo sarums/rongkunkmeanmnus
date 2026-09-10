@@ -2796,9 +2796,10 @@ window.showBlogPost = async function showBlogPost(slug){
   const wrap = $('blog-post-wrap');
   if(!wrap){ NP.done(); return; }
   wrap.innerHTML = '<div style="text-align:center;padding:3rem;color:#555;">Loading...</div>';
+  let post = null; // declared outside try so accessible after
   try {
     const snap = await getDocs(query(collection(db,'blog_posts'), where('slug','==',slug)));
-    const post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
+    post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
     if(!post || post.status!=='published'){ show404(); return; }
     history.pushState({page:'blog-post',slug},'','/blog/'+slug);
     updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
@@ -2920,7 +2921,7 @@ window.showBlogPost = async function showBlogPost(slug){
   } catch(e){ wrap.innerHTML='<div style="color:#555;padding:2rem;">Could not load article.</div>'; }
   NP.done();
   // Render video player after DOM is ready
-  if(typeof post !== 'undefined' && post) setTimeout(()=>renderBlogVideoPlayer(post), 100);
+  if(post) setTimeout(()=>renderBlogVideoPlayer(post), 200);
 }
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
