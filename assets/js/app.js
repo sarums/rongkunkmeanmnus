@@ -2864,24 +2864,40 @@ window.showBlogPost = async function showBlogPost(slug){
               if(!tVid) return '';
               const plVids=tPl?(tPl.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean):[tVid];
               const epBtns=plVids.length>1?`
-                <div style="overflow-x:auto;padding:0 1rem .85rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-                  <div style="display:flex;gap:5px;padding:2px;">
-                    ${plVids.map((v,i)=>`<button
-                      onclick="document.getElementById('bpif').src='${getEmbedUrl(v)}';
-                      document.querySelectorAll('.bpeb').forEach(b=>{b.style.background='rgba(255,255,255,.05)';b.style.color='#666';b.style.borderColor='rgba(255,255,255,.06)';});
-                      this.style.background='#f27d26';this.style.color='#000';this.style.borderColor='#f27d26';
-                      this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
-                      class="bpeb"
-                      style="flex-shrink:0;min-width:40px;padding:5px 8px;
-                        background:${i===0?'#f27d26':'rgba(255,255,255,.05)'};
-                        border:1px solid ${i===0?'#f27d26':'rgba(255,255,255,.06)'};
-                        border-radius:8px;color:${i===0?'#000':'#666'};
-                        font-size:.7rem;font-weight:${i===0?900:600};
-                        cursor:pointer;font-family:inherit;text-align:center;line-height:1.3;">
-                      <div style="font-size:.5rem;opacity:.8;">EP</div>
-                      <div>${i+1}</div>
-                    </button>`).join('')}
+                <div style="position:relative;padding:0 1rem .85rem;">
+                  <!-- Left arrow -->
+                  <button onclick="document.getElementById('bpep-scroll').scrollBy({left:-200,behavior:'smooth'})"
+                    style="position:absolute;left:0;top:50%;transform:translateY(-60%);
+                      width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
+                      border-radius:50%;color:#fff;font-size:.9rem;cursor:pointer;z-index:2;
+                      display:flex;align-items:center;justify-content:center;line-height:1;">‹</button>
+                  <!-- Scrollable EP buttons -->
+                  <div id="bpep-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;
+                    scrollbar-width:none;scroll-behavior:smooth;padding:2px 24px;">
+                    <div style="display:flex;gap:5px;width:max-content;">
+                      ${plVids.map((v,i)=>`<button
+                        onclick="document.getElementById('bpif').src='${getEmbedUrl(v)}';
+                        document.querySelectorAll('.bpeb').forEach(b=>{b.style.background='rgba(255,255,255,.05)';b.style.color='#666';b.style.borderColor='rgba(255,255,255,.06)';});
+                        this.style.background='#f27d26';this.style.color='#000';this.style.borderColor='#f27d26';
+                        this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
+                        class="bpeb"
+                        style="flex-shrink:0;min-width:40px;padding:5px 8px;
+                          background:${i===0?'#f27d26':'rgba(255,255,255,.05)'};
+                          border:1px solid ${i===0?'#f27d26':'rgba(255,255,255,.06)'};
+                          border-radius:8px;color:${i===0?'#000':'#666'};
+                          font-size:.7rem;font-weight:${i===0?900:600};
+                          cursor:pointer;font-family:inherit;text-align:center;line-height:1.3;">
+                        <div style="font-size:.5rem;opacity:.8;">EP</div>
+                        <div>${i+1}</div>
+                      </button>`).join('')}
+                    </div>
                   </div>
+                  <!-- Right arrow -->
+                  <button onclick="document.getElementById('bpep-scroll').scrollBy({left:200,behavior:'smooth'})"
+                    style="position:absolute;right:0;top:50%;transform:translateY(-60%);
+                      width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
+                      border-radius:50%;color:#fff;font-size:.9rem;cursor:pointer;z-index:2;
+                      display:flex;align-items:center;justify-content:center;line-height:1;">›</button>
                 </div>`:'';
               return `<div style="border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#111;margin-bottom:1.5rem;">
                 <div style="position:relative;aspect-ratio:16/9;background:#000;">
