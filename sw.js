@@ -3,8 +3,8 @@
 //  v4 — Cache-first for assets, network-first for pages
 // ═══════════════════════════════════════════
 
-const CACHE_NAME   = 'rkmn-v4';
-const ASSET_CACHE  = 'rkmn-assets-v4';
+const CACHE_NAME   = 'rkmn-v5';
+const ASSET_CACHE  = 'rkmn-assets-v5';
 
 // Static assets — cache forever (immutable)
 const STATIC_ASSETS = [
