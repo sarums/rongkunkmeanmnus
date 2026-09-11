@@ -2841,8 +2841,62 @@ window.showBlogPost = async function showBlogPost(slug){
           <h1 style="font-size:1.4rem;font-weight:900;color:#e4e4e7;line-height:1.35;margin-bottom:1rem;">${post.title||''}</h1>
           ${post.excerpt?`<p style="font-size:.9rem;color:#888;line-height:1.7;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.06);">${post.excerpt}</p>`:''}
 
-          <!-- Video Player Section -->
-          <div id="blog-video-section" style="margin-bottom:1.5rem;"></div>
+          <!-- Video Player Section — built inline -->
+          ${(()=>{
+            try{
+              let tPl=null, tVid=null;
+              // Method 1: relatedVideos
+              if(post.relatedVideos&&post.relatedVideos.length>0){
+                tVid=videos.find(v=>v.id===post.relatedVideos[0]);
+                if(tVid) tPl=playlists.find(p=>(p.videos||[]).includes(tVid.id));
+              }
+              // Method 2: articleId
+              if(!tVid){
+                const lv=videos.find(v=>v.articleId&&(v.articleId===post.id||v.articleId===(post.slug||post.id)));
+                if(lv){ tVid=lv; tPl=playlists.find(p=>(p.videos||[]).includes(lv.id)); }
+              }
+              // Method 3: name match
+              if(!tPl){
+                const pt=(post.title||'').toLowerCase().slice(0,15);
+                tPl=playlists.find(p=>(p.name||'').toLowerCase().includes(pt)&&pt.length>3);
+                if(tPl) tVid=videos.find(v=>v.id===(tPl.videos||[])[0]);
+              }
+              if(!tVid) return '';
+              const plVids=tPl?(tPl.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean):[tVid];
+              const epBtns=plVids.length>1?`
+                <div style="overflow-x:auto;padding:0 1rem .85rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                  <div style="display:flex;gap:5px;padding:2px;">
+                    ${plVids.map((v,i)=>`<button
+                      onclick="document.getElementById('bpif').src='${getEmbedUrl(v)}';
+                      document.querySelectorAll('.bpeb').forEach(b=>{b.style.background='rgba(255,255,255,.05)';b.style.color='#666';b.style.borderColor='rgba(255,255,255,.06)';});
+                      this.style.background='#f27d26';this.style.color='#000';this.style.borderColor='#f27d26';
+                      this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
+                      class="bpeb"
+                      style="flex-shrink:0;min-width:40px;padding:5px 8px;
+                        background:${i===0?'#f27d26':'rgba(255,255,255,.05)'};
+                        border:1px solid ${i===0?'#f27d26':'rgba(255,255,255,.06)'};
+                        border-radius:8px;color:${i===0?'#000':'#666'};
+                        font-size:.7rem;font-weight:${i===0?900:600};
+                        cursor:pointer;font-family:inherit;text-align:center;line-height:1.3;">
+                      <div style="font-size:.5rem;opacity:.8;">EP</div>
+                      <div>${i+1}</div>
+                    </button>`).join('')}
+                  </div>
+                </div>`:'';
+              return `<div style="border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#111;margin-bottom:1.5rem;">
+                <div style="position:relative;aspect-ratio:16/9;background:#000;">
+                  <iframe id="bpif" src="${getEmbedUrl(tVid)}" frameborder="0" allowfullscreen
+                    allow="autoplay;encrypted-media"
+                    style="width:100%;height:100%;position:absolute;inset:0;border:none;"></iframe>
+                </div>
+                <div style="padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.06);">
+                  <div style="font-size:.75rem;font-weight:800;color:#e4e4e7;">${tPl?tPl.name:tVid.title}</div>
+                  <div style="font-size:.65rem;color:#555;">${plVids.length} Ep${plVids.length>1?'s':''}</div>
+                </div>
+                ${epBtns}
+              </div>`;
+            }catch(e){ console.error('blog video err:',e); return ''; }
+          })()}
 
                     <div class="blog-post-content">${post.content||''}</div>
 
@@ -2929,14 +2983,7 @@ window.showBlogPost = async function showBlogPost(slug){
   } catch(e){ wrap.innerHTML='<div style="color:#555;padding:2rem;">Could not load article.</div>'; }
   NP.done();
   // Render video player after DOM is ready
-  if(post){
-    // Use requestAnimationFrame to ensure DOM is ready before rendering
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        renderBlogVideoPlayer(post);
-      });
-    });
-  }
+  // video player is now inline in template
 }
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
