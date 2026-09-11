@@ -1,18 +1,16 @@
 // ═══════════════════════════════════════════
 //  Service Worker — RongKunKmeanMnus PWA
-//  v4 — Cache-first for assets, network-first for pages
+//  v5 — Network first for HTML, Cache first for assets
 // ═══════════════════════════════════════════
 
-const CACHE_NAME   = 'rkmn-v5';
-const ASSET_CACHE  = 'rkmn-assets-v5';
+const CACHE_NAME  = 'rkmn-v5';
+const ASSET_CACHE = 'rkmn-assets-v5';
 
-// Static assets — cache forever (immutable)
+// Static assets to pre-cache
 const STATIC_ASSETS = [
-  '/',
   '/assets/css/main.css',
   '/assets/js/app.js',
   '/assets/js/ads.js',
-  '/assets/img/og-default.png',
   '/manifest.json',
 ];
 
@@ -25,13 +23,13 @@ self.addEventListener('install', e=>{
   );
 });
 
-// ── Activate ──
+// ── Activate — delete old caches ──
 self.addEventListener('activate', e=>{
   e.waitUntil(
     caches.keys().then(keys=>
       Promise.all(keys
         .filter(k=>k!==CACHE_NAME && k!==ASSET_CACHE)
-        .map(k=>caches.delete(k))
+        .map(k=>{ console.log('[SW] deleting old cache:', k); return caches.delete(k); })
       )
     ).then(()=>self.clients.claim())
   );
@@ -48,16 +46,43 @@ self.addEventListener('fetch', e=>{
   // Skip external APIs — always network
   if(
     url.hostname.includes('firestore.googleapis.com') ||
-    url.hostname.includes('firebaseapp.com') ||
+    url.hostname.includes('firebase') ||
     url.hostname.includes('dailymotion.com') ||
     url.hostname.includes('rumble.com') ||
     url.hostname.includes('youtube.com') ||
     url.hostname.includes('vimeo.com') ||
-    url.hostname.includes('pagead2.googlesyndication.com') ||
-    url.hostname.includes('gstatic.com')
+    url.hostname.includes('googlesyndication.com') ||
+    url.hostname.includes('gstatic.com') ||
+    url.hostname.includes('googleapis.com')
   ) return;
 
-  // CSS/JS/Images — cache first, then network
+  // HTML pages — NETWORK FIRST
+  // This ensures users always get fresh content on refresh
+  if(
+    req.mode==='navigate' ||
+    url.pathname==='/' ||
+    url.pathname.endsWith('.html')
+  ){
+    e.respondWith(
+      fetch(req)
+        .then(res=>{
+          // Cache the fresh response
+          if(res && res.status===200){
+            const clone=res.clone();
+            caches.open(CACHE_NAME).then(c=>c.put(req,clone));
+          }
+          return res;
+        })
+        .catch(()=>{
+          // Offline fallback — serve cached version
+          return caches.match(req) || caches.match('/');
+        })
+    );
+    return;
+  }
+
+  // JS/CSS/Images — CACHE FIRST (fast load)
+  // But revalidate in background to keep fresh
   if(
     url.pathname.startsWith('/assets/') ||
     url.pathname.endsWith('.png') ||
@@ -67,21 +92,21 @@ self.addEventListener('fetch', e=>{
     url.pathname.endsWith('.woff2')
   ){
     e.respondWith(
-      caches.match(req).then(cached=>{
-        if(cached) return cached;
-        return fetch(req).then(res=>{
-          if(res && res.status===200){
-            const clone=res.clone();
-            caches.open(ASSET_CACHE).then(c=>c.put(req,clone));
-          }
-          return res;
-        });
-      })
+      caches.open(ASSET_CACHE).then(cache=>
+        cache.match(req).then(cached=>{
+          const fetchPromise = fetch(req).then(res=>{
+            if(res && res.status===200) cache.put(req, res.clone());
+            return res;
+          }).catch(()=>{});
+          // Return cached immediately, update in background
+          return cached || fetchPromise;
+        })
+      )
     );
     return;
   }
 
-  // HTML pages — network first, fallback to cache
+  // Everything else — network with cache fallback
   e.respondWith(
     fetch(req)
       .then(res=>{
@@ -91,11 +116,6 @@ self.addEventListener('fetch', e=>{
         }
         return res;
       })
-      .catch(()=>{
-        return caches.match(req).then(cached=>{
-          if(cached) return cached;
-          if(req.mode==='navigate') return caches.match('/');
-        });
-      })
+      .catch(()=>caches.match(req))
   );
 });
