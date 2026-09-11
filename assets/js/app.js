@@ -2929,7 +2929,14 @@ window.showBlogPost = async function showBlogPost(slug){
   } catch(e){ wrap.innerHTML='<div style="color:#555;padding:2rem;">Could not load article.</div>'; }
   NP.done();
   // Render video player after DOM is ready
-  if(post) setTimeout(()=>renderBlogVideoPlayer(post), 200);
+  if(post){
+    // Use requestAnimationFrame to ensure DOM is ready before rendering
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        renderBlogVideoPlayer(post);
+      });
+    });
+  }
 }
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
