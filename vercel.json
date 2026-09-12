@@ -79,15 +79,11 @@
       "destination": "/api/watch"
     },
     {
-      "source": "/blog/:slug/:ep",
+      "source": "/blog",
       "destination": "/api/blog"
     },
     {
       "source": "/blog/:path*",
-      "destination": "/api/blog"
-    },
-    {
-      "source": "/blog",
       "destination": "/api/blog"
     },
     {
@@ -127,8 +123,19 @@
       "destination": "/pages/donate.html"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api|blog|watch).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/blog.js": {
+      "runtime": "edge"
+    },
+    "api/watch.js": {
+      "runtime": "edge"
+    },
+    "api/og.js": {
+      "runtime": "edge"
+    }
+  }
 }
