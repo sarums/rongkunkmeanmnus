@@ -2655,6 +2655,28 @@ function blogMd(text){
   return t;
 }
 
+// ── BLOG EPISODE CLICK ───────────────────────────────────
+window.blogEpClick = function(btn, src, ep){
+  // Change video
+  const iframe = document.getElementById('bpif');
+  if(iframe) iframe.src = src;
+  // Update button styles
+  document.querySelectorAll('.bpeb').forEach(b=>{
+    b.style.background = 'rgba(255,255,255,.05)';
+    b.style.color      = '#666';
+    b.style.borderColor= 'rgba(255,255,255,.06)';
+    b.style.fontWeight = '600';
+  });
+  btn.style.background  = '#f27d26';
+  btn.style.color       = '#000';
+  btn.style.borderColor = '#f27d26';
+  btn.style.fontWeight  = '900';
+  btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  // Update URL
+  const base = location.pathname.replace(/\/\d+$/, '').replace(/\/$/, '');
+  history.pushState({page:'blog-post', epNum:ep}, '', base + '/' + ep);
+};
+
 // ── BLOG VIDEO PLAYER ────────────────────────────────────
 function renderBlogVideoPlayer(post){
   const container = document.getElementById('blog-video-section');
@@ -2878,26 +2900,26 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
                   <div id="bpep-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;
                     scrollbar-width:none;scroll-behavior:smooth;padding:2px 24px;">
                     <div style="display:flex;gap:5px;width:max-content;">
-                      ${plVids.map((v,i)=>`<button
-                        data-ep="${i+1}" data-src="${getEmbedUrl(v)}"
-                        onclick="
-                          document.getElementById('bpif').src=this.getAttribute('data-src');
-                          document.querySelectorAll('.bpeb').forEach(b=>{b.style.background='rgba(255,255,255,.05)';b.style.color='#666';b.style.borderColor='rgba(255,255,255,.06)';b.style.fontWeight=600;});
-                          this.style.background='#f27d26';this.style.color='#000';this.style.borderColor='#f27d26';this.style.fontWeight=900;
-                          this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-                          const _ep=parseInt(this.getAttribute('data-ep'));
-                          const _base=location.pathname.replace(/\/\d+$/,'').replace(/\/$/,'');
-                          history.pushState({page:'blog-post',epNum:_ep},'',_base+'/'+_ep);"
-                        class="bpeb"
-                        style="flex-shrink:0;min-width:40px;padding:5px 8px;
-                          background:${i===epNum-1?'#f27d26':'rgba(255,255,255,.05)'};
-                          border:1px solid ${i===epNum-1?'#f27d26':'rgba(255,255,255,.06)'};
-                          border-radius:8px;color:${i===epNum-1?'#000':'#666'};
-                          font-size:.7rem;font-weight:${i===epNum-1?900:600};
-                          cursor:pointer;font-family:inherit;text-align:center;line-height:1.3;">
-                        <div style="font-size:.5rem;opacity:.8;">EP</div>
-                        <div>${i+1}</div>
-                      </button>`).join('')}
+                      ${plVids.map((v,i)=>{
+                        const isActive = i===epNum-1;
+                        const embedSrc = getEmbedUrl(v).replace(/'/g,"\'");
+                        return `<button
+                          onclick="blogEpClick(this,'${embedSrc}',${i+1})"
+                          class="bpeb"
+                          style="flex-shrink:0;min-width:40px;padding:5px 8px;
+                            background:${isActive?'#f27d26':'rgba(255,255,255,.05)'};
+                            border:1px solid ${isActive?'#f27d26':'rgba(255,255,255,.06)'};
+                            border-radius:8px;
+                            color:${isActive?'#000':'#666'};
+                            font-size:.7rem;
+                            font-weight:${isActive?900:600};
+                            cursor:pointer;font-family:inherit;
+                            text-align:center;line-height:1.3;
+                            transition:all .15s;">
+                          <div style="font-size:.5rem;opacity:.8;">EP</div>
+                          <div>${i+1}</div>
+                        </button>`;
+                      }).join('')}
                     </div>
                   </div>
                   <!-- Right arrow -->
