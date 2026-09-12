@@ -656,8 +656,10 @@ function routeFromUrl(push=false){
   // Blog
   if(path==='/blog'){ showBlogPage(); return; }
   if(path.startsWith('/blog/')){
-    const slug=path.replace('/blog/','');
-    showBlogPost(slug); return;
+    const parts=path.replace('/blog/','').split('/');
+    const slug=parts[0];
+    const epNum=parts[1]?parseInt(parts[1])||1:1;
+    showBlogPost(slug,epNum); return;
   }
   // History
   if(path==='/history'){ showHistoryPage(); return; }
@@ -701,7 +703,7 @@ window.addEventListener("popstate",e=>{
   } else if(state.page==='blog'){
     showBlogPage();
   } else if(state.page==='blog-post' && state.slug){
-    showBlogPost(state.slug);
+    showBlogPost(state.slug, state.epNum||1);
   } else if(state.page==='home'){
     showPage('home',false);
     // Stop video when going back to home
@@ -2797,7 +2799,8 @@ window.showBlogPage = async function showBlogPage(){
   NP.done();
 }
 
-window.showBlogPost = async function showBlogPost(slug){
+window.showBlogPost = async function showBlogPost(slug, epNum=1){
+  epNum = parseInt(epNum)||1;
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog-post'));
   window.scrollTo(0,0);
@@ -2809,7 +2812,7 @@ window.showBlogPost = async function showBlogPost(slug){
     const snap = await getDocs(query(collection(db,'blog_posts'), where('slug','==',slug)));
     post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
     if(!post || post.status!=='published'){ show404(); return; }
-    history.pushState({page:'blog-post',slug},'','/blog/'+slug);
+    history.pushState({page:'blog-post',slug,epNum},'',epNum>1?'/blog/'+slug+'/'+epNum:'/blog/'+slug);
     updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
     const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : '';
 
@@ -2876,16 +2879,21 @@ window.showBlogPost = async function showBlogPost(slug){
                     scrollbar-width:none;scroll-behavior:smooth;padding:2px 24px;">
                     <div style="display:flex;gap:5px;width:max-content;">
                       ${plVids.map((v,i)=>`<button
-                        onclick="document.getElementById('bpif').src='${getEmbedUrl(v)}';
-                        document.querySelectorAll('.bpeb').forEach(b=>{b.style.background='rgba(255,255,255,.05)';b.style.color='#666';b.style.borderColor='rgba(255,255,255,.06)';});
-                        this.style.background='#f27d26';this.style.color='#000';this.style.borderColor='#f27d26';
-                        this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});"
+                        data-ep="${i+1}" data-src="${getEmbedUrl(v)}"
+                        onclick="
+                          document.getElementById('bpif').src=this.getAttribute('data-src');
+                          document.querySelectorAll('.bpeb').forEach(b=>{b.style.background='rgba(255,255,255,.05)';b.style.color='#666';b.style.borderColor='rgba(255,255,255,.06)';b.style.fontWeight=600;});
+                          this.style.background='#f27d26';this.style.color='#000';this.style.borderColor='#f27d26';this.style.fontWeight=900;
+                          this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+                          const _slug=location.pathname.split('/').filter(x=>x&&x!=='blog')[0];
+                          const _ep=parseInt(this.getAttribute('data-ep'));
+                          history.pushState({page:'blog-post',slug:_slug,epNum:_ep},'','/blog/'+_slug+(_ep>1?'/'+_ep:''));"
                         class="bpeb"
                         style="flex-shrink:0;min-width:40px;padding:5px 8px;
-                          background:${i===0?'#f27d26':'rgba(255,255,255,.05)'};
-                          border:1px solid ${i===0?'#f27d26':'rgba(255,255,255,.06)'};
-                          border-radius:8px;color:${i===0?'#000':'#666'};
-                          font-size:.7rem;font-weight:${i===0?900:600};
+                          background:${i===epNum-1?'#f27d26':'rgba(255,255,255,.05)'};
+                          border:1px solid ${i===epNum-1?'#f27d26':'rgba(255,255,255,.06)'};
+                          border-radius:8px;color:${i===epNum-1?'#000':'#666'};
+                          font-size:.7rem;font-weight:${i===epNum-1?900:600};
                           cursor:pointer;font-family:inherit;text-align:center;line-height:1.3;">
                         <div style="font-size:.5rem;opacity:.8;">EP</div>
                         <div>${i+1}</div>
@@ -2899,9 +2907,12 @@ window.showBlogPost = async function showBlogPost(slug){
                       border-radius:50%;color:#fff;font-size:.9rem;cursor:pointer;z-index:2;
                       display:flex;align-items:center;justify-content:center;line-height:1;">›</button>
                 </div>`:'';
+              // Play correct episode based on epNum from URL
+              const startVid = plVids[epNum-1]||plVids[0];
+              // Set active button styles based on epNum
               return `<div style="border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#111;margin-bottom:1.5rem;">
                 <div style="position:relative;aspect-ratio:16/9;background:#000;">
-                  <iframe id="bpif" src="${getEmbedUrl(tVid)}" frameborder="0" allowfullscreen
+                  <iframe id="bpif" src="${getEmbedUrl(startVid)}" frameborder="0" allowfullscreen
                     allow="autoplay;encrypted-media"
                     style="width:100%;height:100%;position:absolute;inset:0;border:none;"></iframe>
                 </div>
