@@ -3038,6 +3038,13 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
   NP.done();
   // Render video player after DOM is ready
   // video player is now inline in template
+  // Auto-scroll to active EP button after render
+  if(epNum > 1){
+    setTimeout(()=>{
+      const activeBtn = document.querySelector('.bpeb[style*="#f27d26"]');
+      if(activeBtn) activeBtn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+    }, 300);
+  }
 }
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
