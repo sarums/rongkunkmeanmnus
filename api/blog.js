@@ -48,7 +48,9 @@ export default async function handler(req){
   const pageUrl = SITE_URL + path;
 
   if(path.startsWith('/blog/') && path.length > 6){
-    const slug = path.replace('/blog/','').split('/')[0];
+    const parts  = path.replace('/blog/','').split('/');
+    const slug   = parts[0];
+    const epNum  = parts[1] ? parseInt(parts[1])||1 : 1;
 
     // Fetch all blog posts and find by slug or ID
     const res = await fetchFS('blog_posts?pageSize=200');
@@ -60,7 +62,10 @@ export default async function handler(req){
     if(doc?.fields){
       const f = doc.fields;
       const g = k => f[k]?.stringValue||'';
-      title    = g('title') ? `${g('title')} | ${SITE_NAME}` : title;
+      const baseTitle = g('title')||'';
+      title = baseTitle
+        ? (epNum>1 ? `${baseTitle} — Episode ${epNum} | ${SITE_NAME}` : `${baseTitle} | ${SITE_NAME}`)
+        : title;
       desc     = g('excerpt') || desc;
       img      = g('cover')   || IMG;
       category = g('category')|| '';
