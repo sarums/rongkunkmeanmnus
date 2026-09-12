@@ -2812,7 +2812,7 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
     const snap = await getDocs(query(collection(db,'blog_posts'), where('slug','==',slug)));
     post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
     if(!post || post.status!=='published'){ show404(); return; }
-    history.pushState({page:'blog-post',slug,epNum},'',epNum>1?'/blog/'+slug+'/'+epNum:'/blog/'+slug);
+    history.pushState({page:'blog-post',slug,epNum},'','/blog/'+slug+'/'+epNum);
     updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
     const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : '';
 
@@ -2887,7 +2887,7 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
                           this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
                           const _ep=parseInt(this.getAttribute('data-ep'));
                           const _base=location.pathname.replace(/\/\d+$/,'').replace(/\/$/,'');
-                          history.pushState({page:'blog-post',epNum:_ep},'',_base+(_ep>1?'/'+_ep:''));"
+                          history.pushState({page:'blog-post',epNum:_ep},'',_base+'/'+_ep);"
                         class="bpeb"
                         style="flex-shrink:0;min-width:40px;padding:5px 8px;
                           background:${i===epNum-1?'#f27d26':'rgba(255,255,255,.05)'};
