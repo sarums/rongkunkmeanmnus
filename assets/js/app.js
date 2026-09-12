@@ -702,8 +702,12 @@ window.addEventListener("popstate",e=>{
     showForYouPage();
   } else if(state.page==='blog'){
     showBlogPage();
-  } else if(state.page==='blog-post' && state.slug){
-    showBlogPost(state.slug, state.epNum||1);
+  } else if(state.page==='blog-post'){
+    // Get slug from state or from URL
+    const _slug = state.slug || location.pathname.replace('/blog/','').split('/')[0];
+    const _ep   = state.epNum || parseInt(location.pathname.split('/').pop())||1;
+    if(_slug) showBlogPost(_slug, _ep);
+    else routeFromUrl(false);
   } else if(state.page==='home'){
     showPage('home',false);
     // Stop video when going back to home
@@ -2672,9 +2676,10 @@ window.blogEpClick = function(btn, src, ep){
   btn.style.borderColor = '#f27d26';
   btn.style.fontWeight  = '900';
   btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
-  // Update URL
+  // Update URL — extract slug from current path
   const base = location.pathname.replace(/\/\d+$/, '').replace(/\/$/, '');
-  history.pushState({page:'blog-post', epNum:ep}, '', base + '/' + ep);
+  const slug = base.replace('/blog/', '');
+  history.pushState({page:'blog-post', slug:slug, epNum:ep}, '', base + '/' + ep);
 };
 
 // ── BLOG VIDEO PLAYER ────────────────────────────────────
