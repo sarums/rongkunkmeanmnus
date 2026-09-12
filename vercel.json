@@ -79,6 +79,10 @@
       "destination": "/api/watch"
     },
     {
+      "source": "/blog/:slug/:ep",
+      "destination": "/api/blog"
+    },
+    {
       "source": "/blog/:path*",
       "destination": "/api/blog"
     },
