@@ -26,16 +26,24 @@ export default async function handler(req){
   const ua   = req.headers.get('user-agent')||'';
   const bot  = BOTS.test(ua);
 
-  // Real users → serve SPA index.html
+  // Real users → serve the SPA directly
+  // We can't fetch index.html from same domain (circular), so serve it from static path
   if(!bot){
-    const spa = await fetch(`${SITE_URL}/index.html`);
-    const html = await spa.text();
-    return new Response(html,{
-      headers:{
-        'Content-Type':'text/html;charset=utf-8',
-        'Cache-Control':'no-store',
-      }
+    // Fetch index.html directly from Vercel static files
+    const spaRes = await fetch(new URL('/', req.url).href, {
+      headers: { 'x-bypass-middleware': '1' }
     });
+    if(spaRes.ok){
+      const html = await spaRes.text();
+      return new Response(html, {
+        headers: {
+          'Content-Type': 'text/html;charset=utf-8',
+          'Cache-Control': 'no-store',
+        }
+      });
+    }
+    // Fallback: redirect to homepage
+    return Response.redirect(SITE_URL, 302);
   }
 
   // Bots → serve full article content for Google indexing
