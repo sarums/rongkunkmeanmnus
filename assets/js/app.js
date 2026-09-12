@@ -2885,9 +2885,9 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
                           document.querySelectorAll('.bpeb').forEach(b=>{b.style.background='rgba(255,255,255,.05)';b.style.color='#666';b.style.borderColor='rgba(255,255,255,.06)';b.style.fontWeight=600;});
                           this.style.background='#f27d26';this.style.color='#000';this.style.borderColor='#f27d26';this.style.fontWeight=900;
                           this.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-                          const _slug=location.pathname.split('/').filter(x=>x&&x!=='blog')[0];
                           const _ep=parseInt(this.getAttribute('data-ep'));
-                          history.pushState({page:'blog-post',slug:_slug,epNum:_ep},'','/blog/'+_slug+(_ep>1?'/'+_ep:''));"
+                          const _base=location.pathname.replace(/\/\d+$/,'').replace(/\/$/,'');
+                          history.pushState({page:'blog-post',epNum:_ep},'',_base+(_ep>1?'/'+_ep:''));"
                         class="bpeb"
                         style="flex-shrink:0;min-width:40px;padding:5px 8px;
                           background:${i===epNum-1?'#f27d26':'rgba(255,255,255,.05)'};
