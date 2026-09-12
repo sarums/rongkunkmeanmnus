@@ -71,11 +71,29 @@ export default async function handler(req){
       category = g('category')|| '';
       content  = (g('content')||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
 
-      // Get linked video for schema markup
+      // Get episode-specific video for thumbnail
+      // If epNum > 1, find the playlist and get that specific episode
       const relVids = f.relatedVideos?.arrayValue?.values||[];
-      if(relVids.length>0){
-        const firstVidId = relVids[0].stringValue;
-        const vDoc = await fetchFS(`videos/${firstVidId}`);
+      let targetVidId = relVids.length>0 ? relVids[0].stringValue : null;
+
+      // If specific episode requested, find playlist and get correct episode
+      if(epNum > 1 && targetVidId){
+        // Get playlist containing this video
+        const plsData = await fetchFS('playlists');
+        for(const plDoc of (plsData?.documents||[])){
+          const pf   = plDoc.fields||{};
+          const vids = (pf.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
+          if(vids.includes(targetVidId)){
+            // Get the correct episode
+            const epVidId = vids[epNum-1];
+            if(epVidId) targetVidId = epVidId;
+            break;
+          }
+        }
+      }
+
+      if(targetVidId){
+        const vDoc = await fetchFS(`videos/${targetVidId}`);
         if(vDoc?.fields){
           const vf = vDoc.fields;
           const vg = k=>vf[k]?.stringValue||'';
