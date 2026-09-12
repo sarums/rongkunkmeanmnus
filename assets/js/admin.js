@@ -18,7 +18,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
 const auth = getAuth(app);
-const ADMIN_EMAIL = 'soksarum.mii@gmail.com'; // ← Replace with your Google email
+const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@gmail.com'; // ← Replace with your Google email
 
 // ── CACHE BUSTER ─────────────────────────────────────────
 // Clears the site's sessionStorage cache so users see fresh data immediately
@@ -1820,13 +1820,40 @@ window.generateSitemap = async ()=>{
                         p.createdAt?.toDate?p.createdAt.toDate().toISOString().split('T')[0]:today;
         const title   = smEsc(p.title||'');
         const desc    = smEsc((p.excerpt||p.title||'').replace(/<[^>]*>/g,'').slice(0,200));
+        // Main blog article URL
         xml += '  <url>\n';
         xml += '    <loc>'+loc+'</loc>\n';
         xml += '    <lastmod>'+lastmod+'</lastmod>\n';
         xml += '    <changefreq>weekly</changefreq>\n';
-        xml += '    <priority>0.9</priority>\n'; // high priority - main indexable pages
+        xml += '    <priority>0.9</priority>\n';
         xml += '  </url>\n\n';
         blogCount++;
+
+        // Episode URLs — /blog/slug/1, /blog/slug/2 etc.
+        // Find linked playlist for this article
+        const linkedPl = allPlaylists.find(pl=>{
+          return (pl.videos||[]).some(vid=>{
+            const v = allVideos.find(x=>x.id===vid);
+            return v && v.articleId && (v.articleId===p.id||v.articleId===slug);
+          });
+        }) || allPlaylists.find(pl=>{
+          const plName = (pl.name||'').toLowerCase().slice(0,15);
+          const ptitle = (p.title||'').toLowerCase().slice(0,15);
+          return plName.length>3 && ptitle.length>3 && (plName.includes(ptitle)||ptitle.includes(plName));
+        });
+
+        if(linkedPl && (linkedPl.videos||[]).length>0){
+          (linkedPl.videos||[]).forEach((vid,idx)=>{
+            const epLoc = loc + '/' + (idx+1);
+            xml += '  <url>\n';
+            xml += '    <loc>'+epLoc+'</loc>\n';
+            xml += '    <lastmod>'+lastmod+'</lastmod>\n';
+            xml += '    <changefreq>weekly</changefreq>\n';
+            xml += '    <priority>0.8</priority>\n';
+            xml += '  </url>\n\n';
+            blogCount++;
+          });
+        }
       });
       console.log('Blog posts found:', blogPosts.length);
     }catch(e){ console.error('Blog sitemap error:', e); }
