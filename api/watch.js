@@ -73,17 +73,22 @@ export default async function handler(req){
   const ua = req.headers.get('user-agent')||'';
   const bot = BOTS.test(ua);
 
-  // Real users → serve SPA index.html
+  // Real users → serve SPA
   if(!bot){
-    const spa = await fetch(`${SITE_URL}/index.html`);
-    const html = await spa.text();
-    return new Response(html, {
-      headers:{
-        'Content-Type':'text/html;charset=utf-8',
-        'Cache-Control':'no-store',
-        'X-Served-By':'watch-edge-fn',
-      }
+    const spaRes = await fetch(new URL('/', req.url).href, {
+      headers: { 'x-bypass-middleware': '1' }
     });
+    if(spaRes.ok){
+      const html = await spaRes.text();
+      return new Response(html, {
+        headers: {
+          'Content-Type': 'text/html;charset=utf-8',
+          'Cache-Control': 'no-store',
+          'X-Served-By': 'watch-edge-fn',
+        }
+      });
+    }
+    return Response.redirect(SITE_URL, 302);
   }
 
   // Bots → serve OG tags with video data
