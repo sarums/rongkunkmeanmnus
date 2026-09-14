@@ -126,5 +126,16 @@
       "source": "/((?!api|blog|watch).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/blog.js": {
+      "runtime": "edge"
+    },
+    "api/watch.js": {
+      "runtime": "edge"
+    },
+    "api/og.js": {
+      "runtime": "edge"
+    }
+  }
 }
