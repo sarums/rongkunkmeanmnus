@@ -1955,6 +1955,32 @@ window.shareAction=(type)=>{
   // Resolve current video ID from URL (using Firestore IDs)
   let currentVidId = null;
   const path = location.pathname;
+
+  // Blog episode page — get current playing video ID
+  if(path.startsWith('/blog/')){
+    const iframe = document.getElementById('bpif');
+    if(iframe && iframe.src){
+      // Find video by embed URL
+      const src = iframe.src;
+      const vid = videos.find(v=>getEmbedUrl(v)===src||iframe.src.includes(v.videoId));
+      if(vid) currentVidId = vid.id;
+    }
+    // Fallback: get from active EP button
+    if(!currentVidId){
+      const activeBtn = document.querySelector('.bpeb[style*="#f27d26"]');
+      if(activeBtn){
+        const ep = parseInt(activeBtn.getAttribute('data-ep'))||1;
+        const parts = path.replace('/blog/','').split('/');
+        const slug  = parts[0];
+        const post  = allBlogPosts?.find(p=>p.slug===slug||p.id===slug);
+        if(post && post.relatedVideos && post.relatedVideos[0]){
+          const pl = playlists.find(p=>(p.videos||[]).includes(post.relatedVideos[0]));
+          if(pl && pl.videos[ep-1]) currentVidId = pl.videos[ep-1];
+        }
+      }
+    }
+  }
+
   if(path.startsWith('/watch/')){
     const parts = path.slice(7).split('/');
     if(parts.length>=2){
