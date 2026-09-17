@@ -4,7 +4,7 @@ const SITE_NAME = 'រោងកុនគ្មានមនុស្ស';
 const IMG       = `${SITE_URL}/assets/img/og-default.png`;
 
 // STRICT bot detection - only known crawlers
-const BOT = /^(facebookexternalhit|facebot|twitterbot|telegrambot|whatsapp\/|linkedinbot|discordbot|googlebot|bingbot)/i;
+const BOT = /facebookexternalhit|facebot|twitterbot|telegrambot|whatsapp|linkedinbot|discordbot|googlebot|bingbot|yandex|applebot|duckduck/i;
 
 function isBot(ua){ return BOT.test(ua||''); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -139,5 +139,5 @@ export default async function middleware(req){
 }
 
 export const config = {
-  matcher: ['/blog/:path*', '/blog', '/watch/:path*'],
+  matcher: ['/blog/(.*)', '/watch/(.*)'],
 };
