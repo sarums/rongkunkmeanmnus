@@ -79,14 +79,6 @@
       "destination": "/api/watch"
     },
     {
-      "source": "/blog",
-      "destination": "/api/blog"
-    },
-    {
-      "source": "/blog/:path*",
-      "destination": "/api/blog"
-    },
-    {
       "source": "/admin",
       "destination": "/admin/index.html"
     },
@@ -119,12 +111,20 @@
       "destination": "/pages/store.html"
     },
     {
-      "source": "/donate",
-      "destination": "/pages/donate.html"
+      "source": "/blog/:slug/:ep",
+      "destination": "/api/blog/[...slug]"
     },
     {
-      "source": "/((?!api|blog|watch).*)",
-      "destination": "/index.html"
+      "source": "/blog/:slug",
+      "destination": "/api/blog/[...slug]"
+    },
+    {
+      "source": "/blog",
+      "destination": "/api/blog/[...slug]"
+    },
+    {
+      "source": "/donate",
+      "destination": "/pages/donate.html"
     }
   ]
 }
