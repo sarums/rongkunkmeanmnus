@@ -38,18 +38,40 @@ export default async function handler(req){
   const epNum  = parts[1] ? parseInt(parts[1])||1 : 1;
   const pageUrl = `${SITE_URL}/blog/${parts.join('/')}`;
 
-  // Real users → serve SPA
+  // Real users → fetch and serve the SPA index.html
+  // We fetch from the root which is NOT routed through this function
   if(!isBot){
-    return new Response(
-      `<!DOCTYPE html><html><head>
-      <meta charset="UTF-8">
-      <meta http-equiv="refresh" content="0;url=${pageUrl}">
-      <title>Redirecting...</title>
-      </head><body>
-      <script>window.location.href="${pageUrl}"</script>
-      </body></html>`,
-      { headers: { 'Content-Type': 'text/html;charset=utf-8' } }
-    );
+    try{
+      const spaRes = await fetch(`${SITE_URL}/?_spa=1`);
+      if(spaRes.ok){
+        const html = await spaRes.text();
+        return new Response(html, {
+          headers: {
+            'Content-Type': 'text/html;charset=utf-8',
+            'Cache-Control': 'no-store',
+          }
+        });
+      }
+    }catch(e){}
+    // Fallback: serve minimal HTML that loads the SPA
+    return new Response(`<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>រោងកុនគ្មានមនុស្ស</title>
+<link rel="stylesheet" href="/assets/css/main.css?v=202609180446">
+<script type="module" src="/assets/js/app.js?v=202609180446"></script>
+</head>
+<body>
+<div id="page-loader"><div class="loader-spinner"></div></div>
+</body>
+</html>`, {
+      headers: {
+        'Content-Type': 'text/html;charset=utf-8',
+        'Cache-Control': 'no-store',
+      }
+    });
   }
 
   // Bots → fetch article and return OG tags
