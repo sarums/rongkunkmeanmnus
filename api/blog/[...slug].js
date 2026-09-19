@@ -38,11 +38,11 @@ export default async function handler(req){
   const epNum  = parts[1] ? parseInt(parts[1])||1 : 1;
   const pageUrl = `${SITE_URL}/blog/${parts.join('/')}`;
 
-  // Real users → fetch and serve the SPA index.html
-  // We fetch from the root which is NOT routed through this function
+  // Real users → serve the SPA
   if(!isBot){
+    // Fetch the static index.html directly
     try{
-      const spaRes = await fetch(`${SITE_URL}/?_spa=1`);
+      const spaRes = await fetch(new URL('/index.html', req.url).href);
       if(spaRes.ok){
         const html = await spaRes.text();
         return new Response(html, {
@@ -53,18 +53,18 @@ export default async function handler(req){
         });
       }
     }catch(e){}
-    // Fallback: serve minimal HTML that loads the SPA
+    // Final fallback
     return new Response(`<!DOCTYPE html>
 <html lang="km">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>រោងកុនគ្មានមនុស្ស</title>
-<link rel="stylesheet" href="/assets/css/main.css?v=202609180446">
-<script type="module" src="/assets/js/app.js?v=202609180446"></script>
+<link rel="stylesheet" href="/assets/css/main.css?v=202609120142">
 </head>
 <body>
 <div id="page-loader"><div class="loader-spinner"></div></div>
+<script type="module" src="/assets/js/app.js?v=202609180446"></script>
 </body>
 </html>`, {
       headers: {
