@@ -2865,7 +2865,9 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
     const snap = await getDocs(query(collection(db,'blog_posts'), where('slug','==',slug)));
     post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
     if(!post || post.status!=='published'){ show404(); return; }
-    history.pushState({page:'blog-post',slug,epNum},'','/blog/'+slug+'/'+epNum);
+    // Only add /epNum to URL if epNum > 1 (don't force /1 for all articles)
+    const blogUrl = epNum>1 ? '/blog/'+slug+'/'+epNum : '/blog/'+slug;
+    history.pushState({page:'blog-post',slug,epNum},'',blogUrl);
     updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
     const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : '';
 
