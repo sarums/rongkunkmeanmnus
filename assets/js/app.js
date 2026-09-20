@@ -519,7 +519,7 @@ function showPage(id,push=true){
     if(id==='home'){
       history.replaceState({page:'home'},'','/');
     } else {
-      history.pushState({page:id},'','/'+id);
+      history.pushState({page:id, id:id},'','/'+id);
     }
   }
   window.scrollTo(0,0);
@@ -683,8 +683,9 @@ window.addEventListener("popstate",e=>{
   if(!state){ routeFromUrl(false); return; }
 
   if(state.page==='watch' && state.videoId){
-    $('player-iframe').src='';
-    openVideo(state.videoId, false);
+    const pif=$('player-iframe');
+    if(pif) pif.src='';
+    setTimeout(()=>openVideo(state.videoId, false), 50);
   } else if(state.page==='cat' && state.catId){
     const cat = categories.find(c=>c.id===state.catId);
     if(cat) showCatPage(cat);
@@ -704,14 +705,23 @@ window.addEventListener("popstate",e=>{
     showBlogPage();
   } else if(state.page==='blog-post'){
     // Get slug from state or from URL
-    const _slug = state.slug || location.pathname.replace('/blog/','').split('/')[0];
-    const _ep   = state.epNum || parseInt(location.pathname.split('/').pop())||1;
+    const _path = location.pathname.replace('/blog/','').split('/');
+    const _slug = state.slug || _path[0];
+    const _ep   = state.epNum || (parseInt(_path[1])||1);
     if(_slug) showBlogPost(_slug, _ep);
     else routeFromUrl(false);
   } else if(state.page==='home'){
     showPage('home',false);
-    // Stop video when going back to home
     $('player-iframe').src='';
+  } else if(state.page){
+    // Handle generic pages like /for-you, /history etc
+    const pageEl = $('page-'+state.page);
+    if(pageEl){
+      document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+state.page));
+      window.scrollTo(0,0);
+    } else {
+      routeFromUrl(false);
+    }
   } else {
     routeFromUrl(false);
   }
