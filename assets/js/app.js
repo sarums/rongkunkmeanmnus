@@ -2880,7 +2880,11 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
     if(!post || post.status!=='published'){ show404(); return; }
     // Only add /epNum to URL if epNum > 1
     const blogUrl = epNum>1 ? '/blog/'+slug+'/'+epNum : '/blog/'+slug;
-    if(!window._isPopstate) history.pushState({page:'blog-post',slug,epNum},'',blogUrl);
+    if(!window._isPopstate){
+      // Use replaceState so initial blog load doesn't add extra history entry
+      // EP button clicks will use pushState to add proper history
+      history.replaceState({page:'blog-post',slug,epNum},'',blogUrl);
+    }
     updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
     const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : '';
 
