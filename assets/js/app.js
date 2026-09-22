@@ -680,7 +680,8 @@ function show404(){
 
 window.addEventListener("popstate",e=>{
   const state = e.state;
-  if(!state){ routeFromUrl(false); return; }
+  window._isPopstate = true; // flag to prevent double pushState
+  if(!state){ routeFromUrl(false); window._isPopstate=false; return; }
 
   if(state.page==='watch' && state.videoId){
     const pif=$('player-iframe');
@@ -725,6 +726,8 @@ window.addEventListener("popstate",e=>{
   } else {
     routeFromUrl(false);
   }
+  // Reset popstate flag after a tick
+  setTimeout(()=>{ window._isPopstate=false; }, 100);
 });
 
 // ── Load Data ──
@@ -1099,7 +1102,7 @@ window.navGo=(id)=>{
   NP.start();
   const ids=c.target_ids||(c.target_id?[c.target_id]:[]);
   const slug='/'+c.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  history.pushState({page:'cat',catId:id},"",slug);
+  if(!window._isPopstate) history.pushState({page:'cat',catId:id},"",slug);
   buildNav(id);
   if(c.target_type==='playlist'&&ids.length){
     openCategoryById(id);
@@ -1632,7 +1635,7 @@ window.openVideo=async (id,push=true)=>{
 
   // Update URL — always use Firestore IDs for stable unique URLs
   const pl2=playlists.find(p=>(p.videos||[]).includes(id));
-  if(push){
+  if(push && !window._isPopstate){
     if(pl2){
       const epNum=(pl2.videos||[]).indexOf(id)+1;
       // /watch/PLAYLIST_ID/ep-N
@@ -2515,7 +2518,7 @@ window.showForYouPage = async ()=>{
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-cat'));
   window.scrollTo(0,0);
-  history.pushState({page:'for-you'},'','/for-you');
+  if(!window._isPopstate) history.pushState({page:'for-you'},'','/for-you');
   $('cat-title').textContent = '✨ For You';
   $('cat-desc').textContent  = 'Personalized mix of videos and articles';
   const bannerBg=$('cat-banner-bg');
@@ -2828,7 +2831,7 @@ window.showBlogPage = async function showBlogPage(){
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog'));
   window.scrollTo(0,0);
-  history.pushState({page:'blog'},'','/blog');
+  if(!window._isPopstate) history.pushState({page:'blog'},'','/blog');
   updateMeta({title:'Blog | រោងកុនគ្មានមនុស្ស', desc:'Drama reviews, episode recaps, top lists and more from រោងកុនគ្មានមនុស្ស.'});
   const grid = $('blog-grid');
   if(!grid){ NP.done(); return; }
@@ -2875,9 +2878,9 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
     const snap = await getDocs(query(collection(db,'blog_posts'), where('slug','==',slug)));
     post = snap.docs[0] ? {id:snap.docs[0].id,...snap.docs[0].data()} : null;
     if(!post || post.status!=='published'){ show404(); return; }
-    // Only add /epNum to URL if epNum > 1 (don't force /1 for all articles)
+    // Only add /epNum to URL if epNum > 1
     const blogUrl = epNum>1 ? '/blog/'+slug+'/'+epNum : '/blog/'+slug;
-    history.pushState({page:'blog-post',slug,epNum},'',blogUrl);
+    if(!window._isPopstate) history.pushState({page:'blog-post',slug,epNum},'',blogUrl);
     updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
     const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : '';
 
