@@ -2715,10 +2715,11 @@ window.blogEpClick = function(btn, src, ep){
   btn.style.borderColor = '#f27d26';
   btn.style.fontWeight  = '900';
   btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
-  // Update URL — extract slug from current path
+  // Update URL — use replaceState so EP clicks don't stack in history
+  // Back button will go to previous PAGE not previous episode
   const base = location.pathname.replace(/\/\d+$/, '').replace(/\/$/, '');
   const slug = base.replace('/blog/', '');
-  history.pushState({page:'blog-post', slug:slug, epNum:ep}, '', base + '/' + ep);
+  history.replaceState({page:'blog-post', slug:slug, epNum:ep}, '', base + '/' + ep);
 };
 
 // ── BLOG VIDEO PLAYER ────────────────────────────────────
