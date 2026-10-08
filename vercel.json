@@ -111,20 +111,20 @@
       "destination": "/pages/store.html"
     },
     {
+      "source": "/donate",
+      "destination": "/pages/donate.html"
+    },
+    {
       "source": "/blog/:slug/:ep",
       "destination": "/api/blog/[...slug]"
     },
     {
       "source": "/blog/:slug",
-      "destination": "/api/blog/[...slug]"
+      "destination": "/blog/:slug.html"
     },
     {
       "source": "/blog",
-      "destination": "/api/blog/[...slug]"
-    },
-    {
-      "source": "/donate",
-      "destination": "/pages/donate.html"
+      "destination": "/index.html"
     },
     {
       "source": "/(.*)",
