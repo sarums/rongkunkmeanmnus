@@ -1698,4 +1698,1018 @@ function smEsc(s){
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;')
-    .replace(/[
+    .replace(/[ -
+-]/g,''); // remove invalid XML chars
+}
+function smDurToSec(str){
+  if(!str) return '';
+  const p=str.trim().split(':').map(Number);
+  if(p.length===2) return String(p[0]*60+p[1]);
+  if(p.length===3) return String(p[0]*3600+p[1]*60+p[2]);
+  return '';
+}
+
+window.generateSitemap = async ()=>{
+  const btn    = qs('smGenBtn');
+  const dlBtn  = qs('smDownloadBtn');
+  const stats  = qs('smStats');
+  const statsT = qs('smStatsText');
+  const preview= qs('smPreview');
+  const preWrap= qs('smPreviewWrap');
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  if(dlBtn) dlBtn.style.display='none';
+  if(stats) stats.style.display='none';
+  if(preWrap) preWrap.style.display='none';
+
+  const siteUrl = (qs('smSiteUrl')?.value||'https://www.rongkunkmeanmnus.com').replace(/\/+$/,'');
+  const today   = new Date().toISOString().split('T')[0];
+
+  try {
+    const[vSnap,plSnap] = await Promise.all([
+      getDocs(query(collection(db,'videos'),orderBy('createdAt','desc'))),
+      getDocs(collection(db,'playlists'))
+    ]);
+    const vids = vSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+    const pls  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
+    xml += '        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n\n';
+
+    // Static pages
+    const statics = [
+      {loc:'',        priority:'1.0', freq:'daily'},
+      {loc:'/about',  priority:'0.5', freq:'monthly'},
+      {loc:'/privacy',priority:'0.3', freq:'monthly'},
+      {loc:'/terms',  priority:'0.3', freq:'monthly'},
+      {loc:'/contact',priority:'0.4', freq:'monthly'},
+    ];
+    statics.forEach(s=>{
+      xml += '  <url>\n';
+      xml += '    <loc>'+siteUrl+s.loc+'</loc>\n';
+      xml += '    <changefreq>'+s.freq+'</changefreq>\n';
+      xml += '    <priority>'+s.priority+'</priority>\n';
+      xml += '    <lastmod>'+today+'</lastmod>\n';
+      xml += '  </url>\n\n';
+    });
+
+    // Playlist episode URLs — proper /watch/playlist-slug/ep-N format
+    let epCount = 0;
+    pls.forEach(pl=>{
+      const plSlug = smPlaylistSlug(pl);
+      (pl.videos||[]).forEach((vidId, idx)=>{
+        const v = vids.find(x=>x.id===vidId);
+        if(!v) return;
+        const epNum   = idx+1;
+        const loc     = siteUrl+'/watch/'+plSlug+'/ep-'+epNum;
+        const title   = smEsc(v.title||'');
+        const desc    = smEsc((v.description||v.title||'').replace(/<[^>]*>/g,'').slice(0,2048));
+        const thumb   = smGetThumb(v);
+        const dur     = smDurToSec(v.duration||'');
+        const lastmod = v.createdAt?.toDate ? v.createdAt.toDate().toISOString().split('T')[0] : today;
+        xml += '  <url>\n';
+        xml += '    <loc>'+loc+'</loc>\n';
+        xml += '    <lastmod>'+lastmod+'</lastmod>\n';
+        xml += '    <changefreq>weekly</changefreq>\n';
+        xml += '    <priority>0.8</priority>\n';
+        if(title){
+          xml += '    <video:video>\n';
+          xml += '      <video:title>'+title+'</video:title>\n';
+          if(desc)  xml += '      <video:description>'+desc+'</video:description>\n';
+          if(thumb) xml += '      <video:thumbnail_loc>'+smEsc(thumb)+'</video:thumbnail_loc>\n';
+          if(dur)   xml += '      <video:duration>'+dur+'</video:duration>\n';
+          xml += '      <video:publication_date>'+lastmod+'T00:00:00+00:00</video:publication_date>\n';
+          xml += '    </video:video>\n';
+        }
+        xml += '  </url>\n\n';
+        epCount++;
+      });
+    });
+
+    // Single videos not in any playlist
+    const plVidIds = new Set(pls.flatMap(pl=>pl.videos||[]));
+    const singleVids = vids.filter(v=>!plVidIds.has(v.id));
+    singleVids.forEach(v=>{
+      const loc     = siteUrl+'/watch/'+smVideoSlug(v);
+      const title   = smEsc(v.title||'');
+      const desc    = smEsc((v.description||v.title||'').replace(/<[^>]*>/g,'').slice(0,2048));
+      const thumb   = smGetThumb(v);
+      const dur     = smDurToSec(v.duration||'');
+      const lastmod = v.createdAt?.toDate ? v.createdAt.toDate().toISOString().split('T')[0] : today;
+      xml += '  <url>\n';
+      xml += '    <loc>'+loc+'</loc>\n';
+      xml += '    <lastmod>'+lastmod+'</lastmod>\n';
+      xml += '    <changefreq>weekly</changefreq>\n';
+      xml += '    <priority>0.7</priority>\n';
+      if(title){
+        xml += '    <video:video>\n';
+        xml += '      <video:title>'+title+'</video:title>\n';
+        if(desc)  xml += '      <video:description>'+desc+'</video:description>\n';
+        if(thumb) xml += '      <video:thumbnail_loc>'+smEsc(thumb)+'</video:thumbnail_loc>\n';
+        if(dur)   xml += '      <video:duration>'+dur+'</video:duration>\n';
+        xml += '      <video:publication_date>'+lastmod+'T00:00:00+00:00</video:publication_date>\n';
+        xml += '    </video:video>\n';
+      }
+      xml += '  </url>\n\n';
+    });
+
+    // Blog posts
+    let blogCount = 0;
+    try{
+      const blogSnap = await getDocs(collection(db,'blog_posts'));
+      // Include ALL blog posts regardless of status
+      const blogPosts = blogSnap.docs.map(d=>({id:d.id,...d.data()}));
+      blogPosts.forEach(p=>{
+        const slug    = p.slug||p.id;
+        const loc     = siteUrl+'/blog/'+slug;
+        const lastmod = p.updatedAt?.toDate?p.updatedAt.toDate().toISOString().split('T')[0]:
+                        p.createdAt?.toDate?p.createdAt.toDate().toISOString().split('T')[0]:today;
+        const title   = smEsc(p.title||'');
+        const desc    = smEsc((p.excerpt||p.title||'').replace(/<[^>]*>/g,'').slice(0,200));
+        // Main blog article URL
+        xml += '  <url>\n';
+        xml += '    <loc>'+loc+'</loc>\n';
+        xml += '    <lastmod>'+lastmod+'</lastmod>\n';
+        xml += '    <changefreq>weekly</changefreq>\n';
+        xml += '    <priority>0.9</priority>\n';
+        xml += '  </url>\n\n';
+        blogCount++;
+
+        // Episode URLs — /blog/slug/1, /blog/slug/2 etc.
+        // Find linked playlist for this article
+        const linkedPl = allPlaylists.find(pl=>{
+          return (pl.videos||[]).some(vid=>{
+            const v = allVideos.find(x=>x.id===vid);
+            return v && v.articleId && (v.articleId===p.id||v.articleId===slug);
+          });
+        }) || allPlaylists.find(pl=>{
+          const plName = (pl.name||'').toLowerCase().slice(0,15);
+          const ptitle = (p.title||'').toLowerCase().slice(0,15);
+          return plName.length>3 && ptitle.length>3 && (plName.includes(ptitle)||ptitle.includes(plName));
+        });
+
+        if(linkedPl && (linkedPl.videos||[]).length>0){
+          (linkedPl.videos||[]).forEach((vid,idx)=>{
+            const epLoc = loc + '/' + (idx+1);
+            xml += '  <url>\n';
+            xml += '    <loc>'+epLoc+'</loc>\n';
+            xml += '    <lastmod>'+lastmod+'</lastmod>\n';
+            xml += '    <changefreq>weekly</changefreq>\n';
+            xml += '    <priority>0.8</priority>\n';
+            xml += '  </url>\n\n';
+            blogCount++;
+          });
+        }
+      });
+      console.log('Blog posts found:', blogPosts.length);
+    }catch(e){ console.error('Blog sitemap error:', e); }
+
+    xml += '</urlset>';
+    _sitemapXml = xml;
+
+    const totalVideos = epCount + singleVids.length;
+    const totalUrls   = statics.length + epCount + singleVids.length + blogCount;
+
+    if(stats && statsT){
+      stats.style.display='block';
+      statsT.innerHTML = 'Generated <strong style="color:var(--text)">'+totalUrls+' URLs</strong> — '
+        +statics.length+' pages · '+epCount+' playlist eps · '+singleVids.length+' single videos · '
+        +blogCount+' blog posts · '
+        +'<strong style="color:#22c55e">'+totalVideos+' &lt;video:video&gt; tags ✅</strong>';
+    }
+    if(preWrap && preview){
+      preview.textContent = xml.split('\n').slice(0,50).join('\n')+'\n...';
+      preWrap.style.display='block';
+    }
+    if(dlBtn) dlBtn.style.display='inline-flex';
+    showToast('Done!','Sitemap ready — '+totalVideos+' videos tagged','ok');
+
+  } catch(e){
+    showToast('Error', e.message, 'err');
+    console.error(e);
+  }
+  btn.disabled=false;
+  btn.textContent='🗺️ Generate Sitemap';
+};
+
+window.downloadSitemap = ()=>{
+  if(!_sitemapXml) return;
+  const blob = new Blob([_sitemapXml],{type:'application/xml'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='sitemap.xml'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Downloaded!','Upload sitemap.xml to GitHub root','ok');
+};
+
+// ══════════════════════════════════════════
+//  BLOG MANAGER
+// ══════════════════════════════════════════
+let allBlogPosts = [];
+
+function blogSlugify(s){
+  return (s||'').toLowerCase()
+    .replace(/\s+/g,'-')
+    .replace(/[^a-z0-9-]/g,'')
+    .replace(/-+/g,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,80);
+}
+
+// Auto-generate slug from title
+document.addEventListener('DOMContentLoaded', ()=>{
+  const titleEl = document.getElementById('blogTitle');
+  const slugEl  = document.getElementById('blogSlug');
+  if(titleEl && slugEl){
+    titleEl.addEventListener('input', ()=>{
+      if(!slugEl._manualEdit) slugEl.value = blogSlugify(titleEl.value);
+    });
+    slugEl.addEventListener('input', ()=>{ slugEl._manualEdit = true; });
+  }
+});
+
+async function loadBlogPosts(){
+  try {
+    const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    allBlogPosts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderBlogPosts();
+  } catch(e){ showToast('Error', e.message, 'err'); }
+}
+
+function renderBlogPosts(){
+  const list  = qs('blog-list');
+  const empty = qs('blog-empty');
+  const count = qs('blog-count');
+  if(!list) return;
+  count.textContent = '('+allBlogPosts.length+')';
+  if(!allBlogPosts.length){ empty.style.display='block'; list.innerHTML=''; return; }
+  empty.style.display='none';
+  list.innerHTML = allBlogPosts.map(p=>`
+    <div style="display:flex;align-items:flex-start;gap:.85rem;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:.85rem 1rem;transition:border-color .2s"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+      ${p.cover?`<img src="${p.cover}" style="width:80px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">`:
+        `<div style="width:80px;aspect-ratio:16/9;background:var(--bg4);border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem">📝</div>`}
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px;">
+          <span style="font-size:.88rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title||'—'}</span>
+          <span style="font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:4px;background:${p.status==='published'?'rgba(34,197,94,.1)':'rgba(255,165,0,.1)'};color:${p.status==='published'?'#22c55e':'orange'}">${p.status==='published'?'✅ Live':'📝 Draft'}</span>
+        </div>
+        <div style="font-size:.72rem;color:var(--text2);margin-bottom:4px;">${p.category||''} · ${p.lang==='km'?'🇰🇭 Khmer':p.lang==='en'?'🇺🇸 English':'🌐 Both'}</div>
+        <div style="font-size:.75rem;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.excerpt||''}</div>
+        <div style="font-size:.65rem;color:#444;margin-top:4px;">🔗 /blog/${p.slug||p.id}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+        <button class="act-btn act-edit" onclick="editBlogPost('${p.id}')">✏️ Edit</button>
+        <button class="act-btn act-del" onclick="deleteBlogPost('${p.id}','${(p.title||'').replace(/'/g,"\'")}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+window.addBlogPost = async ()=>{
+  const title   = qs('blogTitle').value.trim();
+  const slug    = qs('blogSlug').value.trim() || blogSlugify(title);
+  const cover   = qs('blogCover').value.trim();
+  const cat     = qs('blogCat').value;
+  const excerpt = qs('blogExcerpt').value.trim();
+  const content = qs('blogContent').innerHTML.trim();
+  const relatedVideos = [...blogSelVids];
+  const status  = qs('blogStatus').value;
+  const lang    = qs('blogLang').value;
+
+  if(!title){ showToast('Missing','Title is required','err'); return; }
+  if(!content){ showToast('Missing','Content is required','err'); return; }
+
+  const btn = document.querySelector('#panel-blog .submit-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Publishing...'; }
+
+  try {
+    const data = { title, slug, cover, category:cat, excerpt, content, relatedVideos,
+      status, lang, views:0, createdAt:serverTimestamp() };
+    const ref = await addDoc(collection(db,'blog_posts'), data);
+    allBlogPosts.unshift({id:ref.id,...data});
+
+    // Reset form
+    ['blogTitle','blogSlug','blogCover','blogExcerpt'].forEach(id=>{ if(qs(id)) qs(id).value=''; });
+    if(qs('blogContent')) qs('blogContent').innerHTML='';
+    blogSelVids=[]; renderBlogVidSelected();
+    if(qs('blogVidSearch')) qs('blogVidSearch').value='';
+    if(qs('blogVidResults')) qs('blogVidResults').innerHTML='';
+    if(qs('blogSlug')) qs('blogSlug')._manualEdit = false;
+
+    showToast('Published!','"'+title+'" is now live','ok');
+    renderBlogPosts();
+  } catch(e){ showToast('Error',e.message,'err'); }
+
+  if(btn){ btn.disabled=false; btn.textContent='➕ Publish Post'; }
+};
+
+window.deleteBlogPost = (id, title)=>{
+  showConfirm('Delete Post?','"'+title+'" will be permanently deleted.',async()=>{
+    try {
+      await deleteDoc(doc(db,'blog_posts',id));
+      allBlogPosts = allBlogPosts.filter(p=>p.id!==id);
+      renderBlogPosts();
+      showToast('Deleted','Post removed','warn');
+    } catch(e){ showToast('Error',e.message,'err'); }
+  });
+};
+
+window.editBlogPost = id=>{
+  const p = allBlogPosts.find(x=>x.id===id); if(!p) return;
+  const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;" id="blogEditOverlay">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.75rem;width:640px;max-width:100%;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <span style="font-size:1rem;font-weight:800;">✏️ Edit Blog Post</span>
+      <button onclick="document.getElementById('blogEditOverlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;">×</button>
+    </div>
+    <label class="flabel">Title</label>
+    <input type="text" class="finput" id="beTi" value="${(p.title||'').replace(/"/g,'&quot;')}" style="margin-bottom:.75rem;">
+    <label class="flabel">Slug</label>
+    <input type="text" class="finput" id="beSl" value="${p.slug||''}" style="margin-bottom:.75rem;">
+    <label class="flabel">Cover Image URL</label>
+    <input type="text" class="finput" id="beCo" value="${p.cover||''}" style="margin-bottom:.75rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+      <div>
+        <label class="flabel">Category</label>
+        <select class="fselect" id="beCat">
+          ${['Drama Review','Episode Recap','Top List','Actor Profile','News','Guide'].map(c=>`<option value="${c}" ${c===p.category?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Status</label>
+        <select class="fselect" id="beSt">
+          <option value="published" ${p.status==='published'?'selected':''}>✅ Published</option>
+          <option value="draft" ${p.status==='draft'?'selected':''}>📝 Draft</option>
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Language</label>
+        <select class="fselect" id="beLa">
+          <option value="km" ${p.lang==='km'?'selected':''}>🇰🇭 Khmer</option>
+          <option value="en" ${p.lang==='en'?'selected':''}>🇺🇸 English</option>
+          <option value="both" ${p.lang==='both'?'selected':''}>🌐 Both</option>
+        </select>
+      </div>
+    </div>
+    <label class="flabel">Excerpt</label>
+    <textarea class="ftextarea" id="beEx" style="height:60px;margin-bottom:.75rem;">${p.excerpt||''}</textarea>
+    <label class="flabel">Content</label>
+    <div class="rich-editor-wrap" style="margin-bottom:1rem;">
+      <div class="rich-toolbar">
+        <button type="button" onclick="blogCmd('Bold')"><b>B</b></button>
+        <button type="button" onclick="blogCmd('Italic')"><i>I</i></button>
+        <button type="button" onclick="blogCmd('Underline')"><u>U</u></button>
+        <span class="rich-sep"></span>
+        <button type="button" onclick="blogH2()">H2</button>
+        <button type="button" onclick="blogH3()">H3</button>
+        <span class="rich-sep"></span>
+        <button type="button" onclick="blogCmd('insertUnorderedList')">• List</button>
+        <button type="button" onclick="blogCmd('insertOrderedList')">1. List</button>
+        <span class="rich-sep"></span>
+        <button type="button" onclick="blogCmd('justifyLeft')">◀</button>
+        <button type="button" onclick="blogCmd('justifyCenter')">≡</button>
+        <button type="button" onclick="blogCmd('justifyFull')">☰</button>
+        <span class="rich-sep"></span>
+        <button type="button" onclick="blogLink()">🔗</button>
+        <button type="button" onclick="blogImg()">🖼</button>
+      </div>
+      <div class="rich-content" id="beCn" contenteditable="true"
+        style="min-height:200px;max-height:400px;">${p.content||''}</div>
+    </div>
+    <!-- Related Videos in Edit Modal -->
+    <label class="flabel" style="margin-bottom:.4rem;display:block;">🎬 Related Videos <span style="color:#555;font-weight:500">(optional)</span></label>
+    <div style="position:relative;margin-bottom:.5rem;">
+      <input type="text" class="finput" id="editBlogVidSearch" placeholder="Search videos..." oninput="searchEditBlogVids('${id}')" style="padding-left:2rem;">
+      <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);opacity:.4;">🔍</span>
+    </div>
+    <div id="editBlogVidResults" style="max-height:150px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:.5rem;"></div>
+    <div id="editBlogVidSelected" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px;padding:5px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;margin-bottom:1rem;">
+      ${(p.relatedVideos||[]).map(vid=>{
+        const v=allVideos.find(x=>x.id===vid);
+        return v?`<div style="display:flex;align-items:center;gap:3px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:2px 6px 2px 3px;">
+          <img src="${getAdminThumb(v)}" style="width:34px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;">
+          <span style="font-size:.68rem;font-weight:600;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</span>
+          <button onclick="removeEditBlogVid('${v.id}')" style="background:none;border:none;color:var(--red);font-size:.85rem;cursor:pointer;padding:0;line-height:1;">×</button>
+        </div>`:'';
+      }).join('')||'<span style="font-size:.72rem;color:var(--muted);padding:3px;">None selected</span>'}
+    </div>
+    <button onclick="saveBlogPost('${id}')" class="submit-btn" style="width:100%;">💾 Save Changes</button>
+  </div>
+</div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  // Load existing related videos
+  editBlogSelVids = [...(p.relatedVideos||[])];
+};
+
+window.saveBlogPost = async id=>{
+  const data = {
+    title   : document.getElementById('beTi')?.value.trim(),
+    slug    : document.getElementById('beSl')?.value.trim(),
+    cover   : document.getElementById('beCo')?.value.trim(),
+    category: document.getElementById('beCat')?.value,
+    status  : document.getElementById('beSt')?.value,
+    lang    : document.getElementById('beLa')?.value,
+    excerpt : document.getElementById('beEx')?.value.trim(),
+    content : document.getElementById('beCn')?.innerHTML.trim(),
+    relatedVideos : [...editBlogSelVids],
+    updatedAt: serverTimestamp(),
+  };
+  if(!data.title){ showToast('Error','Title required','err'); return; }
+  try {
+    await updateDoc(doc(db,'blog_posts',id), data);
+    const p = allBlogPosts.find(x=>x.id===id); if(p) Object.assign(p,data);
+    document.getElementById('blogEditOverlay')?.remove();
+    showToast('Saved!','Post updated','ok');
+    renderBlogPosts();
+  } catch(e){ showToast('Error',e.message,'err'); }
+};
+
+// ── RICH EDITOR HELPERS ──────────────────────────────────
+window.richCmd = (editorId, cmd)=>{
+  const el = document.getElementById(editorId);
+  if(!el) return;
+  el.focus();
+  document.execCommand(cmd, false, null);
+};
+
+window.richLink = (editorId)=>{
+  const el = document.getElementById(editorId);
+  if(!el) return;
+  const url = prompt('Enter URL:', 'https://');
+  if(!url) return;
+  el.focus();
+  document.execCommand('createLink', false, url);
+  el.querySelectorAll('a:not([target])').forEach(a=>{ a.target='_blank'; a.rel='noopener'; });
+};
+
+window.richClear = (editorId)=>{
+  const el = document.getElementById(editorId);
+  if(el) el.innerHTML = '';
+};
+
+function getRichContent(editorId){
+  const el = document.getElementById(editorId);
+  return el ? el.innerHTML.trim() : '';
+}
+
+function setRichContent(editorId, html){
+  const el = document.getElementById(editorId);
+  if(el) el.innerHTML = html || '';
+}
+
+// ── BLOG RELATED VIDEOS PICKER ───────────────────────────
+let blogSelVids = [];
+
+window.searchBlogVids = ()=>{
+  const q = (qs('blogVidSearch')?.value||'').toLowerCase();
+  const box = qs('blogVidResults');
+  if(!box) return;
+  // Show ALL videos - selected ones shown with checkmark
+  const filtered = allVideos.filter(v=>
+    (v.title||'').toLowerCase().includes(q)
+  ).slice(0,30);
+  if(!filtered.length){
+    box.innerHTML=`<div style="padding:.6rem .9rem;color:var(--text2);font-size:.78rem;">No videos found</div>`;
+    return;
+  }
+  box.innerHTML = filtered.map(v=>{
+    const selected = blogSelVids.includes(v.id);
+    return `<div onclick="${selected?`removeBlogVid('${v.id}')`:`addBlogVid('${v.id}')`}" id="bvr-${v.id}"
+      style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;background:${selected?'rgba(242,125,38,.06)':''}"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background='${selected?'rgba(242,125,38,.06)':''}'">
+      <img src="${getAdminThumb(v)}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0;"
+        onerror="this.src='https://picsum.photos/seed/${v.id}/160/90'">
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:.77rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</div>
+        <div style="font-size:.66rem;color:var(--text2);">${v.category||''} · ${v.platform||''}</div>
+      </div>
+      <span style="font-size:1.1rem;line-height:1;flex-shrink:0;color:${selected?'#22c55e':'var(--accent)'};">${selected?'✓':'+'}</span>
+    </div>`;
+  }).join('');
+};
+
+window.addBlogVid = id=>{
+  if(!blogSelVids.includes(id)) blogSelVids.push(id);
+  renderBlogVidSelected();
+  searchBlogVids(); // refresh to show checkmark
+};
+
+window.removeBlogVid = id=>{
+  blogSelVids = blogSelVids.filter(x=>x!==id);
+  renderBlogVidSelected();
+  searchBlogVids(); // refresh to remove checkmark
+};
+
+function renderBlogVidSelected(){
+  const wrap = qs('blogVidSelected');
+  const cnt  = qs('blogVidCount');
+  if(!wrap) return;
+  if(cnt) cnt.textContent = '('+blogSelVids.length+')';
+  if(!blogSelVids.length){
+    wrap.innerHTML=`<span style="font-size:.75rem;color:var(--muted);padding:4px;">None — will show random videos</span>`;
+    return;
+  }
+  wrap.innerHTML = blogSelVids.map(id=>{
+    const v = allVideos.find(x=>x.id===id);
+    return v?`<div style="display:flex;align-items:center;gap:4px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:3px 8px 3px 3px;">
+      <img src="${getAdminThumb(v)}" style="width:38px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;">
+      <span style="font-size:.7rem;font-weight:600;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</span>
+      <button onclick="removeBlogVid('${id}')" style="background:none;border:none;color:var(--red);font-size:.9rem;cursor:pointer;padding:0;line-height:1;margin-left:2px;">×</button>
+    </div>`:'';
+  }).join('');
+}
+
+// ── BLOG RICH EDITOR ─────────────────────────────────────
+// Get the currently focused blog editor
+function getBlogEditor(){
+  // Return whichever blog editor is currently focused/active
+  const focused = document.activeElement;
+  if(focused && focused.classList.contains('rich-content')) return focused;
+  // fallback: main blog editor
+  return document.getElementById('blogContent') || document.getElementById('beCn');
+}
+
+window.blogCmd = (cmd)=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  document.execCommand(cmd, false, null);
+};
+
+window.blogH2 = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  document.execCommand('formatBlock', false, 'h2');
+};
+
+window.blogH3 = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  document.execCommand('formatBlock', false, 'h3');
+};
+
+window.blogLink = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  const url = prompt('Enter URL:', 'https://');
+  if(!url) return;
+  document.execCommand('createLink', false, url);
+  // Make links open in new tab
+  el?.querySelectorAll('a:not([target])').forEach(a=>{ a.target='_blank'; a.rel='noopener'; });
+};
+
+window.blogImg = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  const url = prompt('Enter image URL:', 'https://');
+  if(!url) return;
+  document.execCommand('insertHTML', false,
+    `<img src="${url}" style="max-width:100%;border-radius:8px;margin:.5rem 0;" loading="lazy">`);
+};
+
+window.blogClearFormat = ()=>{
+  const el = getBlogEditor();
+  if(el) el.focus();
+  document.execCommand('removeFormat', false, null);
+};
+
+// Handle Enter key — insert <br> instead of <div> for cleaner output
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Enter') return;
+  const el = document.activeElement;
+  if(!el || !el.classList.contains('rich-content')) return;
+  // Allow natural enter — browser handles it
+  // But prevent double-div wrapping on empty lines
+}, false);
+
+// Placeholder behavior for contenteditable
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.querySelectorAll('.rich-content[data-placeholder]').forEach(el=>{
+    el.addEventListener('focus', ()=>{ if(!el.textContent.trim()) el.innerHTML=''; });
+  });
+});
+
+// Edit modal related videos
+let editBlogSelVids = [];
+
+window.searchEditBlogVids = (postId)=>{
+  const q = (document.getElementById('editBlogVidSearch')?.value||'').toLowerCase();
+  const box = document.getElementById('editBlogVidResults');
+  if(!box) return;
+  const filtered = allVideos.filter(v=>(v.title||'').toLowerCase().includes(q)).slice(0,20);
+  if(!filtered.length){ box.innerHTML=`<div style="padding:.5rem .75rem;color:var(--text2);font-size:.75rem;">No videos found</div>`; return; }
+  box.innerHTML = filtered.map(v=>{
+    const selected = editBlogSelVids.includes(v.id);
+    return `<div onclick="${selected?`removeEditBlogVid('${v.id}')`:`addEditBlogVid('${v.id}')`}"
+      style="display:flex;align-items:center;gap:.5rem;padding:.4rem .65rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;background:${selected?'rgba(242,125,38,.06)':''}"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background='${selected?'rgba(242,125,38,.06)':''}'">
+      <img src="${getAdminThumb(v)}" style="width:46px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;flex-shrink:0;">
+      <div style="min-width:0;flex:1;font-size:.73rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</div>
+      <span style="font-size:1rem;line-height:1;color:${selected?'#22c55e':'var(--accent)'};">${selected?'✓':'+'}</span>
+    </div>`;
+  }).join('');
+};
+
+window.addEditBlogVid = id=>{
+  if(!editBlogSelVids.includes(id)) editBlogSelVids.push(id);
+  renderEditBlogVidSelected();
+  searchEditBlogVids();
+};
+
+window.removeEditBlogVid = id=>{
+  editBlogSelVids = editBlogSelVids.filter(x=>x!==id);
+  renderEditBlogVidSelected();
+  searchEditBlogVids();
+};
+
+function renderEditBlogVidSelected(){
+  const wrap = document.getElementById('editBlogVidSelected');
+  if(!wrap) return;
+  if(!editBlogSelVids.length){
+    wrap.innerHTML=`<span style="font-size:.72rem;color:var(--muted);padding:3px;">None selected</span>`;
+    return;
+  }
+  wrap.innerHTML = editBlogSelVids.map(id=>{
+    const v = allVideos.find(x=>x.id===id);
+    return v?`<div style="display:flex;align-items:center;gap:3px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:2px 6px 2px 3px;">
+      <img src="${getAdminThumb(v)}" style="width:34px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;">
+      <span style="font-size:.68rem;font-weight:600;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title||''}</span>
+      <button onclick="removeEditBlogVid('${id}')" style="background:none;border:none;color:var(--red);font-size:.85rem;cursor:pointer;padding:0;line-height:1;">×</button>
+    </div>`:'';
+  }).join('');
+}
+
+// ── ARTICLE PICKER FOR VIDEOS ────────────────────────────
+let _allBlogCache = [];
+
+async function ensureBlogCache(){
+  if(_allBlogCache.length) return;
+  try{
+    const snap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
+    _allBlogCache = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+  }catch(e){}
+}
+
+window.searchArticles = async (searchId, hiddenId, previewId)=>{
+  await ensureBlogCache();
+  const q = (qs(searchId)?.value||'').toLowerCase();
+  const resultsId = searchId.replace('Search','Results');
+  const box = qs(resultsId);
+  if(!box) return;
+
+  if(!q){ box.style.display='none'; return; }
+
+  const filtered = _allBlogCache.filter(p=>
+    (p.title||'').toLowerCase().includes(q) ||
+    (p.category||'').toLowerCase().includes(q)
+  ).slice(0,8);
+
+  if(!filtered.length){
+    box.innerHTML=`<div style="padding:.6rem .9rem;color:var(--text2);font-size:.78rem;">No articles found</div>`;
+    box.style.display='block';
+    return;
+  }
+
+  box.style.display='block';
+  box.innerHTML = filtered.map(p=>`
+    <div onclick="selectArticle('${p.id}','${(p.title||'').replace(/'/g,"\'")}','${searchId}','${hiddenId}','${previewId}')"
+      style="display:flex;align-items:center;gap:.65rem;padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;"
+      onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+      ${p.cover?`<img src="${p.cover}" style="width:52px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;flex-shrink:0;">`
+        :`<div style="width:52px;aspect-ratio:16/9;background:var(--bg4);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem;">📝</div>`}
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title||''}</div>
+        <div style="font-size:.65rem;color:var(--text2);">${p.category||''}</div>
+      </div>
+    </div>`).join('');
+};
+
+window.selectArticle = (id, title, searchId, hiddenId, previewId)=>{
+  if(qs(hiddenId)) qs(hiddenId).value = id;
+  if(qs(searchId)) qs(searchId).value = '';
+  const resultsId = searchId.replace('Search','Results');
+  if(qs(resultsId)) qs(resultsId).style.display='none';
+  // Show preview
+  const prev = qs(previewId);
+  const prevTitle = qs(previewId+'Title');
+  if(prev) prev.style.display='block';
+  if(prevTitle) prevTitle.textContent='📝 '+title;
+};
+
+window.clearArticle = (searchId, hiddenId, previewId)=>{
+  if(qs(hiddenId)) qs(hiddenId).value='';
+  if(qs(searchId)) qs(searchId).value='';
+  const prev = qs(previewId);
+  if(prev) prev.style.display='none';
+};
+
+// ── DUPLICATE VIDEO ──────────────────────────────────────
+window.duplicateVideo = async (id)=>{
+  const v = allVideos.find(x=>x.id===id);
+  if(!v) return;
+  try {
+    const copy = {
+      ...v,
+      title     : 'Copy of ' + (v.title||''),
+      views     : 0,
+      status    : 'draft', // always draft until manually published
+      createdAt : serverTimestamp(),
+      updatedAt : serverTimestamp(),
+    };
+    delete copy.id;
+    const ref = await addDoc(collection(db,'videos'), copy);
+    const newV = {id:ref.id, ...copy};
+    allVideos.unshift(newV);
+    showToast('Duplicated!', '"'+v.title+'" copied — click Edit to modify', 'ok');
+    renderOverview();
+    renderAllVideos();
+    // Open edit modal immediately so user can edit right away
+    setTimeout(()=>openEdit(ref.id), 300);
+  } catch(e){ showToast('Error', e.message, 'err'); }
+};
+
+// ── PLAYLIST DRAG & DROP ──────────────────────────────────
+let _dragSrcIdx = null;
+let _dragPlId   = null;
+
+window.initPlaylistDrag = (plId)=>{
+  const list = document.getElementById('pl-eplist-'+plId);
+  if(!list) return;
+  const rows = list.querySelectorAll('.pl-item-row');
+
+  rows.forEach((row, idx)=>{
+    row.setAttribute('draggable','true');
+    row.dataset.idx = idx;
+
+    row.addEventListener('dragstart', e=>{
+      _dragSrcIdx = idx;
+      _dragPlId   = plId;
+      row.style.opacity = '.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    row.addEventListener('dragend', e=>{
+      row.style.opacity = '';
+      list.querySelectorAll('.pl-item-row').forEach(r=>r.classList.remove('drag-over'));
+    });
+
+    row.addEventListener('dragover', e=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      list.querySelectorAll('.pl-item-row').forEach(r=>r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    });
+
+    row.addEventListener('dragleave', ()=>{
+      row.classList.remove('drag-over');
+    });
+
+    row.addEventListener('drop', async e=>{
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if(_dragSrcIdx === null || _dragSrcIdx === idx || _dragPlId !== plId) return;
+
+      const pl = allPlaylists.find(p=>p.id===plId);
+      if(!pl) return;
+
+      // Reorder videos array
+      const vids = [...(pl.videos||[])];
+      const [moved] = vids.splice(_dragSrcIdx, 1);
+      vids.splice(idx, 0, moved);
+      pl.videos = vids;
+
+      try {
+        await updateDoc(doc(db,'playlists',plId),{videos:vids, updatedAt:serverTimestamp()});
+        showToast('Reordered!','Episode order saved','ok');
+        renderPlaylists();
+        // Re-expand the episode list
+        setTimeout(()=>{
+          togglePlEpisodes(plId);
+          initPlaylistDrag(plId);
+        }, 100);
+      } catch(err){ showToast('Error', err.message, 'err'); }
+
+      _dragSrcIdx = null;
+      _dragPlId   = null;
+    });
+  });
+};
+
+// ── GOOGLE DRIVE IMAGE UPLOAD ────────────────────────────
+// Folder ID for storing blog images — create this folder in your Google Drive
+// and paste the folder ID here
+const DRIVE_FOLDER_ID = 'YOUR_FOLDER_ID'; // ← paste your Google Drive folder ID here
+
+window.uploadImageToDrive = async (input, coverFieldId, previewId, statusId)=>{
+  const file = input.files[0];
+  if(!file) return;
+
+  const statusEl  = document.getElementById(statusId);
+  const previewEl = document.getElementById(previewId);
+  const imgEl     = document.getElementById(coverFieldId.replace('Cover','CoverImg').replace('beCo','beCoImg'));
+  const coverEl   = document.getElementById(coverFieldId);
+
+  if(statusEl) statusEl.textContent = '⏳ Uploading...';
+  if(previewEl) previewEl.style.display = 'flex';
+
+  try {
+    // Convert file to base64
+    const base64 = await new Promise((res,rej)=>{
+      const reader = new FileReader();
+      reader.onload  = ()=>res(reader.result.split(',')[1]);
+      reader.onerror = ()=>rej(new Error('Read failed'));
+      reader.readAsDataURL(file);
+    });
+
+    // Upload to Google Drive using Anthropic API (Claude in Claude)
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        mcp_servers: [{ type: 'url', url: 'https://drivemcp.googleapis.com/mcp/v1', name: 'gdrive' }],
+        messages: [{
+          role: 'user',
+          content: `Upload this image to Google Drive folder ID "${DRIVE_FOLDER_ID}". 
+          File name: ${file.name}
+          The image is base64 encoded: ${base64}
+          After uploading, make the file publicly accessible and return ONLY the direct image URL in this format:
+          https://drive.google.com/uc?export=view&id=FILE_ID`
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.find(c=>c.type==='text')?.text||'';
+
+    // Extract URL from response
+    const urlMatch = text.match(/https:\/\/drive\.google\.com\/uc\?export=view&id=[\w-]+/);
+    if(urlMatch){
+      const imgUrl = urlMatch[0];
+      if(coverEl) coverEl.value = imgUrl;
+      if(imgEl){ imgEl.src = imgUrl; }
+      if(statusEl) statusEl.textContent = '✅ Uploaded successfully!';
+      showToast('Image uploaded!', 'Cover image saved to Google Drive', 'ok');
+    } else {
+      throw new Error('Could not get image URL from Drive');
+    }
+  } catch(e){
+    if(statusEl) statusEl.textContent = '❌ Upload failed: ' + e.message;
+    showToast('Upload failed', e.message, 'err');
+    if(previewEl) previewEl.style.display = 'none';
+  }
+
+  // Reset file input
+  input.value = '';
+};
+
+// ── STATIC BLOG PAGE GENERATOR ──────────────────────────
+// Generates static HTML files for each blog article
+// These files can be uploaded to GitHub for Google indexing
+
+window.generateStaticBlogPages = async ()=>{
+  showToast('Generating...', 'Please wait', 'info');
+  try{
+    const snap = await getDocs(collection(db,'blog_posts'));
+    const posts = snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
+    
+    if(!posts.length){ showToast('No posts','No published blog posts found','warn'); return; }
+
+    // Generate zip-like content — one HTML per article
+    const files = [];
+    
+    for(const post of posts){
+      const slug = post.slug||post.id;
+      const title = post.title||'';
+      const desc  = (post.excerpt||post.title||'').replace(/<[^>]*>/g,'').slice(0,200);
+      const img   = post.cover||'https://www.rongkunkmeanmnus.com/assets/img/og-default.png';
+      const url   = `https://www.rongkunkmeanmnus.com/blog/${slug}`;
+      
+      const html = `<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title} | រោងកុនគ្មានមនុស្ស</title>
+<meta name="description" content="${desc}">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:image" content="${img}">
+<meta property="og:url" content="${url}">
+<meta property="og:site_name" content="រោងកុនគ្មានមនុស្ស">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${desc}">
+<meta name="twitter:image" content="${img}">
+<link rel="canonical" href="${url}">
+<link rel="stylesheet" href="/assets/css/main.css?v=202610070059">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"${title}","description":"${desc}","image":"${img}","url":"${url}","publisher":{"@type":"Organization","name":"រោងកុនគ្មានមនុស្ស","url":"https://www.rongkunkmeanmnus.com"}}</script>
+</head>
+<body>
+<div id="page-loader"><div class="loader-spinner"></div></div>
+<script>window.__blogSlug='${slug}';window.__blogEp=1;</script>
+<script type="module" src="/assets/js/app.js?v=202610070059"></script>
+</body>
+</html>`;
+      files.push({slug, html});
+    }
+
+    // Download as individual files
+    // Show instructions
+    showToast('Generated!', files.length+' pages ready — downloading...', 'ok');
+    
+    // Download each file with delay
+    for(let i=0; i<files.length; i++){
+      const f = files[i];
+      setTimeout(()=>{
+        const blob = new Blob([f.html], {type:'text/html'});
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `${f.slug}.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, i*300);
+    }
+
+    setTimeout(()=>{
+      showToast('Done!', 
+        'Upload these HTML files to GitHub at: blog/[slug].html\n'+
+        'Then add vercel.json rewrite: /blog/:slug → /blog/:slug.html',
+        'ok');
+    }, files.length*300+500);
+
+  }catch(e){
+    showToast('Error', e.message, 'err');
+  }
+};
+
+// ── AUTO START ──
+// ── COMMENTS PANEL ──────────────────────────────────
+let allComments=[];
+
+async function loadComments(){
+  const snap=await getDocs(query(collection(db,'comments'),orderBy('createdAt','desc')));
+  allComments=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderAdminComments(allComments);
+}
+
+window.filterComments=()=>{
+  const q=(qs('commentSearch')?.value||'').toLowerCase();
+  const filtered=q?allComments.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.text||'').toLowerCase().includes(q)):allComments;
+  renderAdminComments(filtered);
+};
+
+function renderAdminComments(list){
+  const el=qs('commentsAdminList');
+  qs('commentsEmpty').style.display=list.length?'none':'flex';
+  if(!list.length){ el.innerHTML=''; return; }
+  el.innerHTML=list.map(c=>{
+    const vid=allVideos.find(v=>v.id===c.videoId);
+    const time=c.createdAt?.toDate?c.createdAt.toDate().toLocaleString():'—';
+    return`<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:.9rem 1rem;display:flex;gap:1rem;align-items:flex-start" id="acmt-${c.id}">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem;flex-wrap:wrap">
+          <span style="font-size:.82rem;font-weight:800;color:#ddd">${escHtml(c.name||'Anonymous')}</span>
+          <span style="font-size:.68rem;color:var(--text2)">${time}</span>
+          ${vid?`<a href="/watch/${vid.id}" target="_blank" style="font-size:.65rem;color:var(--accent);font-weight:700;background:rgba(232,160,32,.1);padding:1px 7px;border-radius:9999px">📺 ${(vid.title||'').slice(0,30)}</a>`:''}
+        </div>
+        <div style="font-size:.83rem;color:#999;line-height:1.55">${escHtml(c.text||'')}</div>
+      </div>
+      <button onclick="adminDeleteComment('${c.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#ef4444;border-radius:8px;padding:.4rem .75rem;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:all .2s" onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">🗑 Delete</button>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+window.adminDeleteComment=async(id)=>{
+  if(!confirm('Delete this comment?'))return;
+  try{
+    await deleteDoc(doc(db,'comments',id));
+    allComments=allComments.filter(c=>c.id!==id);
+    document.getElementById('acmt-'+id)?.remove();
+    showToast('Deleted','Comment removed','ok');
+    if(!allComments.length) qs('commentsEmpty').style.display='flex';
+  }catch(e){ showToast('Error',e.message,'err'); }
+};
+
+// Load comments when panel opens
+const _origShowPanel=window.showPanel;
+window.showPanel=(id,btn)=>{
+  _origShowPanel(id,btn);
+  if(id==='comments') loadComments();
+};
+
+// ── INIT ──────────────────────────────────────────────
+if(isLoggedIn()){
+  hideLoginScreen();
+  loadAll();
+} else {
+  showLoginScreen();
+  setTimeout(()=>{ document.getElementById('loginPwInput')?.focus(); }, 100);
+}
