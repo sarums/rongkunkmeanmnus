@@ -847,6 +847,11 @@
         <div style="display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap;">
           <button class="submit-btn" onclick="generateSitemap()" id="smGenBtn">🗺️ Generate Sitemap</button>
           <button class="submit-btn" id="smDownloadBtn" style="display:none;background:#22c55e;color:#000;" onclick="downloadSitemap()">⬇️ Download sitemap.xml</button>
+          <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06);">
+            <div style="font-size:.8rem;font-weight:700;color:#e4e4e7;margin-bottom:.5rem;">📄 Static Blog Pages (for Google indexing)</div>
+            <div style="font-size:.72rem;color:#555;margin-bottom:.75rem;">Generate static HTML files for each blog article. Upload them to GitHub at <code style="color:#f27d26">blog/</code> folder for Google to index.</div>
+            <button class="submit-btn" onclick="generateStaticBlogPages()" style="background:rgba(242,125,38,.15);color:#f27d26;border:1px solid rgba(242,125,38,.3);">📄 Generate Static Blog Pages</button>
+          </div>
         </div>
         <div id="smStats" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;">
           <div style="font-size:.82rem;color:var(--text2);" id="smStatsText"></div>
