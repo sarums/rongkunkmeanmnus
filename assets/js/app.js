@@ -3226,4 +3226,9 @@ try{
   Object.keys(localStorage).forEach(k=>{ if(k.startsWith('rkmn_cache')) localStorage.removeItem(k); });
 }catch(e){}
 
-loadAll();
+loadAll().then(()=>{
+  // If opened from static blog page, show that blog post
+  if(window.__blogSlug){
+    showBlogPost(window.__blogSlug, window.__blogEp||1);
+  }
+});
