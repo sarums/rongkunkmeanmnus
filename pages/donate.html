@@ -23,6 +23,7 @@ h1{margin:0 0 4px;font-size:22px}
 .custom input{flex:1;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:15px}
 .custom button{padding:11px 16px;background:var(--accent);border-color:var(--accent);color:#fff}
 .curbar{display:flex;gap:8px;justify-content:center;margin-bottom:12px}.curbar button{border:1px solid var(--border);background:transparent;color:var(--text);padding:8px 18px;border-radius:999px;cursor:pointer;font-size:14px}.curbar button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dl{margin-top:14px;border:1px solid var(--accent);background:transparent;color:var(--accent);padding:10px 18px;border-radius:12px;font-size:14px;cursor:pointer;font-weight:600}
 .qrbox{background:#fff;border-radius:16px;padding:14px;display:inline-block;border:2px solid var(--accent)}
 .qrbox svg{width:230px;height:230px;display:block}
 .who{margin:12px 0 2px;font-weight:600}
@@ -41,6 +42,7 @@ a{color:var(--accent)}
   <div class="amounts" id="amounts"></div>
   <div class="custom"><input id="custom" type="number" min="0.1" step="0.1" placeholder="Custom amount (USD)"><button id="go">Set</button></div>
   <div class="qrbox"><div id="qr"></div></div>
+  <div><button class="dl" id="dl">⬇ Download QR image</button></div>
   <div class="who">SOK SARUM</div>
   <div class="amt" id="amt">$1.00</div>
   <div class="hint" id="hint1">Open your bank app → Scan → amount is filled in automatically 🙏</div>
@@ -74,7 +76,7 @@ function buildKHQR(amount){
     (amount>0 ? tlv("99", tlv("00", String(Date.now())) + tlv("01", String(Date.now() + 24*3600*1000))) : "") + "6304";
   return p + crc16(p);
 }
-var amountNow = 0;
+var amountNow = 0, lastQR = null;
 function fmt(a){ return cur==="KHR" ? Math.round(a).toLocaleString("en-US") + " ៛" : "$" + a.toFixed(2); }
 function render(amount){
   amount = cur==="KHR" ? Math.round(amount) : Math.round(amount*100)/100;
@@ -83,6 +85,7 @@ function render(amount){
   var qr = qrcode(0, "M");
   qr.addData(buildKHQR(amount));
   qr.make();
+  lastQR = qr;
   document.getElementById("qr").innerHTML = qr.createSvgTag({cellSize:4, margin:0, scalable:true});
   document.getElementById("amt").textContent = amount > 0 ? fmt(amount) : "Any amount";
   document.getElementById("hint1").textContent = amount > 0 ? "Open your bank app → Scan → amount is filled in automatically 🙏" : "Open your bank app → Scan → type any amount you like 🙏";
@@ -110,6 +113,38 @@ document.getElementById("cKHR").onclick = function(){ setCur("KHR"); };
 document.getElementById("go").onclick = function(){ render(parseFloat(document.getElementById("custom").value)); };
 if (BAKONG_ACCOUNT.indexOf("YOUR_ID") === 0) document.getElementById("warn").style.display = "block";
 setCur(cur);
+
+function makeImage(cb){
+  var q = lastQR, n = q.getModuleCount(), W = 800, H = 1040, cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  var c = cv.getContext("2d");
+  c.fillStyle = "#fff"; c.fillRect(0,0,W,H);
+  c.fillStyle = "#f27d26"; c.fillRect(0,0,W,130);
+  c.fillStyle = "#fff"; c.textAlign = "center";
+  c.font = "bold 44px system-ui, sans-serif"; c.fillText("\u2615 Support Us", W/2, 62);
+  c.font = "26px system-ui, sans-serif"; c.fillText("RongKunKmeanMnus", W/2, 102);
+  var size = 640, cell = Math.floor(size / n), qs = cell * n, x0 = (W - qs) / 2, y0 = 190;
+  c.fillStyle = "#000";
+  for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) c.fillRect(x0 + k*cell, y0 + r*cell, cell, cell);
+  c.fillStyle = "#222"; c.font = "bold 38px system-ui, sans-serif"; c.fillText(MERCHANT_NAME, W/2, y0 + qs + 70);
+  c.fillStyle = "#f27d26"; c.font = "bold 46px system-ui, sans-serif";
+  c.fillText(amountNow > 0 ? fmt(amountNow) : "Any amount", W/2, y0 + qs + 135);
+  c.fillStyle = "#777"; c.font = "24px system-ui, sans-serif";
+  c.fillText("Scan with any Bakong-enabled banking app", W/2, y0 + qs + 185);
+  cv.toBlob(cb, "image/png");
+}
+document.getElementById("dl").onclick = function(){
+  if (!lastQR) return;
+  makeImage(async function(blob){
+    var name = "donate-qr" + (amountNow > 0 ? "-" + amountNow + cur : "") + ".png";
+    var d = null;
+    try { d = window.claude && claude.use ? await claude.use("downloads") : null; } catch(e){}
+    if (d) { try { await d.save({filename: name, data: blob}); } catch(e){} return; }
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+};
 </script>
 </body>
 </html>
