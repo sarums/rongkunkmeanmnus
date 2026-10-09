@@ -42,7 +42,7 @@ a{color:var(--accent)}
   <div class="amounts" id="amounts"></div>
   <div class="custom"><input id="custom" type="number" min="0.1" step="0.1" placeholder="Custom amount (USD)"><button id="go">Set</button></div>
   <div class="qrbox"><div id="qr"></div></div>
-  <div><button class="dl" id="dl">⬇ Download QR image (works from gallery)</button></div>
+  <div><button class="dl" id="dl">⬇ Download QR card</button> <button class="dl" id="dl2">⬇ Plain QR</button></div>
   <div class="who">SOK SARUM</div>
   <div class="amt" id="amt">$1.00</div>
   <div class="hint" id="hint1">Open your bank app → Scan → amount is filled in automatically 🙏</div>
@@ -114,31 +114,53 @@ document.getElementById("go").onclick = function(){ render(parseFloat(document.g
 if (BAKONG_ACCOUNT.indexOf("YOUR_ID") === 0) document.getElementById("warn").style.display = "block";
 setCur(cur);
 
-function makeImage(cb){
-  // Clean, plain image: black modules on pure white, big quiet zone, no extra graphics,
-  // so bank apps can read it from the gallery.
-  var q = lastQR, n = q.getModuleCount();
-  var cell = Math.max(8, Math.floor(900 / n)), qs = cell * n, m = cell * 6, W = qs + m * 2;
-  var cv = document.createElement("canvas");
-  cv.width = W; cv.height = W;
-  var c = cv.getContext("2d");
-  c.fillStyle = "#ffffff"; c.fillRect(0, 0, W, W);
-  c.fillStyle = "#000000";
-  for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) c.fillRect(m + k*cell, m + r*cell, cell, cell);
+function makeImage(cb, fancy){
+  var q = lastQR, n = q.getModuleCount(), cv = document.createElement("canvas"), c;
+  function modules(x0, y0, cell){
+    c.fillStyle = "#000000";
+    for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) c.fillRect(x0 + k*cell, y0 + r*cell, cell, cell);
+  }
+  if (!fancy) {
+    // plain: QR only, big white quiet zone (most reliable for gallery scanning)
+    var cell = Math.max(8, Math.floor(900 / n)), qs = cell * n, m = cell * 6, W = qs + m * 2;
+    cv.width = W; cv.height = W; c = cv.getContext("2d");
+    c.fillStyle = "#ffffff"; c.fillRect(0, 0, W, W);
+    modules(m, m, cell);
+  } else {
+    // designed card: header + QR on a wide white area + text well below the QR
+    var W2 = 1000, cell2 = Math.max(8, Math.floor(740 / n)), qs2 = cell2 * n;
+    var top = 130, gap = 90, y0 = top + gap, x0 = Math.round((W2 - qs2) / 2);
+    var H2 = y0 + qs2 + gap + 190;
+    cv.width = W2; cv.height = H2; c = cv.getContext("2d");
+    c.fillStyle = "#ffffff"; c.fillRect(0, 0, W2, H2);
+    c.fillStyle = "#f27d26"; c.fillRect(0, 0, W2, top);
+    c.fillStyle = "#ffffff"; c.textAlign = "center";
+    c.font = "bold 50px system-ui, sans-serif"; c.fillText("\u2615 Support Us", W2/2, 68);
+    c.font = "28px system-ui, sans-serif"; c.fillText("RongKunKmeanMnus", W2/2, 106);
+    modules(x0, y0, cell2);
+    var ty = y0 + qs2 + gap;
+    c.fillStyle = "#222222"; c.font = "bold 44px system-ui, sans-serif"; c.fillText(MERCHANT_NAME, W2/2, ty);
+    c.fillStyle = "#f27d26"; c.font = "bold 54px system-ui, sans-serif";
+    c.fillText(amountNow > 0 ? fmt(amountNow) : "Any amount", W2/2, ty + 70);
+    c.fillStyle = "#777777"; c.font = "26px system-ui, sans-serif";
+    c.fillText("Scan with any Bakong-enabled banking app", W2/2, ty + 120);
+  }
   cv.toBlob(cb, "image/png");
 }
-document.getElementById("dl").onclick = function(){
+function saveImage(fancy){
   if (!lastQR) return;
   makeImage(async function(blob){
-    var name = "donate-qr" + (amountNow > 0 ? "-" + amountNow + cur : "") + ".png";
+    var name = (fancy ? "donate-card" : "donate-qr-plain") + (amountNow > 0 ? "-" + amountNow + cur : "") + ".png";
     var d = null;
     try { d = window.claude && claude.use ? await claude.use("downloads") : null; } catch(e){}
     if (d) { try { await d.save({filename: name, data: blob}); } catch(e){} return; }
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
-  });
-};
+  }, fancy);
+}
+document.getElementById("dl").onclick = function(){ saveImage(true); };
+document.getElementById("dl2").onclick = function(){ saveImage(false); };
 </script>
 </body>
 </html>
