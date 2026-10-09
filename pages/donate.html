@@ -42,7 +42,7 @@ a{color:var(--accent)}
   <div class="amounts" id="amounts"></div>
   <div class="custom"><input id="custom" type="number" min="0.1" step="0.1" placeholder="Custom amount (USD)"><button id="go">Set</button></div>
   <div class="qrbox"><div id="qr"></div></div>
-  <div><button class="dl" id="dl">⬇ Download QR image</button></div>
+  <div><button class="dl" id="dl">⬇ Download QR image (works from gallery)</button></div>
   <div class="who">SOK SARUM</div>
   <div class="amt" id="amt">$1.00</div>
   <div class="hint" id="hint1">Open your bank app → Scan → amount is filled in automatically 🙏</div>
@@ -115,22 +115,16 @@ if (BAKONG_ACCOUNT.indexOf("YOUR_ID") === 0) document.getElementById("warn").sty
 setCur(cur);
 
 function makeImage(cb){
-  var q = lastQR, n = q.getModuleCount(), W = 800, H = 1040, cv = document.createElement("canvas");
-  cv.width = W; cv.height = H;
+  // Clean, plain image: black modules on pure white, big quiet zone, no extra graphics,
+  // so bank apps can read it from the gallery.
+  var q = lastQR, n = q.getModuleCount();
+  var cell = Math.max(8, Math.floor(900 / n)), qs = cell * n, m = cell * 6, W = qs + m * 2;
+  var cv = document.createElement("canvas");
+  cv.width = W; cv.height = W;
   var c = cv.getContext("2d");
-  c.fillStyle = "#fff"; c.fillRect(0,0,W,H);
-  c.fillStyle = "#f27d26"; c.fillRect(0,0,W,130);
-  c.fillStyle = "#fff"; c.textAlign = "center";
-  c.font = "bold 44px system-ui, sans-serif"; c.fillText("\u2615 Support Us", W/2, 62);
-  c.font = "26px system-ui, sans-serif"; c.fillText("RongKunKmeanMnus", W/2, 102);
-  var size = 640, cell = Math.floor(size / n), qs = cell * n, x0 = (W - qs) / 2, y0 = 190;
-  c.fillStyle = "#000";
-  for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) c.fillRect(x0 + k*cell, y0 + r*cell, cell, cell);
-  c.fillStyle = "#222"; c.font = "bold 38px system-ui, sans-serif"; c.fillText(MERCHANT_NAME, W/2, y0 + qs + 70);
-  c.fillStyle = "#f27d26"; c.font = "bold 46px system-ui, sans-serif";
-  c.fillText(amountNow > 0 ? fmt(amountNow) : "Any amount", W/2, y0 + qs + 135);
-  c.fillStyle = "#777"; c.font = "24px system-ui, sans-serif";
-  c.fillText("Scan with any Bakong-enabled banking app", W/2, y0 + qs + 185);
+  c.fillStyle = "#ffffff"; c.fillRect(0, 0, W, W);
+  c.fillStyle = "#000000";
+  for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) c.fillRect(m + k*cell, m + r*cell, cell, cell);
   cv.toBlob(cb, "image/png");
 }
 document.getElementById("dl").onclick = function(){
