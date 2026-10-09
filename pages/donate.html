@@ -1,250 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Support Us | RongKunKmeanMnus</title>
-  <meta name="description" content="Support RongKunKmeanMnus — buy us a coffee and help keep free streaming alive.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Hanuman:wght@400;700;900&display=swap" rel="stylesheet">
-  <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0a0a0a;--bg2:#111;--bg3:#181818;
-  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
-  --text:#e4e4e7;--text2:#71717a;
-  --brand:#f27d26;--brand2:#ff9340;
-}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Outfit','Hanuman',sans-serif;}
-a{text-decoration:none;color:inherit}
-
-/* Navbar */
-#navbar{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(8,8,8,.97);border-bottom:1px solid var(--border);}
-#nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px;padding:0 24px;}
-.nav-logo{display:flex;align-items:center;gap:9px;}
-.nav-logo-icon{width:30px;height:30px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;}
-.nav-logo-icon svg{fill:#fff;width:12px;height:12px;transform:translateX(1px);}
-.nav-logo-text{font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:-.02em;}
-.nav-back{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:#666;padding:6px 14px;border:1px solid var(--border2);border-radius:9999px;transition:all .2s;}
-.nav-back:hover{color:#fff;border-color:#555;}
-.nav-back svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;}
-
-/* Page */
-.page-wrap{max-width:520px;margin:0 auto;padding:80px 20px 60px;}
-
-/* Hero */
-.hero{text-align:center;padding:2.5rem 0 2rem;}
-.hero-icon{width:64px;height:64px;background:linear-gradient(135deg,#f27d26,#ff6b00);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:1.8rem;box-shadow:0 8px 32px rgba(242,125,38,.3);}
-.hero-title{font-size:1.7rem;font-weight:900;color:#fff;letter-spacing:-.03em;margin-bottom:.5rem;}
-.hero-sub{font-size:.88rem;color:var(--text2);line-height:1.7;max-width:340px;margin:0 auto;}
-.hero-name{color:var(--brand);font-weight:700;}
-
-/* Card */
-.card{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:1.75rem;margin-bottom:1.25rem;}
-.card-title{font-size:.65rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#333;margin-bottom:1.25rem;}
-
-/* Amount grid */
-.amount-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;}
-.amount-btn{padding:10px 6px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:10px;color:#888;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;text-align:center;}
-.amount-btn:hover{border-color:rgba(242,125,38,.4);color:#f27d26;background:rgba(242,125,38,.05);}
-.amount-btn.active{border-color:#f27d26;color:#f27d26;background:rgba(242,125,38,.1);}
-.amount-btn.surprise{grid-column:1/-1;background:linear-gradient(135deg,rgba(242,125,38,.1),rgba(255,107,0,.05));border-color:rgba(242,125,38,.3);color:#f27d26;font-size:.82rem;display:flex;align-items:center;justify-content:center;gap:8px;}
-.amount-btn.surprise:hover{background:linear-gradient(135deg,rgba(242,125,38,.2),rgba(255,107,0,.1));}
-
-/* Selected amount display */
-.selected-wrap{text-align:center;padding:.75rem;background:rgba(242,125,38,.05);border:1px solid rgba(242,125,38,.15);border-radius:10px;margin-bottom:1.25rem;}
-.selected-label{font-size:.65rem;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
-.selected-amount{font-size:1.6rem;font-weight:900;color:#f27d26;letter-spacing:-.03em;}
-
-/* QR section */
-.qr-wrap{text-align:center;}
-.qr-label{font-size:.72rem;color:#555;font-weight:600;margin-bottom:.75rem;}
-.qr-img-wrap{position:relative;display:inline-block;}
-.qr-img{width:220px;height:220px;object-fit:cover;border-radius:16px;border:2px solid rgba(255,255,255,.08);box-shadow:0 8px 32px rgba(0,0,0,.5);}
-.qr-badge{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);background:#f27d26;color:#000;font-size:.65rem;font-weight:900;padding:4px 14px;border-radius:9999px;white-space:nowrap;letter-spacing:.05em;}
-.qr-hint{font-size:.72rem;color:#444;margin-top:1.25rem;line-height:1.6;}
-.qr-hint span{color:#f27d26;font-weight:700;}
-
-/* How it works */
-.steps{display:flex;flex-direction:column;gap:.75rem;}
-.step{display:flex;align-items:center;gap:12px;}
-.step-num{width:28px;height:28px;border-radius:50%;background:rgba(242,125,38,.1);border:1px solid rgba(242,125,38,.2);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#f27d26;flex-shrink:0;}
-.step-text{font-size:.82rem;color:#666;line-height:1.5;}
-.step-text strong{color:#ccc;font-weight:600;}
-
-/* Thank you note */
-.thankyou{text-align:center;padding:1.5rem;background:linear-gradient(135deg,rgba(242,125,38,.05),rgba(255,107,0,.02));border:1px solid rgba(242,125,38,.1);border-radius:16px;}
-.thankyou-icon{font-size:2rem;margin-bottom:.75rem;}
-.thankyou-text{font-size:.85rem;color:#666;line-height:1.7;}
-.thankyou-text strong{color:#f27d26;}
-
-/* Footer */
-.page-footer{border-top:1px solid var(--border);padding:24px;text-align:center;margin-top:2rem;}
-.pf-links{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:8px;}
-.pf-links a{font-size:.68rem;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.08em;transition:color .2s;}
-.pf-links a:hover{color:var(--brand);}
-.pf-copy{font-size:.7rem;color:#1f1f1f;margin-top:6px;}
-
-/* Animations */
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.card{animation:fadeUp .4s ease both;}
-.card:nth-child(1){animation-delay:.05s}
-.card:nth-child(2){animation-delay:.1s}
-.card:nth-child(3){animation-delay:.15s}
-.card:nth-child(4){animation-delay:.2s}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Donate | RongKunKmeanMnus</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{--bg:#fff7f0;--card:#fff;--text:#2a1c10;--muted:#7a6656;--accent:#f27d26;--border:#f1ddcb;--danger:#c0392b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17110c;--card:#231a13;--text:#f6ebe0;--muted:#b9a592;--border:#3a2b1e}}
+:root[data-theme="dark"]{--bg:#17110c;--card:#231a13;--text:#f6ebe0;--muted:#b9a592;--border:#3a2b1e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Khmer",Roboto,sans-serif;display:flex;justify-content:center;padding:20px 14px}
+.card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px;text-align:center}
+h1{margin:0 0 4px;font-size:22px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+.amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.amounts button,.custom button{border:1px solid var(--border);background:transparent;color:var(--text);padding:11px 0;border-radius:12px;font-size:15px;cursor:pointer}
+.amounts button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.custom{display:flex;gap:8px;margin-bottom:18px}
+.custom input{flex:1;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:15px}
+.custom button{padding:11px 16px;background:var(--accent);border-color:var(--accent);color:#fff}
+.curbar{display:flex;gap:8px;justify-content:center;margin-bottom:12px}.curbar button{border:1px solid var(--border);background:transparent;color:var(--text);padding:8px 18px;border-radius:999px;cursor:pointer;font-size:14px}.curbar button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.qrbox{background:#fff;border-radius:16px;padding:14px;display:inline-block;border:2px solid var(--accent)}
+.qrbox svg{width:230px;height:230px;display:block}
+.who{margin:12px 0 2px;font-weight:600}
+.amt{font-size:26px;font-weight:700;color:var(--accent)}
+.hint{color:var(--muted);font-size:13px;margin-top:6px}
+.warn{display:none;background:#fdecea;color:var(--danger);border-radius:10px;padding:10px;font-size:13px;margin-bottom:14px;text-align:left}
+a{color:var(--accent)}
+</style>
 </head>
 <body>
-
-<div id="navbar">
-  <div id="nav-inner">
-    <a href="/" class="nav-logo">
-      <div class="nav-logo-icon"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>
-      <span class="nav-logo-text">RongKunKmeanMnus</span>
-    </a>
-    <a href="/" class="nav-back">
-      <svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Back
-    </a>
-  </div>
-</div>
-
-<div class="page-wrap">
-
-  <!-- Hero -->
-  <div class="hero">
-    <div class="hero-icon">☕</div>
-    <h1 class="hero-title">Support Our Work</h1>
-    <p class="hero-sub">Help <span class="hero-name">SOK SARUM</span> keep RongKunKmeanMnus free for everyone. Every contribution means a lot! 🙏</p>
-  </div>
-
-  <!-- Amount selector -->
-  <div class="card">
-    <div class="card-title">Choose an amount</div>
-    <div class="amount-grid">
-      <button class="amount-btn active" onclick="selectAmount(0.50, this)">$0.50</button>
-      <button class="amount-btn" onclick="selectAmount(1, this)">$1.00</button>
-      <button class="amount-btn" onclick="selectAmount(2, this)">$2.00</button>
-      <button class="amount-btn" onclick="selectAmount(5, this)">$5.00</button>
-      <button class="amount-btn" onclick="selectAmount(10, this)">$10.00</button>
-      <button class="amount-btn" onclick="selectAmount(20, this)">$20.00</button>
-      <button class="amount-btn" onclick="selectAmount(50, this)">$50.00</button>
-      <button class="amount-btn surprise" onclick="surpriseMe()">
-        🎲 Surprise Me!
-      </button>
-    </div>
-    <div class="selected-wrap">
-      <div class="selected-label">You are donating</div>
-      <div class="selected-amount" id="selectedAmount">$0.50</div>
-    </div>
-  </div>
-
-  <!-- QR Code -->
-  <div class="card">
-    <div class="card-title">Scan to pay via ACELEDA</div>
-    <div class="qr-wrap">
-      <div class="qr-label">Open your ACELEDA app → Scan QR → Enter amount → Confirm</div>
-      <div class="qr-img-wrap">
-        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhOY9FjCNH86OFgF1lhv0e88Pd6ig6RdiAOCfZXd4GzYEh5hiQnBT-763sNp1oZbxaqgkc6gjh9ZG8fl-EMStdBSl97ibqAG0k2m87RefZwopqACp3kBc3pI7XyLyKY6wdgHnrAxhHegVAK4RemqLqaaJncWrH29QVSirrHakKt1xlbe2dnmYE_SnCKdIc/s2160/SARUM.jpg"
-          class="qr-img" alt="ACELEDA QR Code - SOK SARUM"
-          onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=ACELEDA-SOK-SARUM'">
-        <div class="qr-badge">ACELEDA · SOK SARUM</div>
-      </div>
-      <p class="qr-hint">
-        Enter <span id="qrAmount">$0.50</span> in the amount field after scanning.<br>
-        Thank you for your support! 🙏
-      </p>
-    </div>
-  </div>
-
-  <!-- How it works -->
-  <div class="card">
-    <div class="card-title">How to donate</div>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-text"><strong>Choose amount</strong> — pick how much you'd like to donate above</div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-text"><strong>Open ACELEDA app</strong> — tap the QR scan icon</div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-text"><strong>Scan the QR code</strong> — point your camera at the code above</div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-text"><strong>Enter the amount</strong> — type the amount you selected</div>
-      </div>
-      <div class="step">
-        <div class="step-num">5</div>
-        <div class="step-text"><strong>Confirm payment</strong> — done! Thank you so much 🎉</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Thank you -->
-  <div class="card">
-    <div class="thankyou">
-      <div class="thankyou-icon">🙏</div>
-      <div class="thankyou-text">
-        Your support helps us keep <strong>RongKunKmeanMnus</strong> free for everyone.<br>
-        Every dollar goes toward server costs and bringing you more great content.<br><br>
-        <strong>សូមអរគុណច្រើន! Thank you so much!</strong>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<div class="page-footer">
-  <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;">
-    <div class="nav-logo-icon" style="width:24px;height:24px;"><svg viewBox="0 0 24 24" fill="#fff" width="10" height="10" style="transform:translateX(1px)"><polygon points="5,3 19,12 5,21"/></svg></div>
-    <span style="font-size:.9rem;font-weight:800;color:#fff;">RongKunKmeanMnus</span>
-  </div>
-  <div class="pf-links">
-    <a href="/">Home</a>
-    <a href="/about">About</a>
-    <a href="/privacy">Privacy</a>
-    <a href="/terms">Terms</a>
-    <a href="/contact">Contact</a>
-  </div>
-  <p class="pf-copy">&copy; 2026 RongKunKmeanMnus. All rights reserved.</p>
+<div class="card">
+  <h1>☕ Support Us</h1>
+  <p class="sub">ជួយគាំទ្រ រោងកុនគ្មានមនុស្ស · Scan with any Bakong-enabled banking app</p>
+  <div class="warn" id="warn">Set your <b>BAKONG_ACCOUNT</b> in the script (e.g. <code>yourname@aclb</code>) to enable real payments.</div>
+  <div class="curbar"><button id="cUSD">USD $</button><button id="cKHR">Riel ៛</button></div>
+  <div class="amounts" id="amounts"></div>
+  <div class="custom"><input id="custom" type="number" min="0.1" step="0.1" placeholder="Custom amount (USD)"><button id="go">Set</button></div>
+  <div class="qrbox"><div id="qr"></div></div>
+  <div class="who">SOK SARUM</div>
+  <div class="amt" id="amt">$1.00</div>
+  <div class="hint" id="hint1">Open your bank app → Scan → amount is filled in automatically 🙏</div>
+  <div class="hint"><a href="https://www.rongkunkmeanmnus.com/">← Back to RongKunKmeanMnus</a></div>
 </div>
 
 <script>
-const amounts = [0.50, 1, 2, 5, 10, 20, 50];
-let currentAmount = 0.50;
+// ====== CONFIG: edit these ======
+var BAKONG_ACCOUNT = "sarom@aclb";   // your Bakong account ID (public, NOT the API token)
+var MERCHANT_NAME  = "SOK SARUM";
+var MERCHANT_CITY  = "Phnom Penh";
+var PRESETS        = {USD:[0.5,1,2,5,10,20], KHR:[2000,4000,10000,20000,40000,80000]};
+var cur = "KHR";   // default currency: "KHR" (Riel) or "USD"
+// =================================
 
-function selectAmount(amount, btn) {
-  currentAmount = amount;
-  document.querySelectorAll('.amount-btn:not(.surprise)').forEach(b => b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  updateDisplay(amount);
+function tlv(tag, val){ return tag + String(val.length).padStart(2,"0") + val; }
+function crc16(s){
+  var c = 0xFFFF;
+  for (var i=0;i<s.length;i++){
+    c ^= s.charCodeAt(i) << 8;
+    for (var j=0;j<8;j++) c = (c & 0x8000) ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF;
+  }
+  return c.toString(16).toUpperCase().padStart(4,"0");
 }
-
-function surpriseMe() {
-  const random = amounts[Math.floor(Math.random() * (amounts.length - 1))];
-  // Remove active from all
-  document.querySelectorAll('.amount-btn:not(.surprise)').forEach(b => b.classList.remove('active'));
-  // Find matching button
-  document.querySelectorAll('.amount-btn:not(.surprise)').forEach(b => {
-    if(parseFloat(b.textContent.replace('$','')) === random) b.classList.add('active');
+function buildKHQR(amount){
+  var p = tlv("00","01") + tlv("01", amount>0 ? "12" : "11") +
+    tlv("29", tlv("00", BAKONG_ACCOUNT)) +
+    tlv("52","5999") + tlv("53", cur==="KHR" ? "116" : "840") +
+    (amount>0 ? tlv("54", cur==="KHR" ? String(Math.round(amount)) : Number(amount).toFixed(2)) : "") +
+    tlv("58","KH") + tlv("59", MERCHANT_NAME.slice(0,25)) + tlv("60", MERCHANT_CITY.slice(0,15)) +
+    (amount>0 ? tlv("99", tlv("00", String(Date.now())) + tlv("01", String(Date.now() + 24*3600*1000))) : "") + "6304";
+  return p + crc16(p);
+}
+var amountNow = 0;
+function fmt(a){ return cur==="KHR" ? Math.round(a).toLocaleString("en-US") + " ៛" : "$" + a.toFixed(2); }
+function render(amount){
+  amount = cur==="KHR" ? Math.round(amount) : Math.round(amount*100)/100;
+  if (!(amount >= 0)) return;
+  amountNow = amount;
+  var qr = qrcode(0, "M");
+  qr.addData(buildKHQR(amount));
+  qr.make();
+  document.getElementById("qr").innerHTML = qr.createSvgTag({cellSize:4, margin:0, scalable:true});
+  document.getElementById("amt").textContent = amount > 0 ? fmt(amount) : "Any amount";
+  document.getElementById("hint1").textContent = amount > 0 ? "Open your bank app → Scan → amount is filled in automatically 🙏" : "Open your bank app → Scan → type any amount you like 🙏";
+  document.querySelectorAll("#amounts button").forEach(function(b){ b.classList.toggle("on", Number(b.dataset.v) === amount); });
+}
+function buildPresets(){
+  var box = document.getElementById("amounts"); box.innerHTML = "";
+  var any = document.createElement("button");
+  any.textContent = "Any amount (type in my bank app)"; any.dataset.v = 0; any.style.gridColumn = "1 / -1";
+  any.onclick = function(){ render(0); };
+  box.appendChild(any);
+  PRESETS[cur].forEach(function(v){
+    var b = document.createElement("button");
+    b.textContent = fmt(v); b.dataset.v = v;
+    b.onclick = function(){ render(v); };
+    box.appendChild(b);
   });
-  updateDisplay(random);
-  // Fun animation on surprise button
-  const sb = document.querySelector('.amount-btn.surprise');
-  sb.textContent = '🎉 $' + random.toFixed(2) + '!';
-  setTimeout(()=>{ sb.innerHTML = '🎲 Surprise Me!'; }, 2000);
+  document.getElementById("custom").placeholder = "Custom amount (" + (cur==="KHR" ? "Riel" : "USD") + ")";
+  document.getElementById("cUSD").classList.toggle("on", cur==="USD");
+  document.getElementById("cKHR").classList.toggle("on", cur==="KHR");
 }
-
-function updateDisplay(amount) {
-  const fmt = '$' + amount.toFixed(2);
-  document.getElementById('selectedAmount').textContent = fmt;
-  document.getElementById('qrAmount').textContent = fmt;
-}
+function setCur(c){ cur = c; buildPresets(); render(0); }
+document.getElementById("cUSD").onclick = function(){ setCur("USD"); };
+document.getElementById("cKHR").onclick = function(){ setCur("KHR"); };
+document.getElementById("go").onclick = function(){ render(parseFloat(document.getElementById("custom").value)); };
+if (BAKONG_ACCOUNT.indexOf("YOUR_ID") === 0) document.getElementById("warn").style.display = "block";
+setCur(cur);
 </script>
-
 </body>
 </html>
