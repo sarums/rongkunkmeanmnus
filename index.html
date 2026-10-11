@@ -448,6 +448,9 @@
             <button id="mobile-playlist-close" onclick="toggleMobilePlaylist()"
               style="display:none;background:none;border:none;color:#555;font-size:1.1rem;cursor:pointer;padding:0;line-height:1;margin-left:auto;">✕</button>
           </div>
+          <input id="mobile-episode-search" class="mobile-episode-search" type="search"
+            placeholder="Search episode number or title…" aria-label="Search episodes"
+            oninput="filterMobileEpisodes(this.value)">
           <div class="playlist-items hide-scroll" id="playlist-items"></div>
         </div>
 
