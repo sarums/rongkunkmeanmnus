@@ -2727,6 +2727,19 @@ window.blogEpClick = function(btn, src, ep){
   btn.style.borderColor = '#f27d26';
   btn.style.fontWeight  = '900';
   btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  // Keep both desktop strip and mobile grid synchronized.
+  document.querySelectorAll('.blog-episode-tile').forEach(tile=>tile.classList.toggle('active',Number(tile.dataset.episode)===Number(ep)));
+  document.querySelectorAll('.bpeb').forEach(tile=>{
+    const active=Number(tile.dataset.episode)===Number(ep);
+    tile.style.background=active?'#f27d26':'rgba(255,255,255,.05)';
+    tile.style.color=active?'#000':'#666';
+    tile.style.borderColor=active?'#f27d26':'rgba(255,255,255,.06)';
+    tile.style.fontWeight=active?'900':'600';
+  });
+  if(typeof window.setBlogEpisodeRange==='function') window.setBlogEpisodeRange(Math.floor((Number(ep)-1)/30));
+  const toggleLabel=document.getElementById('blog-playlist-toggle-label');
+  const count=document.querySelector('.blog-playlist-count');
+  if(count) count.textContent=`· EP ${ep} / ${document.querySelectorAll('.blog-episode-tile').length}`;
   // Record every selected episode in browser history so Back restores
   // the previously selected episode instead of skipping to the previous page.
   const base = location.pathname.replace(/\/\d+$/, '').replace(/\/$/, '');
@@ -2952,45 +2965,48 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1, fromPopstate=fa
               if(!tVid) return '';
               const plVids=tPl?(tPl.videos||[]).map(id=>videos.find(v=>v.id===id)).filter(Boolean):[tVid];
               const epBtns=plVids.length>1?`
-                <div style="position:relative;padding:0 1rem .85rem;">
-                  <!-- Left arrow -->
+                <!-- Desktop keeps the existing horizontal episode selector -->
+                <div class="blog-episode-desktop" style="position:relative;padding:0 1rem .85rem;">
                   <button onclick="document.getElementById('bpep-scroll').scrollBy({left:-200,behavior:'smooth'})"
-                    style="position:absolute;left:0;top:50%;transform:translateY(-60%);
-                      width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
-                      border-radius:50%;color:#fff;font-size:.9rem;cursor:pointer;z-index:2;
-                      display:flex;align-items:center;justify-content:center;line-height:1;">‹</button>
-                  <!-- Scrollable EP buttons -->
-                  <div id="bpep-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;
-                    scrollbar-width:none;scroll-behavior:smooth;padding:2px 24px;">
+                    aria-label="Previous episodes" style="position:absolute;left:0;top:50%;transform:translateY(-60%);width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:50%;color:#fff;font-size:.9rem;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;line-height:1;">‹</button>
+                  <div id="bpep-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-behavior:smooth;padding:2px 24px;">
                     <div style="display:flex;gap:5px;width:max-content;">
                       ${plVids.map((v,i)=>{
                         const isActive = i===epNum-1;
-                        const embedSrc = getEmbedUrl(v).replace(/'/g,"\'");
-                        return `<button
-                          onclick="blogEpClick(this,'${embedSrc}',${i+1})"
-                          class="bpeb"
-                          style="flex-shrink:0;min-width:40px;padding:5px 8px;
-                            background:${isActive?'#f27d26':'rgba(255,255,255,.05)'};
-                            border:1px solid ${isActive?'#f27d26':'rgba(255,255,255,.06)'};
-                            border-radius:8px;
-                            color:${isActive?'#000':'#666'};
-                            font-size:.7rem;
-                            font-weight:${isActive?900:600};
-                            cursor:pointer;font-family:inherit;
-                            text-align:center;line-height:1.3;
-                            transition:all .15s;">
-                          <div style="font-size:.5rem;opacity:.8;">EP</div>
-                          <div>${i+1}</div>
+                        const embedSrc = getEmbedUrl(v).replace(/'/g,"\\'");
+                        return `<button onclick="blogEpClick(this,'${embedSrc}',${i+1})" class="bpeb" data-episode="${i+1}"
+                          style="flex-shrink:0;min-width:40px;padding:5px 8px;background:${isActive?'#f27d26':'rgba(255,255,255,.05)'};border:1px solid ${isActive?'#f27d26':'rgba(255,255,255,.06)'};border-radius:8px;color:${isActive?'#000':'#666'};font-size:.7rem;font-weight:${isActive?900:600};cursor:pointer;font-family:inherit;text-align:center;line-height:1.3;transition:all .15s;">
+                          <div style="font-size:.5rem;opacity:.8;">EP</div><div>${i+1}</div>
                         </button>`;
                       }).join('')}
                     </div>
                   </div>
-                  <!-- Right arrow -->
-                  <button onclick="document.getElementById('bpep-scroll').scrollBy({left:200,behavior:'smooth'})"
-                    style="position:absolute;right:0;top:50%;transform:translateY(-60%);
-                      width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);
-                      border-radius:50%;color:#fff;font-size:.9rem;cursor:pointer;z-index:2;
-                      display:flex;align-items:center;justify-content:center;line-height:1;">›</button>
+                  <button onclick="document.getElementById('bpep-scroll').scrollBy({left:200,behavior:'smooth'})" aria-label="Next episodes"
+                    style="position:absolute;right:0;top:50%;transform:translateY(-60%);width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:50%;color:#fff;font-size:.9rem;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;line-height:1;">›</button>
+                </div>
+                <!-- Mobile episode-focused playlist, opened by Show Playlist -->
+                <div class="blog-mobile-playlist">
+                  <button type="button" id="blog-playlist-toggle" class="blog-playlist-toggle" onclick="toggleBlogEpisodePlaylist()" aria-expanded="false">
+                    <span>📋 <strong id="blog-playlist-toggle-label">Show Playlist</strong> <span class="blog-playlist-count">· EP ${epNum} / ${plVids.length}</span></span>
+                    <span id="blog-playlist-toggle-chevron" class="blog-playlist-chevron">▾</span>
+                  </button>
+                  <div id="blog-episode-playlist-panel" class="blog-episode-playlist-panel" hidden>
+                    <input id="blog-episode-search" class="blog-episode-search" type="search" placeholder="Search episode number or title…" oninput="filterBlogEpisodes(this.value)" autocomplete="off" aria-label="Search episodes">
+                    <div id="blog-episode-ranges" class="blog-episode-ranges">
+                      ${Array.from({length:Math.ceil(plVids.length/30)},(_,r)=>`<button type="button" class="blog-episode-range ${epNum-1>=r*30&&epNum-1<(r+1)*30?'active':''}" data-range="${r}" onclick="setBlogEpisodeRange(${r})">${r*30+1}–${Math.min((r+1)*30,plVids.length)}</button>`).join('')}
+                    </div>
+                    <div id="blog-episode-grid" class="blog-episode-grid">
+                      ${plVids.map((v,i)=>{
+                        const title=(v.title||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                        const src=getEmbedUrl(v).replace(/'/g,"\\'");
+                        return `<button type="button" class="blog-episode-tile ${i===epNum-1?'active':''}" data-episode="${i+1}" data-range="${Math.floor(i/30)}" ${Math.floor(i/30)!==Math.floor((epNum-1)/30)?'hidden':''} data-search="${String(i+1+' '+(v.title||'')).toLowerCase().replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" title="${title}" onclick="blogEpClick(this,'${src}',${i+1})"><span class="blog-episode-number">${i+1}</span></button>`;
+                      }).join('')}
+                    </div>
+                    ${relVids&&relVids.length?`<div class="blog-related-programs"><div class="blog-related-heading">Related Program</div><div class="blog-related-grid">${relVids.slice(0,6).map(v=>{
+                      const href='/watch/'+(playlists.find(p=>(p.videos||[]).includes(v.id))?playlistSlug(playlists.find(p=>(p.videos||[]).includes(v.id))):videoSlug(v));
+                      return `<a class="blog-related-card" href="${href}" onclick="event.preventDefault();${playlists.some(p=>(p.videos||[]).includes(v.id))?`openPlaylist('${playlists.find(p=>(p.videos||[]).includes(v.id)).id}','${v.id}')`:`window.location.href='${href}'`}"><img src="${getThumb(v)}" loading="lazy" alt=""><span>${(v.title||'Related video').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span></a>`;
+                    }).join('')}</div></div>`:''}
+                  </div>
                 </div>`:'';
               // Play correct episode based on epNum from URL
               const startVid = plVids[epNum-1]||plVids[0];
@@ -3104,6 +3120,41 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1, fromPopstate=fa
     }, 300);
   }
 }
+
+// ── BLOG MOBILE EPISODE-FOCUSED PLAYLIST ──────────────────
+window.toggleBlogEpisodePlaylist = ()=>{
+  const panel=document.getElementById('blog-episode-playlist-panel');
+  const label=document.getElementById('blog-playlist-toggle-label');
+  const chevron=document.getElementById('blog-playlist-toggle-chevron');
+  const button=document.getElementById('blog-playlist-toggle');
+  if(!panel) return;
+  const opening=panel.hidden;
+  panel.hidden=!opening;
+  if(label) label.textContent=opening?'Hide Playlist':'Show Playlist';
+  if(chevron) chevron.textContent=opening?'▴':'▾';
+  if(button) button.setAttribute('aria-expanded',String(opening));
+};
+window.filterBlogEpisodes = value=>{
+  const q=String(value||'').trim().toLowerCase();
+  const tiles=[...document.querySelectorAll('#blog-episode-grid .blog-episode-tile')];
+  const activeRange=Number(document.querySelector('#blog-episode-ranges .blog-episode-range.active')?.dataset.range||0);
+  tiles.forEach(tile=>{
+    const searchable=(tile.dataset.search||'').toLowerCase();
+    tile.hidden=q ? !searchable.includes(q) : Number(tile.dataset.range)!==activeRange;
+  });
+  const ranges=document.getElementById('blog-episode-ranges');
+  if(ranges) ranges.style.display=q?'none':'';
+};
+window.setBlogEpisodeRange = range=>{
+  document.querySelectorAll('#blog-episode-ranges .blog-episode-range').forEach(btn=>btn.classList.toggle('active',Number(btn.dataset.range)===Number(range)));
+  document.querySelectorAll('#blog-episode-grid .blog-episode-tile').forEach(tile=>{
+    tile.hidden=Number(tile.dataset.range)!==Number(range);
+  });
+  const search=document.getElementById('blog-episode-search');
+  if(search) search.value='';
+  const ranges=document.getElementById('blog-episode-ranges');
+  if(ranges) ranges.style.display='';
+};
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
 let _mobilePlaylistOpen = false;
