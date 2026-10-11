@@ -3,7 +3,7 @@
 //  v5 — Network first for HTML, Cache first for assets
 // ═══════════════════════════════════════════
 
-const CACHE_NAME  = 'rkmn-v13-mobile-hidden-state-fix';
+const CACHE_NAME  = 'rkmn-v14-mobile-five-nav-feed';
 const ASSET_CACHE = 'rkmn-assets-v13-mobile-hidden-state-fix';
 
 // Static assets to pre-cache
