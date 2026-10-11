@@ -3,8 +3,8 @@
 //  v5 — Network first for HTML, Cache first for assets
 // ═══════════════════════════════════════════
 
-const CACHE_NAME  = 'rkmn-v6';
-const ASSET_CACHE = 'rkmn-assets-v6';
+const CACHE_NAME  = 'rkmn-v7';
+const ASSET_CACHE = 'rkmn-assets-v7';
 
 // Static assets to pre-cache
 const STATIC_ASSETS = [
