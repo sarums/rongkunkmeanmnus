@@ -1598,6 +1598,7 @@ window.openVideo=async (id,push=true)=>{
   $("playlist-panel").style.display="none";
   // Reset mobile playlist toggle
   _mobilePlaylistOpen = false;
+  document.body.classList.remove('mobile-playlist-open');
   const _mBtn=$('mobile-playlist-btn-wrap');
   if(_mBtn) _mBtn.style.display='none';
   const _mLabel=$('mobile-playlist-label');
@@ -1739,6 +1740,45 @@ window.openVideo=async (id,push=true)=>{
     // Build episode range tabs for the mobile-focused playlist.
     // Insert them outside the grid so the grid contains only numbered episodes.
     const isMobile = window.innerWidth <= 768;
+
+    // Build the native-app-style mobile bottom sheet for the main watch playlist.
+    if(isMobile){
+      let detail=document.getElementById('mobile-playlist-detail');
+      if(!detail){
+        detail=document.createElement('div');
+        detail.id='mobile-playlist-detail';
+        detail.className='mobile-playlist-detail';
+      }
+      const poster=getThumb(v);
+      const currentTitle=escHtml(v.title||pl.name||'Playlist');
+      const metaViews=fmtViews(v.views||0);
+      const metaCategory=escHtml(v.category||v.platform||v.source||'Drama');
+      const synopsisText=escHtml(v.description||'No synopsis available.');
+      detail.innerHTML=`
+        <div class="mobile-sheet-handle"><span></span></div>
+        <div class="mobile-sheet-show-info">
+          <img class="mobile-sheet-poster" src="${poster}" alt="" onerror="this.style.visibility='hidden'">
+          <div class="mobile-sheet-show-copy">
+            <div class="mobile-sheet-show-title">${currentTitle}</div>
+            <div class="mobile-sheet-show-meta">▷ ${metaViews} views · ${metaCategory}</div>
+          </div>
+          <button class="mobile-sheet-close" type="button" aria-label="Close playlist" onclick="toggleMobilePlaylist()">×</button>
+        </div>
+        <div class="mobile-sheet-tabs">
+          <button type="button" class="mobile-sheet-tab" data-tab="synopsis" onclick="setMobilePlaylistTab('synopsis')">Synopsis</button>
+          <button type="button" class="mobile-sheet-tab active" data-tab="episodes" onclick="setMobilePlaylistTab('episodes')">Episodes</button>
+        </div>
+        <div id="mobile-playlist-synopsis" class="mobile-playlist-synopsis" hidden>${synopsisText}</div>`;
+      const items=document.getElementById('playlist-items');
+      const rangesNow=document.getElementById('mobile-episode-ranges');
+      const panel=document.getElementById('playlist-panel');
+      if(panel && detail.parentNode!==panel){
+        panel.insertBefore(detail, rangesNow || items || panel.firstChild);
+      }
+      const search=document.getElementById('mobile-episode-search');
+      if(search) search.style.display='none';
+    }
+
     let mobileRanges = document.getElementById('mobile-episode-ranges');
     if(isMobile){
       if(!mobileRanges){
@@ -3209,6 +3249,17 @@ window.setMobileEpisodeRange = (range)=>{
   if(ranges) ranges.style.display = '';
 };
 
+window.setMobilePlaylistTab = (tab)=>{
+  const synopsis=document.getElementById('mobile-playlist-synopsis');
+  const ranges=document.getElementById('mobile-episode-ranges');
+  const items=document.getElementById('playlist-items');
+  document.querySelectorAll('.mobile-sheet-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.tab===tab));
+  const isSynopsis=tab==='synopsis';
+  if(synopsis) synopsis.hidden=!isSynopsis;
+  if(ranges) ranges.style.display=isSynopsis?'none':'';
+  if(items) items.style.display=isSynopsis?'none':'grid';
+};
+
 window.toggleMobilePlaylist = ()=>{
   _mobilePlaylistOpen = !_mobilePlaylistOpen;
   const panel    = $('playlist-panel');
@@ -3218,12 +3269,15 @@ window.toggleMobilePlaylist = ()=>{
   const btn      = $('mobile-playlist-toggle');
 
   if(_mobilePlaylistOpen){
-    if(panel){ panel.style.display=''; panel.style.animation='slideDown .25s ease'; }
+    document.body.classList.add('mobile-playlist-open');
+    setMobilePlaylistTab('episodes');
+    if(panel){ panel.style.display=''; panel.style.animation='mobileSheetIn .22s ease-out'; }
     if(label) label.textContent = 'Hide Playlist';
     if(chevron) chevron.style.transform = 'rotate(180deg)';
     if(closeBtn) closeBtn.style.display = 'block';
     if(btn) btn.style.background = 'rgba(242,125,38,.12)';
   } else {
+    document.body.classList.remove('mobile-playlist-open');
     if(panel) panel.style.display = 'none';
     if(label) label.textContent = 'Show Playlist';
     if(chevron) chevron.style.transform = '';
