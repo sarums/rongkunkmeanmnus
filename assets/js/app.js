@@ -709,7 +709,7 @@ window.addEventListener("popstate",e=>{
     const _path = location.pathname.replace('/blog/','').split('/');
     const _slug = state.slug || _path[0];
     const _ep   = state.epNum || (parseInt(_path[1])||1);
-    if(_slug) showBlogPost(_slug, _ep);
+    if(_slug) showBlogPost(_slug, _ep, true);
     else routeFromUrl(false);
   } else if(state.page==='home'){
     showPage('home',false);
@@ -2715,11 +2715,11 @@ window.blogEpClick = function(btn, src, ep){
   btn.style.borderColor = '#f27d26';
   btn.style.fontWeight  = '900';
   btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
-  // Update URL — use replaceState so EP clicks don't stack in history
-  // Back button will go to previous PAGE not previous episode
+  // Record every selected episode in browser history so Back restores
+  // the previously selected episode instead of skipping to the previous page.
   const base = location.pathname.replace(/\/\d+$/, '').replace(/\/$/, '');
   const slug = base.replace('/blog/', '');
-  history.replaceState({page:'blog-post', slug:slug, epNum:ep}, '', base + '/' + ep);
+  history.pushState({page:'blog-post', slug:slug, epNum:ep}, '', base + '/' + ep);
 };
 
 // ── BLOG VIDEO PLAYER ────────────────────────────────────
@@ -2866,7 +2866,7 @@ window.showBlogPage = async function showBlogPage(){
   NP.done();
 }
 
-window.showBlogPost = async function showBlogPost(slug, epNum=1){
+window.showBlogPost = async function showBlogPost(slug, epNum=1, fromPopstate=false){
   epNum = parseInt(epNum)||1;
   NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-blog-post'));
@@ -2881,9 +2881,9 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1){
     if(!post || post.status!=='published'){ show404(); return; }
     // Only add /epNum to URL if epNum > 1
     const blogUrl = epNum>1 ? '/blog/'+slug+'/'+epNum : '/blog/'+slug;
-    if(!window._isPopstate){
-      // Use replaceState so initial blog load doesn't add extra history entry
-      // EP button clicks will use pushState to add proper history
+    if(!fromPopstate && !window._isPopstate){
+      // Set the state for a directly loaded article without creating a duplicate entry.
+      // Episode selections create their own entries in blogEpClick().
       history.replaceState({page:'blog-post',slug,epNum},'',blogUrl);
     }
     updateMeta({title:post.title, desc:post.excerpt||post.title, image:post.cover||'', url:location.href});
