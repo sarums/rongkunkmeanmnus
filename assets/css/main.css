@@ -1123,3 +1123,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   }
   body.blog-playlist-open #blog-episode-grid { overflow:visible !important; max-height:none !important; }
 }
+
+
+/* Mobile playlist episode-range filtering: hidden episodes must never be forced visible by grid styles. */
+#playlist-items .pl-item[hidden] { display: none !important; }
+
+
+
+/* Fix: the mobile blog playlist grid must respect the hidden attribute.
+   Keep this selector more specific than the tile's display:grid rule. */
+@media (max-width: 768px) {
+  body.blog-playlist-open #blog-episode-grid .blog-episode-tile[hidden],
+  #blog-episode-grid .blog-episode-tile[hidden] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
