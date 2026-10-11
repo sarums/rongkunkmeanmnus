@@ -3,8 +3,8 @@
 //  v5 — Network first for HTML, Cache first for assets
 // ═══════════════════════════════════════════
 
-const CACHE_NAME  = 'rkmn-v5';
-const ASSET_CACHE = 'rkmn-assets-v5';
+const CACHE_NAME  = 'rkmn-v6';
+const ASSET_CACHE = 'rkmn-assets-v6';
 
 // Static assets to pre-cache
 const STATIC_ASSETS = [
@@ -42,6 +42,9 @@ self.addEventListener('fetch', e=>{
 
   // Skip non-GET
   if(req.method!=='GET') return;
+
+  // Never cache admin
+  if(url.pathname.startsWith('/admin') || url.pathname.endsWith('/admin.js')) return;
 
   // Skip external APIs — always network
   if(
