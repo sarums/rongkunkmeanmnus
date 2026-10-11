@@ -96,7 +96,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="https://firestore.googleapis.com">
   <link rel="dns-prefetch" href="https://www.dailymotion.com">
-  <link rel="stylesheet" href="/assets/css/main.css?v=202610111700">
+  <link rel="stylesheet" href="/assets/css/main.css?v=playlist-scroll-fix-20261011">
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8912019493601229" crossorigin="anonymous"></script>
 </head>
@@ -720,14 +720,7 @@
     @keyframes pulse404{0%,100%{box-shadow:0 0 0 0 rgba(242,125,38,.3)}50%{box-shadow:0 0 0 14px rgba(242,125,38,0)}}
     #page-404.active{display:flex!important;}
   </style>
-
-  <!-- PULL TO REFRESH INDICATOR -->
-  <div id="ptr-indicator">
-    <span class="ptr-icon">↓</span>
-    <span class="ptr-text">Pull to refresh</span>
-  </div>
-
-  <!-- ═══ DONATE MODAL ═══ -->
+<!-- ═══ DONATE MODAL ═══ -->
   <div id="donate-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem;">
     <div style="background:#111;border:1px solid rgba(255,255,255,.1);border-radius:20px;width:100%;max-width:400px;overflow:hidden;max-height:90vh;overflow-y:auto;">
       <!-- Header -->
@@ -797,7 +790,7 @@
 
   <!-- ═══ SCRIPTS ═══ -->
   <script src="/assets/js/ads.js"></script>
-  <script type="module" src="/assets/js/app.js?v=202610111700"></script>
+  <script type="module" src="/assets/js/app.js?v=playlist-scroll-fix-20261011"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
