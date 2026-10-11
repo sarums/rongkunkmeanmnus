@@ -1187,19 +1187,3 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   .fy-slide.is-playing .fy-slide-play { display:none; }
 }
 @media (min-width:768px) { #bottom-nav { display:none !important; } }
-
-
-/* For You mobile feed: remove site header and make video cards edge-to-edge */
-@media (max-width: 767px) {
-  body.fy-active { padding-top: 0 !important; padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important; }
-  body.fy-active #navbar { display: none !important; }
-  body.fy-active #page-cat,
-  body.fy-active #page-cat .page-content { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: none !important; }
-  body.fy-active #page-cat .cat-banner { display: none !important; }
-  body.fy-active #page-cat #cat-grid { width: 100vw !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
-  body.fy-active .fy-vertical-feed { width: 100vw !important; height: calc(100dvh - 70px - env(safe-area-inset-bottom)) !important; height: calc(100vh - 70px - env(safe-area-inset-bottom)) !important; }
-  body.fy-active .fy-slide { width: 100vw !important; height: calc(100dvh - 70px - env(safe-area-inset-bottom)) !important; height: calc(100vh - 70px - env(safe-area-inset-bottom)) !important; min-height: 0 !important; }
-  body.fy-active .fy-slide-media img,
-  body.fy-active .fy-slide-media iframe { width: 100% !important; height: 100% !important; object-fit: contain !important; }
-  body.fy-active #bottom-nav { display: block !important; }
-}
