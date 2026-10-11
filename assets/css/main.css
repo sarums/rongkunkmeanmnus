@@ -1139,3 +1139,15 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
     visibility: hidden !important;
   }
 }
+
+
+/* Definitive mobile playlist visibility fix: hidden must beat grid/flex !important rules. */
+@media (max-width: 768px) {
+  body.mobile-playlist-open #playlist-panel #playlist-items[hidden],
+  body.mobile-playlist-open #playlist-panel #playlist-items .pl-item[hidden],
+  body.mobile-playlist-open #playlist-panel #mobile-episode-ranges[hidden],
+  body.mobile-playlist-open #playlist-panel #mobile-playlist-synopsis[hidden] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
