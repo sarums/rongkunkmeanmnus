@@ -2700,9 +2700,20 @@ function blogMd(text){
 
 // ── BLOG EPISODE CLICK ───────────────────────────────────
 window.blogEpClick = function(btn, src, ep){
-  // Change video
+  // Replace the iframe's own history entry when switching episodes.
+  // Otherwise browser Back can first navigate inside the embedded player
+  // while leaving the top-level /blog/... URL unchanged.
   const iframe = document.getElementById('bpif');
-  if(iframe) iframe.src = src;
+  if(iframe){
+    try {
+      // Cross-origin frame navigation is allowed; reading its document is not.
+      // location.replace avoids adding a nested iframe history entry per episode.
+      iframe.contentWindow.location.replace(src);
+    } catch (err) {
+      // Fallback for unusual embed/browser restrictions.
+      iframe.src = src;
+    }
+  }
   // Update button styles
   document.querySelectorAll('.bpeb').forEach(b=>{
     b.style.background = 'rgba(255,255,255,.05)';
