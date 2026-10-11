@@ -1141,13 +1141,18 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 }
 
 
-/* Definitive mobile playlist visibility fix: hidden must beat grid/flex !important rules. */
+/* Verified mobile playlist visibility overrides.
+   Existing mobile rules use display:grid/flex !important, which defeats hidden/inline styles. */
 @media (max-width: 768px) {
   body.mobile-playlist-open #playlist-panel #playlist-items[hidden],
-  body.mobile-playlist-open #playlist-panel #playlist-items .pl-item[hidden],
   body.mobile-playlist-open #playlist-panel #mobile-episode-ranges[hidden],
-  body.mobile-playlist-open #playlist-panel #mobile-playlist-synopsis[hidden] {
+  body.mobile-playlist-open #playlist-panel #mobile-playlist-synopsis[hidden],
+  body.mobile-playlist-open #playlist-panel #playlist-items .pl-item[hidden],
+  #playlist-panel #playlist-items .pl-item[hidden] {
     display: none !important;
     visibility: hidden !important;
+  }
+  body.mobile-playlist-open #playlist-panel #mobile-episode-ranges:not([hidden]) {
+    display: flex !important;
   }
 }
