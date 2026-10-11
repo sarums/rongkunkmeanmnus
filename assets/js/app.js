@@ -2725,6 +2725,17 @@ function blogMd(text){
 
 // ── BLOG EPISODE CLICK ───────────────────────────────────
 window.blogEpClick = function(btn, src, ep){
+  document.body.classList.remove('blog-playlist-open');
+  const mobilePanel=document.getElementById('blog-episode-playlist-panel');
+  if(mobilePanel && !mobilePanel.hidden){
+    mobilePanel.hidden=true;
+    const label=document.getElementById('blog-playlist-toggle-label');
+    const chevron=document.getElementById('blog-playlist-toggle-chevron');
+    const toggle=document.getElementById('blog-playlist-toggle');
+    if(label) label.textContent='Show Playlist';
+    if(chevron) chevron.textContent='▾';
+    if(toggle) toggle.setAttribute('aria-expanded','false');
+  }
   // Replace the iframe's own history entry when switching episodes.
   // Otherwise browser Back can first navigate inside the embedded player
   // while leaving the top-level /blog/... URL unchanged.
@@ -3015,7 +3026,6 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1, fromPopstate=fa
                     <span id="blog-playlist-toggle-chevron" class="blog-playlist-chevron">▾</span>
                   </button>
                   <div id="blog-episode-playlist-panel" class="blog-episode-playlist-panel" hidden>
-                    <input id="blog-episode-search" class="blog-episode-search" type="search" placeholder="Search episode number or title…" oninput="filterBlogEpisodes(this.value)" autocomplete="off" aria-label="Search episodes">
                     <div id="blog-episode-ranges" class="blog-episode-ranges">
                       ${Array.from({length:Math.ceil(plVids.length/30)},(_,r)=>`<button type="button" class="blog-episode-range ${epNum-1>=r*30&&epNum-1<(r+1)*30?'active':''}" data-range="${r}" onclick="setBlogEpisodeRange(${r})">${r*30+1}–${Math.min((r+1)*30,plVids.length)}</button>`).join('')}
                     </div>
@@ -3023,7 +3033,7 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1, fromPopstate=fa
                       ${plVids.map((v,i)=>{
                         const title=(v.title||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                         const src=getEmbedUrl(v).replace(/'/g,"\\'");
-                        return `<button type="button" class="blog-episode-tile ${i===epNum-1?'active':''}" data-episode="${i+1}" data-range="${Math.floor(i/30)}" ${Math.floor(i/30)!==Math.floor((epNum-1)/30)?'hidden':''} data-search="${String(i+1+' '+(v.title||'')).toLowerCase().replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" title="${title}" onclick="blogEpClick(this,'${src}',${i+1})"><span class="blog-episode-number">${i+1}</span></button>`;
+                        return `<button type="button" class="blog-episode-tile ${i===epNum-1?'active':''}" data-episode="${i+1}" data-range="${Math.floor(i/30)}" ${Math.floor(i/30)!==Math.floor((epNum-1)/30)?'hidden':''} data-search="${String(i+1+' '+(v.title||'')).toLowerCase().replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" title="${title}" onclick="blogEpClick(this,'${src}',${i+1})"><span class="blog-episode-number" aria-label="Episode ${i+1}">${i+1}</span></button>`;
                       }).join('')}
                     </div>
                     ${relVids&&relVids.length?`<div class="blog-related-programs"><div class="blog-related-heading">Related Program</div><div class="blog-related-grid">${relVids.slice(0,6).map(v=>{
@@ -3154,30 +3164,20 @@ window.toggleBlogEpisodePlaylist = ()=>{
   if(!panel) return;
   const opening=panel.hidden;
   panel.hidden=!opening;
+  document.body.classList.toggle('blog-playlist-open', opening && window.matchMedia('(max-width: 768px)').matches);
   if(label) label.textContent=opening?'Hide Playlist':'Show Playlist';
-  if(chevron) chevron.textContent=opening?'▴':'▾';
+  if(chevron) chevron.textContent=opening?'×':'▾';
   if(button) button.setAttribute('aria-expanded',String(opening));
-};
-window.filterBlogEpisodes = value=>{
-  const q=String(value||'').trim().toLowerCase();
-  const tiles=[...document.querySelectorAll('#blog-episode-grid .blog-episode-tile')];
-  const activeRange=Number(document.querySelector('#blog-episode-ranges .blog-episode-range.active')?.dataset.range||0);
-  tiles.forEach(tile=>{
-    const searchable=(tile.dataset.search||'').toLowerCase();
-    tile.hidden=q ? !searchable.includes(q) : Number(tile.dataset.range)!==activeRange;
-  });
-  const ranges=document.getElementById('blog-episode-ranges');
-  if(ranges) ranges.style.display=q?'none':'';
+  if(opening){
+    const activeRange=document.querySelector('#blog-episode-ranges .blog-episode-range.active');
+    if(activeRange) window.setBlogEpisodeRange(Number(activeRange.dataset.range));
+  }
 };
 window.setBlogEpisodeRange = range=>{
   document.querySelectorAll('#blog-episode-ranges .blog-episode-range').forEach(btn=>btn.classList.toggle('active',Number(btn.dataset.range)===Number(range)));
   document.querySelectorAll('#blog-episode-grid .blog-episode-tile').forEach(tile=>{
     tile.hidden=Number(tile.dataset.range)!==Number(range);
   });
-  const search=document.getElementById('blog-episode-search');
-  if(search) search.value='';
-  const ranges=document.getElementById('blog-episode-ranges');
-  if(ranges) ranges.style.display='';
 };
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
