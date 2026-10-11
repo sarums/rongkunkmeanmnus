@@ -1797,7 +1797,8 @@ window.openVideo=async (id,push=true)=>{
         ).join('');
       }
       document.querySelectorAll('#playlist-items .pl-item').forEach(item=>{
-        item.style.display = Math.floor((Number(item.dataset.episode)-1)/30)===Math.floor(plQueueIdx/30) ? '' : 'none';
+        const ep = Number(item.dataset.episode || 0);
+        item.hidden = !(ep > 0 && Math.floor((ep - 1) / 30) === Math.floor(plQueueIdx / 30));
       });
     } else if(mobileRanges){
       mobileRanges.remove();
@@ -3316,7 +3317,7 @@ window.filterMobileEpisodes = (value)=>{
     const title = item.getAttribute('data-search') || item.textContent.toLowerCase();
     const range = Math.floor((Number(ep)-1)/30);
     const matches = !query || ep.includes(query) || title.includes(query);
-    item.style.display = matches && (query || range===activeRange) ? '' : 'none';
+    item.hidden = !(matches && (query || range === activeRange));
   });
   const ranges = document.getElementById('mobile-episode-ranges');
   if(ranges) ranges.style.display = query ? 'none' : '';
@@ -3328,7 +3329,8 @@ window.setMobileEpisodeRange = (range)=>{
   const search = document.getElementById('mobile-episode-search');
   if(search) search.value = '';
   document.querySelectorAll('#playlist-items .pl-item').forEach(item=>{
-    item.style.display = Math.floor((Number(item.dataset.episode)-1)/30)===Number(range) ? '' : 'none';
+    const ep = Number(item.dataset.episode || 0);
+    item.hidden = !(ep > 0 && Math.floor((ep - 1) / 30) === Number(range));
   });
   const ranges = document.getElementById('mobile-episode-ranges');
   if(ranges) ranges.style.display = '';
