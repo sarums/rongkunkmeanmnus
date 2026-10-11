@@ -384,7 +384,39 @@ window.addVideo = async ()=>{
 };
 
 // ── ALL VIDEOS TABLE ──────────────────────────────────
-window.filterVideos = (q)=>{
+// ── PAGINATION HELPER ─────────────────────────────────
+const PAGE_SIZE = 20;
+let vidPage = 1, blogPage = 1, _lastVidList = [];
+
+function renderPager(anchorId, pagerId, total, page, goFn){
+  let el = document.getElementById(pagerId);
+  const anchor = document.getElementById(anchorId);
+  if(!anchor) return;
+  if(!el){
+    el = document.createElement('div');
+    el.id = pagerId;
+    el.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:14px 0 4px;';
+    anchor.parentNode.insertBefore(el, anchor.nextSibling);
+  }
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(total <= PAGE_SIZE){ el.innerHTML = ''; return; }
+  const btn = (label, p, active, disabled)=>`<button ${disabled?'disabled':''} onclick="${goFn}(${p})" style="min-width:34px;padding:6px 10px;border-radius:8px;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'var(--accent)':'var(--bg3)'};color:${active?'#fff':'var(--text2)'};font-weight:700;font-size:.78rem;cursor:${disabled?'default':'pointer'};opacity:${disabled?.4:1}">${label}</button>`;
+  let h = btn('‹ Prev', page-1, false, page<=1);
+  const set = new Set([1, pages, page-1, page, page+1]);
+  let last = 0;
+  [...set].filter(n=>n>=1&&n<=pages).sort((a,b)=>a-b).forEach(n=>{
+    if(last && n-last>1) h += '<span style="color:var(--muted)">…</span>';
+    h += btn(n, n, n===page, false);
+    last = n;
+  });
+  h += btn('Next ›', page+1, false, page>=pages);
+  const from = (page-1)*PAGE_SIZE+1, to = Math.min(page*PAGE_SIZE,total);
+  h += `<span style="width:100%;text-align:center;font-size:.7rem;color:var(--muted)">Showing ${from}–${to} of ${total}</span>`;
+  el.innerHTML = h;
+}
+
+// ── ALL VIDEOS TABLE ──────────────────────────────────
+window.filterVideos = (q, keepPage)=>{
   const plat=qs('filterPlatform').value;
   const cat=qs('filterCat').value;
   let vids=allVideos.filter(v=>{
@@ -393,11 +425,21 @@ window.filterVideos = (q)=>{
     const mC=!cat||v.category===cat;
     return mQ&&mP&&mC;
   });
+  _lastVidList = vids;
+  if(!keepPage) vidPage = 1;
+  const pages = Math.max(1, Math.ceil(vids.length/PAGE_SIZE));
+  if(vidPage > pages) vidPage = pages;
   qs('allVidsEmpty').style.display=vids.length?'none':'block';
-  renderVideosTable(vids);
+  renderVideosTable(vids.slice((vidPage-1)*PAGE_SIZE, vidPage*PAGE_SIZE));
+  renderPager('allVidsEmpty','vidPager',vids.length,vidPage,'goVidPage');
+};
+window.goVidPage = (p)=>{
+  vidPage = p;
+  filterVideos(qs('vidSearch')?qs('vidSearch').value:'', true);
+  const t = qs('allVidsTable'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'});
 };
 
-function renderAllVideos(){ filterVideos(''); }
+function renderAllVideos(){ filterVideos(qs('vidSearch')?qs('vidSearch').value:'', true); }
 
 function renderVideosTable(vids){
   qs('allVidsTable').innerHTML = vids.map(v=>`<tr>
@@ -1938,15 +1980,21 @@ async function loadBlogPosts(){
   } catch(e){ showToast('Error', e.message, 'err'); }
 }
 
+window.goBlogPage = (p)=>{ blogPage=p; renderBlogPosts(); const l=qs('blog-list'); if(l) l.scrollIntoView({behavior:'smooth',block:'start'}); };
+
 function renderBlogPosts(){
   const list  = qs('blog-list');
   const empty = qs('blog-empty');
   const count = qs('blog-count');
   if(!list) return;
   count.textContent = '('+allBlogPosts.length+')';
-  if(!allBlogPosts.length){ empty.style.display='block'; list.innerHTML=''; return; }
+  if(!allBlogPosts.length){ empty.style.display='block'; list.innerHTML=''; renderPager('blog-list','blogPager',0,1,'goBlogPage'); return; }
   empty.style.display='none';
-  list.innerHTML = allBlogPosts.map(p=>`
+  const bPages = Math.max(1, Math.ceil(allBlogPosts.length/PAGE_SIZE));
+  if(blogPage > bPages) blogPage = bPages;
+  const pagePosts = allBlogPosts.slice((blogPage-1)*PAGE_SIZE, blogPage*PAGE_SIZE);
+  renderPager('blog-list','blogPager',allBlogPosts.length,blogPage,'goBlogPage');
+  list.innerHTML = pagePosts.map(p=>`
     <div style="display:flex;align-items:flex-start;gap:.85rem;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:.85rem 1rem;transition:border-color .2s"
       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
       ${p.cover?`<img src="${p.cover}" style="width:80px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">`:
