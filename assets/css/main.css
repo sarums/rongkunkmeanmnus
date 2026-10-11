@@ -990,3 +990,70 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
     touch-action: manipulation !important;
   }
 }
+
+
+
+/* v8: fix mobile playlist touch scrolling and tap hit-testing in Chrome */
+@media (max-width: 768px) {
+  body.mobile-playlist-open {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    touch-action: none !important;
+  }
+
+  body.mobile-playlist-open::before {
+    z-index: 2147483000 !important;
+    pointer-events: none !important;
+  }
+
+  body.mobile-playlist-open #playlist-panel {
+    z-index: 2147483001 !important;
+    pointer-events: auto !important;
+    isolation: isolate !important;
+    transform: none !important;
+  }
+
+  body.mobile-playlist-open #playlist-panel *,
+  body.mobile-playlist-open #playlist-panel *::before,
+  body.mobile-playlist-open #playlist-panel *::after {
+    pointer-events: auto;
+  }
+
+  body.mobile-playlist-open #playlist-panel .playlist-items {
+    display: grid !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+    position: relative !important;
+    z-index: 1 !important;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.mobile-playlist-open #playlist-panel .pl-item {
+    display: flex !important;
+    position: relative !important;
+    z-index: 2 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    cursor: pointer !important;
+  }
+
+  body.mobile-playlist-open #playlist-panel #mobile-episode-ranges {
+    position: relative !important;
+    z-index: 3 !important;
+    pointer-events: auto !important;
+    touch-action: pan-x !important;
+  }
+
+  body.mobile-playlist-open #playlist-panel button {
+    position: relative;
+    z-index: 3;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+}
