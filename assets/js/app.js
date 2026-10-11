@@ -2586,6 +2586,7 @@ window.showForYouPage = async ()=>{
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-cat'));
   window.scrollTo(0,0);
   if(!window._isPopstate) history.pushState({page:'for-you'},'','/for-you');
+  document.querySelectorAll('#bottom-nav-row a').forEach(a=>a.classList.toggle('active',a.id==='bn-foryou'));
   $('cat-title').textContent = '✨ For You';
   $('cat-desc').textContent  = 'Personalized mix of videos and articles';
   const bannerBg=$('cat-banner-bg');
@@ -3429,10 +3430,15 @@ loadAll().then(()=>{
 
 
 // Mobile bottom navigation helpers
-window.openForYouFeed = ()=>{
-  const section=document.getElementById('recommended-section');
-  document.querySelectorAll('#bottom-nav-row a').forEach(a=>a.classList.toggle('active',a.id==='bn-foryou'));
-  if(section) section.scrollIntoView({behavior:'smooth',block:'start'});
+window.openForYouFeed = (event)=>{
+  // The For You tab is its own page, not a scroll target on Home.
+  if(event) event.preventDefault();
+  if(typeof window.showForYouPage === 'function'){
+    window.showForYouPage();
+  } else {
+    // Safe fallback if the feed function has not loaded yet.
+    window.location.href = '/for-you';
+  }
 };
 window.toggleMobileMenu = ()=>{
   const sheet=document.getElementById('mobile-menu-sheet');
