@@ -116,11 +116,11 @@
     },
     {
       "source": "/blog/:slug/:ep",
-      "destination": "/api/blog/[...slug]"
+      "destination": "/api/blog/:slug/:ep"
     },
     {
       "source": "/blog/:slug",
-      "destination": "/blog/:slug.html"
+      "destination": "/api/blog/:slug"
     },
     {
       "source": "/blog",
