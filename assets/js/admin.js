@@ -1741,8 +1741,7 @@ function smEsc(s){
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;')
-    .replace(/[ -
--]/g,''); // remove invalid XML chars
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g,''); // remove invalid XML chars
 }
 function smDurToSec(str){
   if(!str) return '';
