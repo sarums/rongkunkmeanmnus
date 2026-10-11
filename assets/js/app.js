@@ -3234,61 +3234,62 @@ let _mobilePlaylistOriginalNext = null;
   const style = document.createElement('style');
   style.id = 'rkmn-mobile-playlist-fix';
   style.textContent = `
-    html, body { overscroll-behavior-y: none; }
+    html, body { overscroll-behavior-y: none !important; }
     #ptr-indicator { display: none !important; visibility: hidden !important; pointer-events: none !important; }
     @media (max-width: 768px) {
       body.mobile-playlist-open { overflow: hidden !important; overscroll-behavior: none !important; }
+      /* The sheet itself is the scroll container. This avoids the flex-child
+         scroll trap that clipped the bottom episode rows on Android browsers. */
       body.mobile-playlist-open #playlist-panel {
-        position: fixed !important;
-        inset: auto 0 calc(64px + env(safe-area-inset-bottom, 0px)) 0 !important;
-        width: 100% !important; max-width: none !important;
-        height: min(68dvh, 760px) !important;
-        max-height: calc(100dvh - 140px) !important;
-        min-height: 280px !important;
+        position: fixed !important; left: 0 !important; right: 0 !important;
+        top: 30dvh !important; bottom: 0 !important;
+        width: 100vw !important; max-width: none !important;
+        height: auto !important; min-height: 0 !important; max-height: none !important;
         box-sizing: border-box !important;
-        display: flex !important; flex-direction: column !important;
-        overflow: hidden !important;
-        z-index: 2147483000 !important;
-        background: #050505 !important;
-        border-radius: 28px 28px 0 0 !important;
-        padding-bottom: 8px !important;
-        overscroll-behavior: contain !important;
-        touch-action: pan-y !important;
-      }
-      body.mobile-playlist-open #playlist-panel * { touch-action: pan-y; }
-      body.mobile-playlist-open #playlist-panel .mobile-playlist-detail,
-      body.mobile-playlist-open #playlist-panel #mobile-episode-ranges { flex: 0 0 auto !important; }
-      body.mobile-playlist-open #playlist-panel #playlist-items {
-        flex: 1 1 auto !important; min-height: 0 !important; max-height: none !important;
-        overflow-y: auto !important; overflow-x: hidden !important;
+        display: block !important;
+        overflow-y: scroll !important; overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
         overscroll-behavior-y: contain !important; touch-action: pan-y !important;
-        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
-        scrollbar-width: thin !important;
-        pointer-events: auto !important;
+        z-index: 2147483647 !important; isolation: isolate !important;
+        background: #050505 !important;
+        border-radius: 28px 28px 0 0 !important;
+        padding: 12px 14px calc(28px + env(safe-area-inset-bottom, 0px)) !important;
+        pointer-events: auto !important; transform: none !important;
       }
-      body.mobile-playlist-open #playlist-panel #playlist-items > * { pointer-events: auto !important; }
-      body.mobile-playlist-open #playlist-panel .mobile-playlist-detail { pointer-events: auto !important; }
+      body.mobile-playlist-open #playlist-panel * { pointer-events: auto !important; }
+      /* Let the sheet scroll naturally rather than nesting a second scroller. */
+      body.mobile-playlist-open #playlist-panel .playlist-items,
+      body.mobile-playlist-open #playlist-panel #playlist-items {
+        display: grid !important; height: auto !important; max-height: none !important;
+        min-height: 0 !important; flex: none !important;
+        overflow: visible !important; overflow-y: visible !important;
+        padding-bottom: 26px !important; touch-action: pan-y !important;
+      }
+      body.mobile-playlist-open #playlist-panel #mobile-episode-ranges,
       body.mobile-playlist-open #playlist-panel .mobile-sheet-tabs,
-      body.mobile-playlist-open #playlist-panel .mobile-sheet-show-info,
-      body.mobile-playlist-open #playlist-panel .mobile-episode-ranges { flex-shrink: 0 !important; }
-      /* Also make the separate blog-post playlist sheet independently scrollable. */
+      body.mobile-playlist-open #playlist-panel .mobile-sheet-show-info { position: relative; z-index: 2; }
+      body.mobile-playlist-open #playlist-panel .pl-item,
+      body.mobile-playlist-open #playlist-panel button { pointer-events: auto !important; touch-action: manipulation !important; }
+
+      /* Same outer-sheet scrolling strategy for the separate blog playlist. */
       body.blog-playlist-open { overflow: hidden !important; overscroll-behavior: none !important; }
+      body.blog-playlist-open .blog-playlist-toggle {
+        position: fixed !important; top: 30dvh !important; left: 0 !important; right: 0 !important;
+        z-index: 2147483646 !important; width: 100vw !important; box-sizing: border-box !important;
+      }
       body.blog-playlist-open #blog-episode-playlist-panel {
         position: fixed !important; left: 0 !important; right: 0 !important;
-        top: auto !important; bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
-        height: min(68dvh, 760px) !important; max-height: calc(100dvh - 140px) !important;
-        min-height: 280px !important; box-sizing: border-box !important;
-        overflow-y: auto !important; overflow-x: hidden !important;
+        top: calc(30dvh + 50px) !important; bottom: 0 !important;
+        width: 100vw !important; height: auto !important; max-height: none !important;
+        box-sizing: border-box !important; display: block !important;
+        overflow-y: scroll !important; overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important; overscroll-behavior-y: contain !important;
-        touch-action: pan-y !important; z-index: 2147483000 !important;
-        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
-        background: #050505 !important;
+        touch-action: pan-y !important; z-index: 2147483647 !important;
+        padding: 14px 14px calc(28px + env(safe-area-inset-bottom, 0px)) !important;
+        background: #080808 !important; pointer-events: auto !important;
       }
-      body.blog-playlist-open #blog-episode-grid {
-        overflow: visible !important; max-height: none !important;
-      }
-      body.blog-playlist-open #blog-episode-grid .blog-episode-tile { pointer-events: auto !important; }
+      body.blog-playlist-open #blog-episode-grid { overflow: visible !important; max-height: none !important; }
+      body.blog-playlist-open #blog-episode-grid .blog-episode-tile { pointer-events: auto !important; touch-action: manipulation !important; }
     }
   `;
   document.head.appendChild(style);
