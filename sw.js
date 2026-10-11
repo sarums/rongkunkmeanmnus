@@ -3,8 +3,8 @@
 //  v5 — Network first for HTML, Cache first for assets
 // ═══════════════════════════════════════════
 
-const CACHE_NAME  = 'rkmn-v11-v9';
-const ASSET_CACHE = 'rkmn-assets-v11';
+const CACHE_NAME  = 'rkmn-v12-playlist-scroll-fix';
+const ASSET_CACHE = 'rkmn-assets-v12-playlist-scroll-fix';
 
 // Static assets to pre-cache
 const STATIC_ASSETS = [
