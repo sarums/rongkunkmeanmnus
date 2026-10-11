@@ -505,7 +505,7 @@ const NP = {
 };
 
 function showPage(id,push=true){
-  if(id!=='cat' && id!=='for-you'){\n    document.body.classList.remove('fy-active');
+  if(id!=='cat' && id!=='for-you'){
     document.getElementById('page-cat')?.classList.remove('fy-feed-page');
     document.getElementById('cat-grid')?.classList.remove('fy-vertical-feed');
     if(window._fySwipeObserver){window._fySwipeObserver.disconnect();window._fySwipeObserver=null;}
@@ -1019,7 +1019,7 @@ function buildNav(activeId){
 
   $("nav-cats").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
-    +`<a href="/for-you" onclick="event.preventDefault();window.showForYouPage();return false" ${resolvedActive==='for-you'?'class="active"':''}>✨ For You</a>`
+    +`<a href="/for-you" onclick="event.preventDefault();showForYouPage()" ${resolvedActive==='for-you'?'class="active"':''}>✨ For You</a>`
     +desktopCats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("")
     +`<a href="/blog" onclick="event.preventDefault();showBlogPage()" style="font-weight:600;">📝 Blog</a>`
     +`<a href="/donate" style="color:#f27d26;font-weight:800;display:flex;align-items:center;gap:5px;" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">☕ Donate</a>`;
@@ -1056,7 +1056,7 @@ function buildNav(activeId){
       Home
     </a>`
     +cats.map(c=>navLink(c,true)).join("")
-    +`<a href="/for-you" onclick="event.preventDefault();toggleMobileMenu();window.showForYouPage();return false"
+    +`<a href="/for-you" onclick="event.preventDefault();toggleMobileMenu();showForYouPage()"
       style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.8);text-decoration:none;"
       onmouseover="this.style.background='rgba(242,125,38,.08)';this.style.color='#f27d26'"
       onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.8)'">
@@ -2587,11 +2587,10 @@ let _fyPool=[], _fyPage=0, _fyObserver=null;
 const FY_BATCH=20;
 
 window.showForYouPage = async ()=>{
-  try { if(window.NP?.start) NP.start(); } catch(e) { console.warn('Progress indicator unavailable',e); }
-  document.body.classList.add('fy-active');
+  NP.start();
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-cat'));
   window.scrollTo(0,0);
-  if(!window._isPopstate && location.pathname!=='/for-you') history.pushState({page:'for-you'},'','/for-you');
+  if(!window._isPopstate) history.pushState({page:'for-you'},'','/for-you');
   const page=$('page-cat'), title=$('cat-title'), desc=$('cat-desc');
   if(page) page.classList.add('fy-feed-page');
   if(title) title.textContent='✨ For You';
@@ -2610,7 +2609,7 @@ window.showForYouPage = async ()=>{
       <div class="fy-slide-media"><img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="${i<2?'eager':'lazy'}"></div>
       <div class="fy-slide-shade"></div>
       <div class="fy-slide-info"><h2 class="fy-slide-title">${v.title||'Drama video'}</h2><div class="fy-slide-meta">${[v.category, v.views||v.viewsDisplay?fmtViews(v.views||0)+' views':''].filter(Boolean).join(' · ')}</div></div>
-      <div class="fy-slide-actions"><button class="fy-slide-action" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button><button class="fy-slide-action" type="button" aria-label="Open playlist" title="Open playlist" onclick="fyOpenPlaylist('${String(v.id).replace(/'/g,"\\'")}')">↗</button></div>
+      <div class="fy-slide-actions"><button class="fy-slide-action" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button><button class="fy-slide-action" type="button" aria-label="Open video" onclick="fyOpenVideo('${String(v.id).replace(/'/g,"\\'")}')">↗</button></div>
       <button class="fy-slide-play" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button>
     </article>`).join('');
     if(window._fySwipeObserver) window._fySwipeObserver.disconnect();
@@ -2640,11 +2639,6 @@ window.fyPlaySlide=(button)=>{
   slide.classList.add('is-playing');
 };
 window.fyOpenVideo=(id)=>{const v=videos.find(x=>x.id===id);if(v)openVideo(id);};
-window.fyOpenPlaylist=(id)=>{
-  const pl=playlists.find(p=>(p.videos||[]).includes(id));
-  if(pl) window.openPlaylist(pl.id,id);
-  else window.fyOpenVideo(id);
-};
 
 function _fyBlogCard(p){
   return `<a class="vcard" href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')">
