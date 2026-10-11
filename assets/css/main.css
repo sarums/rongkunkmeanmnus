@@ -998,7 +998,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   body.mobile-playlist-open {
     overflow: hidden !important;
     overscroll-behavior: none !important;
-    touch-action: none !important;
+    touch-action: auto !important;
   }
 
   body.mobile-playlist-open::before {
@@ -1056,4 +1056,35 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
     pointer-events: auto !important;
     touch-action: manipulation !important;
   }
+}
+
+
+
+/* v9: Chrome touch fix — allow episode grid scrolling; disable pull-to-refresh UI */
+@media (max-width: 768px) {
+  body.mobile-playlist-open {
+    touch-action: auto !important;
+  }
+  body.mobile-playlist-open #playlist-panel {
+    touch-action: auto !important;
+  }
+  body.mobile-playlist-open #playlist-panel .playlist-items {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+    pointer-events: auto !important;
+  }
+  body.mobile-playlist-open #playlist-panel .pl-item,
+  body.mobile-playlist-open #playlist-panel .mobile-episode-range,
+  body.mobile-playlist-open #playlist-panel .mobile-sheet-tab,
+  body.mobile-playlist-open #playlist-panel .mobile-sheet-close {
+    pointer-events: auto !important;
+  }
+  #ptr-indicator { display: none !important; }
 }
