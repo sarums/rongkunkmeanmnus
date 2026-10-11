@@ -505,6 +505,11 @@ const NP = {
 };
 
 function showPage(id,push=true){
+  if(id!=='cat' && id!=='for-you'){\n    document.body.classList.remove('fy-active');
+    document.getElementById('page-cat')?.classList.remove('fy-feed-page');
+    document.getElementById('cat-grid')?.classList.remove('fy-vertical-feed');
+    if(window._fySwipeObserver){window._fySwipeObserver.disconnect();window._fySwipeObserver=null;}
+  }
   if(id!=="watch"){
     previousPage=id;
     const iframe = document.getElementById('player-iframe');
@@ -525,7 +530,7 @@ function showPage(id,push=true){
   window.scrollTo(0,0);
   // Update bottom nav
   document.querySelectorAll('#bottom-nav a').forEach(a=>a.classList.remove('active'));
-  const bnMap={home:'bn-home',search:'bn-search',history:'bn-history'};
+  const bnMap={home:'bn-home',search:'bn-search',history:'bn-history','for-you':'bn-for-you',cat:'bn-for-you'};
   if(bnMap[id]) $(bnMap[id])?.classList.add('active');
   // Reset meta for non-video pages
   if(id==='home') updateMeta({title:'រោងកុនគ្មានមនុស្ស | Watch Chinese Drama, Khmer Drama Free Online', desc:'Watch Chinese Drama, Khmer Drama and Khmer dubbed series online for free. រោងកុនគ្មានមនុស្ស — your free streaming destination. No subscription needed.', url:'https://www.rongkunkmeanmnus.com'});
@@ -1014,7 +1019,7 @@ function buildNav(activeId){
 
   $("nav-cats").innerHTML=
     `<a href="/" onclick="goHome(event)" ${resolvedActive==='home'?'class="active"':''}>Home</a>`
-    +`<a href="/for-you" onclick="event.preventDefault();showForYouPage()" ${resolvedActive==='for-you'?'class="active"':''}>✨ For You</a>`
+    +`<a href="/for-you" onclick="event.preventDefault();window.showForYouPage();return false" ${resolvedActive==='for-you'?'class="active"':''}>✨ For You</a>`
     +desktopCats.map(c=>`<a href="${slug(c)}" data-catid="${c.id}" onclick="event.preventDefault();navGo('${c.id}')" ${resolvedActive===c.id?'class="active"':''}>${c.name}</a>`).join("")
     +`<a href="/blog" onclick="event.preventDefault();showBlogPage()" style="font-weight:600;">📝 Blog</a>`
     +`<a href="/donate" style="color:#f27d26;font-weight:800;display:flex;align-items:center;gap:5px;" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">☕ Donate</a>`;
@@ -1051,7 +1056,7 @@ function buildNav(activeId){
       Home
     </a>`
     +cats.map(c=>navLink(c,true)).join("")
-    +`<a href="/for-you" onclick="event.preventDefault();toggleMobileMenu();showForYouPage()"
+    +`<a href="/for-you" onclick="event.preventDefault();toggleMobileMenu();window.showForYouPage();return false"
       style="display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.8);text-decoration:none;"
       onmouseover="this.style.background='rgba(242,125,38,.08)';this.style.color='#f27d26'"
       onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.8)'">
@@ -2582,69 +2587,63 @@ let _fyPool=[], _fyPage=0, _fyObserver=null;
 const FY_BATCH=20;
 
 window.showForYouPage = async ()=>{
-  NP.start();
+  try { if(window.NP?.start) NP.start(); } catch(e) { console.warn('Progress indicator unavailable',e); }
+  document.body.classList.add('fy-active');
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-cat'));
   window.scrollTo(0,0);
-  if(!window._isPopstate) history.pushState({page:'for-you'},'','/for-you');
-  document.querySelectorAll('#bottom-nav-row a').forEach(a=>a.classList.toggle('active',a.id==='bn-foryou'));
-  $('cat-title').textContent = '✨ For You';
-  $('cat-desc').textContent  = 'Personalized mix of videos and articles';
-  const bannerBg=$('cat-banner-bg');
-  if(bannerBg) bannerBg.style.backgroundImage='none';
-  updateMeta({title:'For You | រោងកុនគ្មានមនុស្ស', desc:'Your personalized mix of videos and articles on រោងកុនគ្មានមនុស្ស.', url:location.href});
-
-  const grid = $('cat-grid');
-  if(!grid){ NP.done(); return; }
-  grid.innerHTML = skelRow(4);
-
-  // Reset state
-  _fyPage=0; _fyPool=[];
-  if(_fyObserver){ _fyObserver.disconnect(); _fyObserver=null; }
-
+  if(!window._isPopstate && location.pathname!=='/for-you') history.pushState({page:'for-you'},'','/for-you');
+  const page=$('page-cat'), title=$('cat-title'), desc=$('cat-desc');
+  if(page) page.classList.add('fy-feed-page');
+  if(title) title.textContent='✨ For You';
+  if(desc) desc.textContent='Swipe up for the next drama';
+  updateMeta({title:'For You | រោងកុនគ្មានមនុស្ស',desc:'Swipe through dramas and videos on រោងកុនគ្មានមនុស្ស.',url:location.href});
+  const grid=$('cat-grid');
+  if(!grid){NP.done();return;}
+  grid.classList.add('fy-vertical-feed');
+  grid.innerHTML='<div style="padding:2rem;text-align:center;color:#aaa">Loading your feed…</div>';
+  document.querySelectorAll('#bottom-nav a').forEach(a=>a.classList.toggle('active',a.id==='bn-for-you'));
   try {
-    // Fetch blog posts
-    const blogSnap = await getDocs(query(collection(db,'blog_posts'), orderBy('createdAt','desc')));
-    const blogPosts = blogSnap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='published');
-
-    // Shuffle videos
-    const shuffledVids = [...videos].sort(()=>Math.random()-.5);
-    const shuffledBlogs = [...blogPosts].sort(()=>Math.random()-.5);
-
-    // Build mixed pool: 4 videos → 1 article → 4 videos → 1 article...
-    // Ads are injected by buildFeedWithAds using AD_CONFIG.feedEvery setting
-    const mixed = [];
-    let vi=0, bi=0;
-    while(vi<shuffledVids.length || bi<shuffledBlogs.length){
-      for(let i=0;i<4&&vi<shuffledVids.length;i++){
-        mixed.push({type:'video', data:shuffledVids[vi++]});
+    if(!videos.length) await new Promise(resolve=>setTimeout(resolve,600));
+    const list=[...videos].sort(()=>Math.random()-.5);
+    if(!list.length){grid.innerHTML='<div style="padding:3rem 1rem;text-align:center;color:#aaa">No videos yet. Please check back soon.</div>';NP.done();return;}
+    grid.innerHTML=list.map((v,i)=>`<article class="fy-slide" data-fy-index="${i}" data-video-id="${String(v.id).replace(/"/g,'')}" aria-label="${String(v.title||'Drama video').replace(/"/g,'&quot;')}">
+      <div class="fy-slide-media"><img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="${i<2?'eager':'lazy'}"></div>
+      <div class="fy-slide-shade"></div>
+      <div class="fy-slide-info"><h2 class="fy-slide-title">${v.title||'Drama video'}</h2><div class="fy-slide-meta">${[v.category, v.views||v.viewsDisplay?fmtViews(v.views||0)+' views':''].filter(Boolean).join(' · ')}</div></div>
+      <div class="fy-slide-actions"><button class="fy-slide-action" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button><button class="fy-slide-action" type="button" aria-label="Open playlist" title="Open playlist" onclick="fyOpenPlaylist('${String(v.id).replace(/'/g,"\\'")}')">↗</button></div>
+      <button class="fy-slide-play" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button>
+    </article>`).join('');
+    if(window._fySwipeObserver) window._fySwipeObserver.disconnect();
+    window._fySwipeObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
+      const slide=entry.target;
+      if(entry.isIntersecting && entry.intersectionRatio>=0.68){
+        // Only the active slide may play; off-screen players are removed to stop audio.
+        document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const v=videos.find(x=>x.id===other.dataset.videoId);media.innerHTML=v?`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`:'';}});
+      } else if(!entry.isIntersecting && slide.classList.contains('is-playing')){
+        slide.classList.remove('is-playing'); const media=slide.querySelector('.fy-slide-media'); const v=videos.find(x=>x.id===slide.dataset.videoId); if(v) media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;
       }
-      if(bi<shuffledBlogs.length){
-        mixed.push({type:'blog', data:shuffledBlogs[bi++]});
-      }
-    }
-    _fyPool = mixed;
-
-    grid.innerHTML='';
-    _fyRenderBatch(grid);
-
-    // Setup infinite scroll sentinel
-    const sentinel = document.createElement('div');
-    sentinel.id='fy-sentinel';
-    sentinel.style.cssText='height:20px;grid-column:1/-1;';
-    grid.appendChild(sentinel);
-
-    _fyObserver = new IntersectionObserver(entries=>{
-      if(entries[0].isIntersecting){
-        _fyRenderBatch(grid);
-      }
-    },{rootMargin:'300px'});
-    _fyObserver.observe(sentinel);
-
-  } catch(e){
-    const shuffled = [...videos].sort(()=>Math.random()-.5);
-    renderGrid(grid, shuffled);
-  }
+    }),{root:grid,threshold:[0,.68,1]});
+    grid.querySelectorAll('.fy-slide').forEach(slide=>window._fySwipeObserver.observe(slide));
+  } catch(e){console.error('For You feed error',e);grid.innerHTML='<div style="padding:2rem;text-align:center;color:#aaa">Unable to load videos right now.</div>';}
   NP.done();
+};
+window.fyPlaySlide=(button)=>{
+  const slide=button.closest('.fy-slide'); if(!slide) return;
+  const v=videos.find(x=>x.id===slide.dataset.videoId); if(!v) return;
+  document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>x.id===other.dataset.videoId);if(ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}});
+  const media=slide.querySelector('.fy-slide-media'); let src=getEmbedUrl(v);
+  if(!src){window.openVideo(v.id);return;}
+  if(src.includes('?')) src+='&autoplay=1'; else src+='?autoplay=1';
+  if(/youtube\.com\/embed/.test(src)) src+='&mute=1&playsinline=1';
+  if(/dailymotion\.com\/embed/.test(src)) src+='&mute=1';
+  media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  slide.classList.add('is-playing');
+};
+window.fyOpenVideo=(id)=>{const v=videos.find(x=>x.id===id);if(v)openVideo(id);};
+window.fyOpenPlaylist=(id)=>{
+  const pl=playlists.find(p=>(p.videos||[]).includes(id));
+  if(pl) window.openPlaylist(pl.id,id);
+  else window.fyOpenVideo(id);
 };
 
 function _fyBlogCard(p){
@@ -3427,23 +3426,3 @@ loadAll().then(()=>{
     showBlogPost(window.__blogSlug, window.__blogEp||1);
   }
 });
-
-
-// Mobile bottom navigation helpers
-window.openForYouFeed = (event)=>{
-  // The For You tab is its own page, not a scroll target on Home.
-  if(event) event.preventDefault();
-  if(typeof window.showForYouPage === 'function'){
-    window.showForYouPage();
-  } else {
-    // Safe fallback if the feed function has not loaded yet.
-    window.location.href = '/for-you';
-  }
-};
-window.toggleMobileMenu = ()=>{
-  const sheet=document.getElementById('mobile-menu-sheet');
-  if(!sheet) return;
-  const open=!sheet.classList.contains('active');
-  sheet.classList.toggle('active',open);
-  sheet.setAttribute('aria-hidden',String(!open));
-};
