@@ -79,6 +79,7 @@ window.doLogin = async ()=>{
     btn.disabled = true;
     btn.textContent = 'Signing in...';
     err.style.display = 'none';
+    if(ADMIN_EMAIL.includes('YOUR_ADMIN_EMAIL')) throw new Error('ADMIN_EMAIL in admin.js (line 21) is still the placeholder. Put your real Google email there.');
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const email = result.user.email;
