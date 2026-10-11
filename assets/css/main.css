@@ -940,3 +940,53 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   #playlist-panel .pl-item.current::before { color:#fff !important; }
   #playlist-panel .pl-item.watched:not(.current)::after { top:2px; right:4px; font-size:10px; }
 }
+
+
+
+/* v7 fix: allow scrolling to the final episode inside the mobile playlist sheet */
+@media (max-width: 767px) {
+  .mobile-playlist-sheet,
+  .mobile-playlist-modal,
+  .playlist-bottom-sheet,
+  .episode-playlist-sheet,
+  #mobilePlaylistSheet,
+  #mobile-playlist-sheet {
+    max-height: 100dvh !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+
+  .mobile-playlist-sheet .playlist-content,
+  .mobile-playlist-sheet .episode-grid,
+  .mobile-playlist-modal .playlist-content,
+  .mobile-playlist-modal .episode-grid,
+  .playlist-bottom-sheet .playlist-content,
+  .playlist-bottom-sheet .episode-grid,
+  .episode-playlist-sheet .playlist-content,
+  .episode-playlist-sheet .episode-grid,
+  #mobilePlaylistSheet .playlist-content,
+  #mobilePlaylistSheet .episode-grid,
+  #mobile-playlist-sheet .playlist-content,
+  #mobile-playlist-sheet .episode-grid {
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-playlist-sheet .episode-grid button,
+  .mobile-playlist-modal .episode-grid button,
+  .playlist-bottom-sheet .episode-grid button,
+  .episode-playlist-sheet .episode-grid button,
+  #mobilePlaylistSheet .episode-grid button,
+  #mobile-playlist-sheet .episode-grid button {
+    touch-action: manipulation !important;
+  }
+}
