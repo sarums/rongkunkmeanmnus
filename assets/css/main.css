@@ -757,6 +757,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
     outline:none;
   }
   #playlist-panel .mobile-episode-search:focus { border-color:#f27d26; }
+  #mobile-episode-ranges {
+    display:flex; gap:8px; overflow-x:auto; padding:0 0 12px;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch;
+  }
+  #mobile-episode-ranges::-webkit-scrollbar { display:none; }
+  #mobile-episode-ranges .mobile-episode-range {
+    flex:0 0 auto; padding:8px 12px; border:1px solid #303030;
+    border-radius:8px; background:#171717; color:#aaa; font:inherit;
+    font-size:12px; font-weight:800; cursor:pointer;
+  }
+  #mobile-episode-ranges .mobile-episode-range.active {
+    color:#111; background:#f27d26; border-color:#f27d26;
+  }
   #playlist-panel .playlist-items {
     display:grid;
     grid-template-columns:repeat(5,minmax(0,1fr));
