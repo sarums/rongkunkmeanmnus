@@ -880,7 +880,15 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   body.mobile-playlist-open { overflow:hidden !important; }
   body.mobile-playlist-open::before {
     content:""; position:fixed; inset:0; z-index:10000;
-    background:rgba(0,0,0,.42); pointer-events:auto;
+    background:rgba(0,0,0,.42);
+    /* Keep the dimmer visual-only: it must never intercept taps on the sheet. */
+    pointer-events:none;
+  }
+  body.mobile-playlist-open #playlist-panel,
+  body.mobile-playlist-open #playlist-panel button,
+  body.mobile-playlist-open #playlist-panel a {
+    pointer-events:auto !important;
+    touch-action:manipulation;
   }
   body.mobile-playlist-open #playlist-panel {
     position:fixed !important; z-index:10001 !important;
