@@ -3323,17 +3323,14 @@ window.filterMobileEpisodes = (value)=>{
   if(ranges) ranges.style.display = query ? 'none' : '';
 };
 window.setMobileEpisodeRange = (range)=>{
-  const selectedRange = Number(range);
   document.querySelectorAll('#mobile-episode-ranges .mobile-episode-range').forEach(btn=>{
-    btn.classList.toggle('active', Number(btn.dataset.range) === selectedRange);
+    btn.classList.toggle('active', Number(btn.dataset.range)===Number(range));
   });
   const search = document.getElementById('mobile-episode-search');
   if(search) search.value = '';
   document.querySelectorAll('#playlist-items .pl-item').forEach(item=>{
     const ep = Number(item.dataset.episode || 0);
-    const shouldShow = ep > 0 && Math.floor((ep - 1) / 30) === selectedRange;
-    item.hidden = !shouldShow;
-    item.toggleAttribute('hidden', !shouldShow);
+    item.hidden = !(ep > 0 && Math.floor((ep - 1) / 30) === Number(range));
   });
   const ranges = document.getElementById('mobile-episode-ranges');
   if(ranges) ranges.style.display = '';
@@ -3347,11 +3344,7 @@ window.setMobilePlaylistTab = (tab)=>{
   const isSynopsis=tab==='synopsis';
   if(synopsis){ synopsis.hidden=!isSynopsis; synopsis.toggleAttribute('hidden', !isSynopsis); }
   if(ranges){ ranges.hidden=isSynopsis; ranges.toggleAttribute('hidden', isSynopsis); ranges.style.display=isSynopsis?'none':''; }
-  if(items){
-    items.hidden=isSynopsis;
-    items.toggleAttribute('hidden', isSynopsis);
-    items.style.display=isSynopsis?'none':'grid';
-  }
+  if(items){ items.hidden=isSynopsis; items.toggleAttribute('hidden', isSynopsis); items.style.display=isSynopsis?'none':'grid'; }
 };
 
 window.toggleMobilePlaylist = ()=>{
