@@ -1599,6 +1599,7 @@ window.openVideo=async (id,push=true)=>{
   // Reset mobile playlist toggle
   _mobilePlaylistOpen = false;
   document.body.classList.remove('mobile-playlist-open');
+  restoreMobilePlaylistPanel();
   const _mBtn=$('mobile-playlist-btn-wrap');
   if(_mBtn) _mBtn.style.display='none';
   const _mLabel=$('mobile-playlist-label');
@@ -3222,6 +3223,89 @@ window.setBlogEpisodeRange = range=>{
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
 let _mobilePlaylistOpen = false;
+let _mobilePlaylistOriginalParent = null;
+let _mobilePlaylistOriginalNext = null;
+
+// This playlist lives inside the watch-page layout on desktop. On mobile, move it
+// directly under <body> while open so transformed/overflowing ancestors cannot
+// trap a fixed sheet or prevent its episode list from receiving touch scrolls.
+(function installMobilePlaylistFix(){
+  if(document.getElementById('rkmn-mobile-playlist-fix')) return;
+  const style = document.createElement('style');
+  style.id = 'rkmn-mobile-playlist-fix';
+  style.textContent = `
+    html, body { overscroll-behavior-y: none; }
+    #ptr-indicator { display: none !important; visibility: hidden !important; pointer-events: none !important; }
+    @media (max-width: 768px) {
+      body.mobile-playlist-open { overflow: hidden !important; overscroll-behavior: none !important; }
+      body.mobile-playlist-open #playlist-panel {
+        position: fixed !important;
+        inset: auto 0 calc(64px + env(safe-area-inset-bottom, 0px)) 0 !important;
+        width: 100% !important; max-width: none !important;
+        height: min(68dvh, 760px) !important;
+        max-height: calc(100dvh - 140px) !important;
+        min-height: 280px !important;
+        box-sizing: border-box !important;
+        display: flex !important; flex-direction: column !important;
+        overflow: hidden !important;
+        z-index: 2147483000 !important;
+        background: #050505 !important;
+        border-radius: 28px 28px 0 0 !important;
+        padding-bottom: 8px !important;
+        overscroll-behavior: contain !important;
+        touch-action: pan-y !important;
+      }
+      body.mobile-playlist-open #playlist-panel * { touch-action: pan-y; }
+      body.mobile-playlist-open #playlist-panel .mobile-playlist-detail,
+      body.mobile-playlist-open #playlist-panel #mobile-episode-ranges { flex: 0 0 auto !important; }
+      body.mobile-playlist-open #playlist-panel #playlist-items {
+        flex: 1 1 auto !important; min-height: 0 !important; max-height: none !important;
+        overflow-y: auto !important; overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain !important; touch-action: pan-y !important;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+        scrollbar-width: thin !important;
+        pointer-events: auto !important;
+      }
+      body.mobile-playlist-open #playlist-panel #playlist-items > * { pointer-events: auto !important; }
+      body.mobile-playlist-open #playlist-panel .mobile-playlist-detail { pointer-events: auto !important; }
+      body.mobile-playlist-open #playlist-panel .mobile-sheet-tabs,
+      body.mobile-playlist-open #playlist-panel .mobile-sheet-show-info,
+      body.mobile-playlist-open #playlist-panel .mobile-episode-ranges { flex-shrink: 0 !important; }
+      /* Also make the separate blog-post playlist sheet independently scrollable. */
+      body.blog-playlist-open { overflow: hidden !important; overscroll-behavior: none !important; }
+      body.blog-playlist-open #blog-episode-playlist-panel {
+        position: fixed !important; left: 0 !important; right: 0 !important;
+        top: auto !important; bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+        height: min(68dvh, 760px) !important; max-height: calc(100dvh - 140px) !important;
+        min-height: 280px !important; box-sizing: border-box !important;
+        overflow-y: auto !important; overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important; overscroll-behavior-y: contain !important;
+        touch-action: pan-y !important; z-index: 2147483000 !important;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+        background: #050505 !important;
+      }
+      body.blog-playlist-open #blog-episode-grid {
+        overflow: visible !important; max-height: none !important;
+      }
+      body.blog-playlist-open #blog-episode-grid .blog-episode-tile { pointer-events: auto !important; }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+function restoreMobilePlaylistPanel(){
+  const panel = document.getElementById('playlist-panel');
+  if(panel && _mobilePlaylistOriginalParent){
+    if(_mobilePlaylistOriginalNext && _mobilePlaylistOriginalNext.parentNode===_mobilePlaylistOriginalParent){
+      _mobilePlaylistOriginalParent.insertBefore(panel, _mobilePlaylistOriginalNext);
+    } else {
+      _mobilePlaylistOriginalParent.appendChild(panel);
+    }
+  }
+  _mobilePlaylistOriginalParent = null;
+  _mobilePlaylistOriginalNext = null;
+}
 
 window.filterMobileEpisodes = (value)=>{
   const query = String(value||'').trim().toLowerCase();
@@ -3261,17 +3345,25 @@ window.setMobilePlaylistTab = (tab)=>{
 };
 
 window.toggleMobilePlaylist = ()=>{
-  _mobilePlaylistOpen = !_mobilePlaylistOpen;
   const panel    = $('playlist-panel');
   const label    = $('mobile-playlist-label');
   const chevron  = $('mobile-playlist-chevron');
   const closeBtn = $('mobile-playlist-close');
   const btn      = $('mobile-playlist-toggle');
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
+  _mobilePlaylistOpen = !_mobilePlaylistOpen;
   if(_mobilePlaylistOpen){
+    if(panel && isMobile){
+      if(!_mobilePlaylistOriginalParent){
+        _mobilePlaylistOriginalParent = panel.parentNode;
+        _mobilePlaylistOriginalNext = panel.nextSibling;
+      }
+      if(panel.parentNode !== document.body) document.body.appendChild(panel);
+    }
     document.body.classList.add('mobile-playlist-open');
     setMobilePlaylistTab('episodes');
-    if(panel){ panel.style.display=''; panel.style.animation='mobileSheetIn .22s ease-out'; }
+    if(panel){ panel.style.display='flex'; panel.style.animation='mobileSheetIn .22s ease-out'; }
     if(label) label.textContent = 'Hide Playlist';
     if(chevron) chevron.style.transform = 'rotate(180deg)';
     if(closeBtn) closeBtn.style.display = 'block';
@@ -3279,6 +3371,7 @@ window.toggleMobilePlaylist = ()=>{
   } else {
     document.body.classList.remove('mobile-playlist-open');
     if(panel) panel.style.display = 'none';
+    restoreMobilePlaylistPanel();
     if(label) label.textContent = 'Show Playlist';
     if(chevron) chevron.style.transform = '';
     if(closeBtn) closeBtn.style.display = 'none';
@@ -3316,9 +3409,7 @@ function hideCookieBanner(){
   setTimeout(()=>{ b.style.display='none'; }, 300);
 }
 
-// ── PULL TO REFRESH DISABLED ─────────────────────────────
-// Disabled at user request to prevent touch gestures interfering with playlist scrolling.
-
+// Pull-to-refresh has been intentionally removed. CSS below also disables overscroll refresh.
 
 // Clear any old cache on startup
 try{
