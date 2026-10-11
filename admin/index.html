@@ -1052,6 +1052,19 @@
 <div class="toast-wrap" id="toastWrap"></div>
 
 <!-- FIREBASE -->
-<script type="module" src="/assets/js/admin.js"></script>
+<script type="module" src="/assets/js/admin.js?v=202610110835"></script>
+<script>
+// Fallback: if admin.js failed to load, make the button explain why
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    if(typeof window.doLogin!=='function'){
+      var e=document.getElementById('loginError');
+      if(e){e.style.display='block';e.textContent='❌ admin.js failed to load. Hard refresh (Ctrl+Shift+R) or open the Console (F12) and send the red error.';}
+      var b=document.getElementById('loginBtn');
+      if(b) b.onclick=function(){location.reload(true);};
+    }
+  },2500);
+});
+</script>
 </body>
 </html>
