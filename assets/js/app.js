@@ -1736,9 +1736,33 @@ window.openVideo=async (id,push=true)=>{
         ${isWatched&&!isCurrent?`<div class="pl-watched-dot" title="Watched"></div>`:''}
       </a>`;
     }).join("");
+    // Build episode range tabs for the mobile-focused playlist.
+    // Insert them outside the grid so the grid contains only numbered episodes.
+    const isMobile = window.innerWidth <= 768;
+    let mobileRanges = document.getElementById('mobile-episode-ranges');
+    if(isMobile){
+      if(!mobileRanges){
+        mobileRanges=document.createElement('div');
+        mobileRanges.id='mobile-episode-ranges';
+        mobileRanges.className='mobile-episode-ranges';
+        const items=document.getElementById('playlist-items');
+        if(items && items.parentNode) items.parentNode.insertBefore(mobileRanges,items);
+      }
+      if(mobileRanges){
+        const rangeCount=Math.ceil(playlistQueue.length/30);
+        const activeRange=Math.floor(plQueueIdx/30);
+        mobileRanges.innerHTML=Array.from({length:rangeCount},(_,r)=>
+          `<button type="button" class="mobile-episode-range ${r===activeRange?'active':''}" data-range="${r}" onclick="setMobileEpisodeRange(${r})">${r*30+1}–${Math.min((r+1)*30,playlistQueue.length)}</button>`
+        ).join('');
+      }
+      document.querySelectorAll('#playlist-items .pl-item').forEach(item=>{
+        item.style.display = Math.floor((Number(item.dataset.episode)-1)/30)===Math.floor(plQueueIdx/30) ? '' : 'none';
+      });
+    } else if(mobileRanges){
+      mobileRanges.remove();
+    }
     // Desktop: show playlist panel directly
     // Mobile: show toggle button, keep playlist hidden by default
-    const isMobile = window.innerWidth <= 768;
     if(isMobile){
       $("playlist-panel").style.display="none";
       _mobilePlaylistOpen = false;
@@ -3161,11 +3185,28 @@ let _mobilePlaylistOpen = false;
 
 window.filterMobileEpisodes = (value)=>{
   const query = String(value||'').trim().toLowerCase();
+  const activeRange = Number(document.querySelector('#mobile-episode-ranges .mobile-episode-range.active')?.dataset.range || 0);
   document.querySelectorAll('#playlist-items .pl-item').forEach(item=>{
     const ep = item.getAttribute('data-episode') || '';
     const title = item.getAttribute('data-search') || item.textContent.toLowerCase();
-    item.style.display = (!query || ep.includes(query) || title.includes(query)) ? '' : 'none';
+    const range = Math.floor((Number(ep)-1)/30);
+    const matches = !query || ep.includes(query) || title.includes(query);
+    item.style.display = matches && (query || range===activeRange) ? '' : 'none';
   });
+  const ranges = document.getElementById('mobile-episode-ranges');
+  if(ranges) ranges.style.display = query ? 'none' : '';
+};
+window.setMobileEpisodeRange = (range)=>{
+  document.querySelectorAll('#mobile-episode-ranges .mobile-episode-range').forEach(btn=>{
+    btn.classList.toggle('active', Number(btn.dataset.range)===Number(range));
+  });
+  const search = document.getElementById('mobile-episode-search');
+  if(search) search.value = '';
+  document.querySelectorAll('#playlist-items .pl-item').forEach(item=>{
+    item.style.display = Math.floor((Number(item.dataset.episode)-1)/30)===Number(range) ? '' : 'none';
+  });
+  const ranges = document.getElementById('mobile-episode-ranges');
+  if(ranges) ranges.style.display = '';
 };
 
 window.toggleMobilePlaylist = ()=>{
