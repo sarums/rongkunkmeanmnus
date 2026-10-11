@@ -1721,6 +1721,7 @@ window.openVideo=async (id,push=true)=>{
       const isWatched=watchedIds.includes(pv.id);
       const isCurrent=pv.id===id;
       return`<a class="pl-item${isCurrent?' current':''}${isWatched&&!isCurrent?' watched':''}"
+        data-episode="${pi+1}" data-search="${String(pv.title||'').replace(/"/g,'&quot;').toLowerCase()}"
         href="/watch/${playlistSlug(pl)}/ep-${pi+1}"
         onclick="event.preventDefault();window.location.href='/watch/${playlistSlug(pl)}/ep-${pi+1}'">
         <div class="pl-thumb" style="position:relative;">
@@ -3106,6 +3107,15 @@ window.showBlogPost = async function showBlogPost(slug, epNum=1, fromPopstate=fa
 
 // ── MOBILE PLAYLIST TOGGLE ───────────────────────────────
 let _mobilePlaylistOpen = false;
+
+window.filterMobileEpisodes = (value)=>{
+  const query = String(value||'').trim().toLowerCase();
+  document.querySelectorAll('#playlist-items .pl-item').forEach(item=>{
+    const ep = item.getAttribute('data-episode') || '';
+    const title = item.getAttribute('data-search') || item.textContent.toLowerCase();
+    item.style.display = (!query || ep.includes(query) || title.includes(query)) ? '' : 'none';
+  });
+};
 
 window.toggleMobilePlaylist = ()=>{
   _mobilePlaylistOpen = !_mobilePlaylistOpen;
