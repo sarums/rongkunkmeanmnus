@@ -1088,3 +1088,38 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   }
   #ptr-indicator { display: none !important; }
 }
+
+
+/* Mobile playlist scroll fix (2026-10-11): the sheet, not a nested grid, owns vertical scrolling. */
+@media (max-width: 768px) {
+  html, body { overscroll-behavior-y: none !important; }
+  #ptr-indicator { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+  body.mobile-playlist-open { overflow:hidden !important; overscroll-behavior:none !important; }
+  body.mobile-playlist-open #playlist-panel {
+    position:fixed !important; top:30dvh !important; bottom:0 !important; left:0 !important; right:0 !important;
+    width:100vw !important; height:auto !important; max-height:none !important; min-height:0 !important;
+    display:block !important; overflow-y:scroll !important; overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important;
+    z-index:2147483647 !important; isolation:isolate !important; transform:none !important;
+    padding:12px 14px calc(28px + env(safe-area-inset-bottom, 0px)) !important; box-sizing:border-box !important;
+  }
+  body.mobile-playlist-open #playlist-panel .playlist-items,
+  body.mobile-playlist-open #playlist-panel #playlist-items {
+    display:grid !important; height:auto !important; min-height:0 !important; max-height:none !important; flex:none !important;
+    overflow:visible !important; overflow-y:visible !important; padding-bottom:26px !important;
+  }
+  body.mobile-playlist-open #playlist-panel *, body.mobile-playlist-open #playlist-panel *::before,
+  body.mobile-playlist-open #playlist-panel *::after { pointer-events:auto !important; }
+  body.blog-playlist-open { overflow:hidden !important; overscroll-behavior:none !important; }
+  body.blog-playlist-open .blog-playlist-toggle {
+    position:fixed !important; top:30dvh !important; left:0 !important; right:0 !important; width:100vw !important; z-index:2147483646 !important;
+  }
+  body.blog-playlist-open #blog-episode-playlist-panel {
+    position:fixed !important; top:calc(30dvh + 50px) !important; bottom:0 !important; left:0 !important; right:0 !important;
+    width:100vw !important; height:auto !important; max-height:none !important; display:block !important;
+    overflow-y:scroll !important; overflow-x:hidden !important; -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-y:contain !important; touch-action:pan-y !important; z-index:2147483647 !important;
+    padding-bottom:calc(28px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  body.blog-playlist-open #blog-episode-grid { overflow:visible !important; max-height:none !important; }
+}
