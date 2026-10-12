@@ -1207,3 +1207,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   .fy-slide.is-playing .fy-slide-play { display:none; }
 }
 @media (min-width:768px) { #bottom-nav { display:none !important; } }
+
+
+/* For You feed: hide the global header and page footer on mobile only.
+   Keep the bottom navigation available so users can still change sections. */
+@media (max-width: 767px) {
+  body:has(#page-cat.fy-feed-page.active) #navbar {
+    display: none !important;
+  }
+  body:has(#page-cat.fy-feed-page.active) #page-cat > .slim-footer {
+    display: none !important;
+  }
+  body:has(#page-cat.fy-feed-page.active) #page-cat.fy-feed-page {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+}
