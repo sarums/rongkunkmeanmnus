@@ -1168,55 +1168,42 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   body { padding-bottom:calc(70px + env(safe-area-inset-bottom)); }
   #bottom-nav { display:block !important; }
   #bottom-nav-row { display:flex; }
-  #page-cat.fy-feed-page { padding-top:0 !important; }
+  #page-cat.fy-feed-page {
+    padding:0 !important;
+    width:100vw !important;
+    max-width:none !important;
+    margin-left:calc(50% - 50vw) !important;
+    margin-right:calc(50% - 50vw) !important;
+    overflow-x:clip;
+    background:#050505;
+  }
   #page-cat.fy-feed-page #cat-banner, #page-cat.fy-feed-page .cat-banner,
   #page-cat.fy-feed-page #cat-title, #page-cat.fy-feed-page #cat-desc { display:none !important; }
-  #page-cat.fy-feed-page #cat-grid { display:block !important; padding:0 !important; margin:0 !important; }
+  #page-cat.fy-feed-page #cat-grid {
+    display:block !important;
+    position:relative !important;
+    left:50% !important;
+    transform:translateX(-50%) !important;
+    width:100vw !important;
+    max-width:none !important;
+    min-width:0 !important;
+    padding:0 !important;
+    margin:0 !important;
+    overflow-x:clip;
+    background:#050505;
+  }
   .fy-vertical-feed { height:calc(100dvh - 70px - env(safe-area-inset-bottom)); height:calc(100vh - 70px - env(safe-area-inset-bottom)); overflow-y:auto; overscroll-behavior-y:contain; scroll-snap-type:y mandatory; scrollbar-width:none; background:#050505; }
   .fy-vertical-feed::-webkit-scrollbar { display:none; }
   .fy-slide { position:relative; height:calc(100dvh - 70px - env(safe-area-inset-bottom)); height:calc(100vh - 70px - env(safe-area-inset-bottom)); min-height:420px; scroll-snap-align:start; scroll-snap-stop:always; overflow:hidden; background:#050505; color:#fff; }
   .fy-slide-media { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; }
   .fy-slide-media img, .fy-slide-media iframe { width:100%; height:100%; object-fit:contain; border:0; }
-  /* Fit the feed media to the detected source orientation (wide 16:9 or tall 9:16). */
-  .fy-slide.is-landscape .fy-slide-media img,
-  .fy-slide.is-landscape .fy-slide-media iframe { width:100%; height:auto; max-height:100%; aspect-ratio:16/9; object-fit:cover; }
-  .fy-slide.is-portrait .fy-slide-media img,
-  .fy-slide.is-portrait .fy-slide-media iframe { width:100%; height:100%; max-width:100%; aspect-ratio:9/16; object-fit:contain; }
-  .fy-slide-actions .fy-playlist-action { background:rgba(20,20,20,.78); color:#fff; border:1px solid rgba(255,255,255,.45); box-shadow:0 3px 14px #0008; font-size:1.35rem; }
   .fy-slide-shade { position:absolute; inset:35% 0 0; background:linear-gradient(transparent,rgba(0,0,0,.84)); pointer-events:none; }
   .fy-slide-info { position:absolute; z-index:2; left:16px; right:78px; bottom:22px; padding-bottom:8px; text-shadow:0 1px 4px #000; }
   .fy-slide-title { font-size:1.03rem; font-weight:850; line-height:1.35; margin:0 0 7px; }
   .fy-slide-meta { font-size:.75rem; color:#ddd; }
   .fy-slide-actions { position:absolute; z-index:3; right:13px; bottom:35px; display:flex; flex-direction:column; gap:20px; align-items:center; }
   .fy-slide-action { border:0; background:rgba(30,30,30,.72); color:white; border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; text-decoration:none; }
+  .fy-slide-play { position:absolute; z-index:3; left:50%; top:50%; transform:translate(-50%,-50%); border:1px solid #ffffff77; background:#0008; border-radius:50%; color:#fff; width:62px; height:62px; font-size:1.5rem; }
+  .fy-slide.is-playing .fy-slide-play { display:none; }
 }
 @media (min-width:768px) { #bottom-nav { display:none !important; } }
-
-/* Clear playlist icon on the For You feed action button */
-@media (max-width:767px) {
-  .fy-slide-actions .fy-playlist-action svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
-}
-
-
-/* FIX: true edge-to-edge For You feed on mobile. Remove spacing from the page wrapper as well as the feed grid. */
-@media (max-width: 767px) {
-  html, body { max-width: 100%; overflow-x: hidden; }
-  body:has(#page-cat.fy-feed-page) { padding-left: 0 !important; padding-right: 0 !important; }
-  #page-cat.fy-feed-page {
-    width: 100vw !important; max-width: 100vw !important;
-    margin-left: calc(50% - 50vw) !important; margin-right: 0 !important;
-    padding-left: 0 !important; padding-right: 0 !important;
-    border-left: 0 !important; border-right: 0 !important;
-    box-sizing: border-box !important; background: #050505 !important;
-  }
-  #page-cat.fy-feed-page .page-content,
-  #page-cat.fy-feed-page #cat-grid,
-  #page-cat.fy-feed-page .fy-vertical-feed,
-  #page-cat.fy-feed-page .fy-slide {
-    width: 100% !important; max-width: none !important;
-    margin-left: 0 !important; margin-right: 0 !important;
-    padding-left: 0 !important; padding-right: 0 !important;
-    border-left: 0 !important; border-right: 0 !important;
-    border-radius: 0 !important; box-sizing: border-box !important;
-  }
-}
