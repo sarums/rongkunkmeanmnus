@@ -1191,3 +1191,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   .fy-slide-action { border:0; background:rgba(30,30,30,.72); color:white; border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; text-decoration:none; }
 }
 @media (min-width:768px) { #bottom-nav { display:none !important; } }
+
+/* Clear playlist icon on the For You feed action button */
+@media (max-width:767px) {
+  .fy-slide-actions .fy-playlist-action svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
+}
