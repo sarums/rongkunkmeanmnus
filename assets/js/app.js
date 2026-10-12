@@ -2609,7 +2609,7 @@ window.showForYouPage = async ()=>{
       <div class="fy-slide-media"><img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="${i<2?'eager':'lazy'}" onload="fySetVideoOrientation(this)"></div>
       <div class="fy-slide-shade"></div>
       <div class="fy-slide-info"><h2 class="fy-slide-title">${v.title||'Drama video'}</h2><div class="fy-slide-meta">${[v.category, v.views||v.viewsDisplay?fmtViews(v.views||0)+' views':''].filter(Boolean).join(' · ')}</div></div>
-      <div class="fy-slide-actions"><button class="fy-slide-action fy-play-action" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button><button class="fy-slide-action" type="button" aria-label="Open video" onclick="fyOpenVideo('${String(v.id).replace(/'/g,"\\'")}')">↗</button></div>
+      <div class="fy-slide-actions"><button class="fy-slide-action fy-playlist-action" type="button" aria-label="Open playlist" title="Open playlist" onclick="fyOpenPlaylistForVideo('${String(v.id).replace(/'/g,"\\'")}')">▤</button></div>
     </article>`).join('');
     if(window._fySwipeObserver) window._fySwipeObserver.disconnect();
     window._fySwipeObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
@@ -2643,6 +2643,7 @@ window.fyPlaySlide=(button)=>{
   slide.classList.add('is-playing');
 };
 window.fyOpenVideo=(id)=>{const v=videos.find(x=>x.id===id);if(v)openVideo(id);};
+window.fyOpenPlaylistForVideo=(id)=>{const v=videos.find(x=>x.id===id);if(!v)return;const pl=playlists.find(p=>(p.videos||[]).includes(id));if(pl){openPlaylist(pl.id,id);return;}window.fyOpenVideo(id);};
 
 function _fyBlogCard(p){
   return `<a class="vcard" href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')">
