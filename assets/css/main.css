@@ -1198,56 +1198,25 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 }
 
 
-/* For You feed: remove outer red gutters and make the feed full-bleed on mobile */
+/* FIX: true edge-to-edge For You feed on mobile. Remove spacing from the page wrapper as well as the feed grid. */
 @media (max-width: 767px) {
-  html:has(#page-cat.fy-feed-page),
-  body:has(#page-cat.fy-feed-page) { background: #050505 !important; }
+  html, body { max-width: 100%; overflow-x: hidden; }
+  body:has(#page-cat.fy-feed-page) { padding-left: 0 !important; padding-right: 0 !important; }
   #page-cat.fy-feed-page {
-    box-sizing: border-box !important;
     width: 100vw !important; max-width: 100vw !important;
-    margin-left: calc(50% - 50vw) !important;
-    margin-right: calc(50% - 50vw) !important;
+    margin-left: calc(50% - 50vw) !important; margin-right: 0 !important;
     padding-left: 0 !important; padding-right: 0 !important;
     border-left: 0 !important; border-right: 0 !important;
-    background: #050505 !important; overflow-x: clip !important;
+    box-sizing: border-box !important; background: #050505 !important;
   }
+  #page-cat.fy-feed-page .page-content,
   #page-cat.fy-feed-page #cat-grid,
   #page-cat.fy-feed-page .fy-vertical-feed,
   #page-cat.fy-feed-page .fy-slide {
-    box-sizing: border-box !important;
     width: 100% !important; max-width: none !important;
     margin-left: 0 !important; margin-right: 0 !important;
+    padding-left: 0 !important; padding-right: 0 !important;
     border-left: 0 !important; border-right: 0 !important;
-  }
-}
-
-
-/* TRUE edge-to-edge For You feed: zero horizontal margin, padding, and border. */
-@media (max-width: 767px) {
-  html:has(#page-cat.fy-feed-page),
-  body:has(#page-cat.fy-feed-page) {
-    width: 100% !important; max-width: 100% !important;
-    margin: 0 !important; padding: 0 !important;
-    overflow-x: hidden !important; background: #000 !important;
-  }
-  body:has(#page-cat.fy-feed-page) #page-cat.fy-feed-page {
-    position: relative !important; left: 50% !important; right: auto !important;
-    transform: translateX(-50%) !important;
-    width: 100vw !important; max-width: 100vw !important; min-width: 0 !important;
-    margin: 0 !important; padding: 0 !important;
-    border: 0 !important; border-radius: 0 !important;
-    background: #000 !important; overflow: hidden !important;
-  }
-  body:has(#page-cat.fy-feed-page) #page-cat.fy-feed-page #cat-grid,
-  body:has(#page-cat.fy-feed-page) #page-cat.fy-feed-page .fy-vertical-feed,
-  body:has(#page-cat.fy-feed-page) #page-cat.fy-feed-page .fy-slide,
-  body:has(#page-cat.fy-feed-page) #page-cat.fy-feed-page .fy-slide-media {
-    box-sizing: border-box !important;
-    width: 100vw !important; max-width: 100vw !important; min-width: 0 !important;
-    margin: 0 !important; padding-left: 0 !important; padding-right: 0 !important;
-    border-left: 0 !important; border-right: 0 !important; border-radius: 0 !important;
-  }
-  body:has(#page-cat.fy-feed-page) #page-cat.fy-feed-page .fy-slide-info {
-    left: 16px !important; right: 78px !important;
+    border-radius: 0 !important; box-sizing: border-box !important;
   }
 }
