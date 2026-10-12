@@ -1,10 +1,10 @@
 // ═══════════════════════════════════════════
 //  Service Worker — RongKunKmeanMnus PWA
-//  v5 — Network first for HTML, Cache first for assets
+//  v6 — Network first for HTML, CSS, and JS
 // ═══════════════════════════════════════════
 
-const CACHE_NAME  = 'rkmn-v14-mobile-five-nav-feed';
-const ASSET_CACHE = 'rkmn-assets-v13-mobile-hidden-state-fix';
+const CACHE_NAME  = 'rkmn-v15-network-first-assets';
+const ASSET_CACHE = 'rkmn-assets-v14-network-first-assets';
 
 // Static assets to pre-cache
 const STATIC_ASSETS = [
@@ -84,25 +84,50 @@ self.addEventListener('fetch', e=>{
     return;
   }
 
-  // JS/CSS/Images — CACHE FIRST (fast load)
-  // But revalidate in background to keep fresh
+  // CSS and JavaScript — NETWORK FIRST so deployed updates are not hidden
+  // behind a stale service-worker cache. Use cache only when offline.
   if(
-    url.pathname.startsWith('/assets/') ||
+    url.pathname.endsWith('.css') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.mjs')
+  ){
+    e.respondWith(
+      caches.open(ASSET_CACHE).then(cache=>
+        fetch(req).then(res=>{
+          if(res && res.ok) cache.put(req, res.clone());
+          return res;
+        }).catch(()=>cache.match(req).then(cached=>{
+          if(cached) return cached;
+          return new Response('Offline and no cached copy is available.', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: {'Content-Type':'text/plain; charset=utf-8'}
+          });
+        }))
+      )
+    );
+    return;
+  }
+
+  // Images and fonts — cache first for speed; refresh the cache in background.
+  if(
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.jpeg') ||
+    url.pathname.endsWith('.gif') ||
     url.pathname.endsWith('.svg') ||
     url.pathname.endsWith('.webp') ||
+    url.pathname.endsWith('.woff') ||
     url.pathname.endsWith('.woff2')
   ){
     e.respondWith(
       caches.open(ASSET_CACHE).then(cache=>
         cache.match(req).then(cached=>{
           const fetchPromise = fetch(req).then(res=>{
-            if(res && res.status===200) cache.put(req, res.clone());
+            if(res && res.ok) cache.put(req, res.clone());
             return res;
-          }).catch(()=>{});
-          // Return cached immediately, update in background
-          return cached || fetchPromise;
+          }).catch(()=>null);
+          return cached || fetchPromise || new Response('', {status: 503});
         })
       )
     );
