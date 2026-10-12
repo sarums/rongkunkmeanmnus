@@ -1179,10 +1179,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   .fy-slide-media img, .fy-slide-media iframe { width:100%; height:100%; object-fit:contain; border:0; }
   /* Fit the feed media to the detected source orientation (wide 16:9 or tall 9:16). */
   .fy-slide.is-landscape .fy-slide-media img,
-  .fy-slide.is-landscape .fy-slide-media iframe { width:100%; height:auto; max-height:100%; aspect-ratio:16/9; }
+  .fy-slide.is-landscape .fy-slide-media iframe { width:100%; height:auto; max-height:100%; aspect-ratio:16/9; object-fit:cover; }
   .fy-slide.is-portrait .fy-slide-media img,
-  .fy-slide.is-portrait .fy-slide-media iframe { width:auto; height:100%; max-width:100%; aspect-ratio:9/16; }
-  .fy-slide-action.fy-play-action { background:#f27d26; color:#111; box-shadow:0 3px 14px #0008; font-weight:900; }
+  .fy-slide.is-portrait .fy-slide-media iframe { width:100%; height:100%; max-width:100%; aspect-ratio:9/16; object-fit:contain; }
+  .fy-slide-actions .fy-playlist-action { background:rgba(20,20,20,.78); color:#fff; border:1px solid rgba(255,255,255,.45); box-shadow:0 3px 14px #0008; font-size:1.35rem; }
   .fy-slide-shade { position:absolute; inset:35% 0 0; background:linear-gradient(transparent,rgba(0,0,0,.84)); pointer-events:none; }
   .fy-slide-info { position:absolute; z-index:2; left:16px; right:78px; bottom:22px; padding-bottom:8px; text-shadow:0 1px 4px #000; }
   .fy-slide-title { font-size:1.03rem; font-weight:850; line-height:1.35; margin:0 0 7px; }
