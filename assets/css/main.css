@@ -1223,3 +1223,24 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
     padding-top: 0 !important;
   }
 }
+
+
+/* For You feed: keep the play control reachable at mid-right on mobile. */
+@media (max-width: 767px) {
+  #page-cat.fy-feed-page .fy-slide-actions {
+    right: 18px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+    gap: 12px !important;
+  }
+  #page-cat.fy-feed-page .fy-slide-action {
+    width: 50px !important; height: 50px !important;
+    border-radius: 50% !important;
+    background: rgba(30,30,30,.82) !important;
+    color: #fff !important;
+    position: relative; z-index: 5;
+    touch-action: manipulation;
+  }
+  #page-cat.fy-feed-page .fy-slide-info { right: 82px !important; }
+}
