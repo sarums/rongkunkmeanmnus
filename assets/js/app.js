@@ -106,9 +106,12 @@ const getThumb=v=>{
 };
 
 const getEmbedUrl=v=>{
-  const src=v.platform||v.source||"";
-  const id=(v.videoId||(v.url||"").split("/").pop()||"");
-  if(src==="dailymotion") return`https://www.dailymotion.com/embed/video/${id}?autoplay=1`;
+  const src=String(v.platform||v.source||"").toLowerCase();
+  const rawId=String(v.videoId||v.url||"").trim();
+  // Accept either a bare Dailymotion ID (xaw4d36) or a Dailymotion URL.
+  const dmMatch=rawId.match(/(?:dai\.ly\/|dailymotion\.com\/(?:video\/|embed\/video\/))([a-zA-Z0-9]+)/i);
+  const id=(src==="dailymotion" ? (dmMatch?dmMatch[1]:rawId.split(/[/?#]/).filter(Boolean).pop()||"") : (v.videoId||(v.url||"").split("/").pop()||""));
+  if(src==="dailymotion") return`https://geo.dailymotion.com/player/x8lr5.html?video=${encodeURIComponent(id)}&mute=true`;
   if(src==="rumble")      return`https://rumble.com/embed/${id}/?pub=4`;
   if(src==="youtube")     return`https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
   if(src==="vimeo")       return`https://player.vimeo.com/video/${id}?autoplay=1`;
@@ -2635,9 +2638,9 @@ window.fyPlaySlide=(button)=>{
   const media=slide.querySelector('.fy-slide-media'); let src=getEmbedUrl(v);
   if(!src){window.openVideo(v.id);return;}
   const addParam=(url,key,value)=>{try{const u=new URL(url,location.href);if(!u.searchParams.has(key))u.searchParams.set(key,value);return u.href;}catch(e){return url+(url.includes('?')?'&':'?')+key+'='+encodeURIComponent(value);}};
-  src=addParam(src,'autoplay','1');
+  if(!/geo\.dailymotion\.com\/player\//.test(src)) src=addParam(src,'autoplay','1');
   if(/youtube\.com\/embed|youtube-nocookie\.com\/embed/.test(src)){src=addParam(src,'mute','1');src=addParam(src,'playsinline','1');}
-  if(/dailymotion\.com\/embed/.test(src)) src=addParam(src,'mute','1');
+  if(/geo\.dailymotion\.com\/player\//.test(src)) src=addParam(src,'mute','true');
   if(/rumble\.com\/embed/.test(src)) src=addParam(src,'autoplay','2');
   media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   slide.classList.add('is-playing');
