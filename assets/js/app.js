@@ -2609,7 +2609,7 @@ window.showForYouPage = async ()=>{
       <div class="fy-slide-media"><img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="${i<2?'eager':'lazy'}"></div>
       <div class="fy-slide-shade"></div>
       <div class="fy-slide-info"><h2 class="fy-slide-title">${v.title||'Drama video'}</h2><div class="fy-slide-meta">${[v.category, v.views||v.viewsDisplay?fmtViews(v.views||0)+' views':''].filter(Boolean).join(' · ')}</div></div>
-      <div class="fy-slide-actions"><button class="fy-slide-action" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button><button class="fy-slide-action" type="button" aria-label="Open video" onclick="fyOpenVideo('${String(v.id).replace(/'/g,"\\'")}')">↗</button></div>
+      <div class="fy-slide-actions"><button class="fy-slide-action" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button><button class="fy-slide-action" type="button" aria-label="Open video" onclick="fyOpenVideo('${String(v.id).replace(/'/g,"\\'")}')">↗</button><button class="fy-slide-action fy-playlist-action" type="button" aria-label="Open playlist" title="Playlist" onclick="fyOpenPlaylist('${String(v.id).replace(/'/g,"\\'")}')">☷</button></div>
       <button class="fy-slide-play" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button>
     </article>`).join('');
     if(window._fySwipeObserver) window._fySwipeObserver.disconnect();
@@ -2643,6 +2643,28 @@ window.fyPlaySlide=(button)=>{
   slide.classList.add('is-playing');
 };
 window.fyOpenVideo=(id)=>{const v=videos.find(x=>x.id===id);if(v)openVideo(id);};
+
+window.fyClosePlaylistPopup=()=>{const el=document.getElementById('fy-playlist-popup');if(el)el.remove();document.body.classList.remove('fy-playlist-popup-open');};
+window.fyOpenPlaylist=(videoId)=>{
+  const current=videos.find(v=>String(v.id)===String(videoId));
+  const pl=playlists.find(p=>(p.videos||[]).some(id=>String(id)===String(videoId)));
+  if(!pl){ if(current) { const fallback=playlists.find(p=>p.category&&current.category&&String(p.category)===String(current.category)); if(fallback){ fyRenderPlaylistPopup(fallback,videoId); return; } } alert('Playlist is not available for this video yet.'); return; }
+  fyRenderPlaylistPopup(pl,videoId);
+};
+function fyRenderPlaylistPopup(pl,activeVideoId){
+  window.fyClosePlaylistPopup();
+  const ids=pl.videos||[]; const first=videos.find(v=>String(v.id)===String(ids[0]));
+  const poster=pl.thumbnail||(first?getThumb(first):'');
+  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const watched=getHistory();
+  const episodeHtml=ids.map((id,i)=>{const v=videos.find(x=>String(x.id)===String(id));const active=String(id)===String(activeVideoId);return `<button type="button" class="fy-popup-episode${active?' active':''}${watched.includes(id)?' watched':''}" onclick="fyChoosePlaylistEpisode('${String(pl.id).replace(/'/g,"\\'")}','${String(id).replace(/'/g,"\\'")}')"><span>${i+1}</span>${watched.includes(id)?'<i>✓</i>':''}</button>`;}).join('');
+  const el=document.createElement('div');el.id='fy-playlist-popup';el.className='fy-playlist-popup';el.innerHTML=`<div class="fy-playlist-backdrop" onclick="fyClosePlaylistPopup()"></div><section class="fy-playlist-sheet" role="dialog" aria-modal="true" aria-label="Playlist"><div class="fy-playlist-handle"></div><button class="fy-playlist-close" onclick="fyClosePlaylistPopup()" aria-label="Close playlist">×</button><div class="fy-playlist-heading">${poster?`<img src="${esc(poster)}" alt="">`:''}<div><h2>${esc(pl.name||'Playlist')}</h2><p>▷ ${ids.length} episodes · ${esc(pl.category||'Drama')}</p></div></div><div class="fy-playlist-tabs"><button class="active" data-fytab="episodes" onclick="fyPlaylistTab('episodes',this)">Episodes</button><button data-fytab="synopsis" onclick="fyPlaylistTab('synopsis',this)">Synopsis</button></div><div class="fy-playlist-episode-wrap" id="fy-playlist-episode-wrap"><div class="fy-playlist-grid">${episodeHtml}</div></div><div class="fy-playlist-synopsis" id="fy-playlist-synopsis" hidden>${esc(pl.description||'No synopsis available.')}</div></section>`;
+  document.body.appendChild(el);document.body.classList.add('fy-playlist-popup-open');
+}
+window.fyChoosePlaylistEpisode=(plId,videoId)=>{window.fyClosePlaylistPopup();window.openPlaylist(plId,videoId);};
+window.fyPlaylistTab=(tab,btn)=>{document.querySelectorAll('.fy-playlist-tabs button').forEach(b=>b.classList.toggle('active',b===btn));const eps=document.getElementById('fy-playlist-episode-wrap'),syn=document.getElementById('fy-playlist-synopsis');if(eps)eps.hidden=tab!=='episodes';if(syn)syn.hidden=tab!=='synopsis';};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')window.fyClosePlaylistPopup();});
+
 
 function _fyBlogCard(p){
   return `<a class="vcard" href="/blog/${p.slug||p.id}" onclick="event.preventDefault();showBlogPost('${p.slug||p.id}')">
