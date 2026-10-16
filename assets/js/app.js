@@ -2648,7 +2648,7 @@ window.fyPlaySlide=(button)=>{
   const addParam=(url,key,value)=>{try{const u=new URL(url,location.href);if(!u.searchParams.has(key))u.searchParams.set(key,value);return u.href;}catch(e){return url+(url.includes('?')?'&':'?')+key+'='+encodeURIComponent(value);}};
   if(!/geo\.dailymotion\.com\/player\//.test(src)) src=addParam(src,'autoplay','1');
   if(/youtube\.com\/embed|youtube-nocookie\.com\/embed/.test(src)){src=addParam(src,'mute','1');src=addParam(src,'playsinline','1');}
-  if(/geo\.dailymotion\.com\/player\//.test(src)) src=addParam(src,'mute','true');
+  if(/geo\.dailymotion\.com\/player\//.test(src)){src=addParam(src,'mute','true');src=addParam(src,'controls','false');}
   if(/rumble\.com\/embed/.test(src)) src=addParam(src,'autoplay','2');
   media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   slide.classList.add('is-playing');
