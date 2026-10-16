@@ -1203,8 +1203,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
   .fy-slide-meta { font-size:.75rem; color:#ddd; }
   .fy-slide-actions { position:absolute; z-index:3; right:13px; bottom:35px; display:flex; flex-direction:column; gap:20px; align-items:center; }
   .fy-slide-action { border:0; background:rgba(30,30,30,.72); color:white; border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; text-decoration:none; }
-  .fy-slide-play { position:absolute; z-index:3; left:50%; top:50%; transform:translate(-50%,-50%); border:1px solid #ffffff77; background:#0008; border-radius:50%; color:#fff; width:62px; height:62px; font-size:1.5rem; }
-  .fy-slide.is-playing .fy-slide-play { display:none; }
+  .fy-tap-toggle { position:absolute; z-index:1; inset:0; width:100%; height:100%; padding:0; border:0; background:transparent; cursor:pointer; touch-action:manipulation; }
+  .fy-slide-actions { pointer-events:none; }
+  .fy-slide-action { pointer-events:auto; }
+
 }
 @media (min-width:768px) { #bottom-nav { display:none !important; } }
 
@@ -1225,7 +1227,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 }
 
 
-/* For You feed: keep the play control reachable at mid-right on mobile. */
+/* For You feed: keep navigation actions reachable; playback toggles by tapping the video. */
 @media (max-width: 767px) {
   #page-cat.fy-feed-page .fy-slide-actions {
     right: 18px !important;
