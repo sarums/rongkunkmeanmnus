@@ -2588,6 +2588,36 @@ window.playDrama = ()=>{
 // For You page state
 let _fyPool=[], _fyPage=0, _fyObserver=null;
 const FY_BATCH=20;
+let _fyDmSdkPromise=null;
+const _fyDmPlayers=new Map();
+function fyLoadDailymotionSdk(){
+  if(window.dailymotion&&typeof window.dailymotion.createPlayer==='function') return Promise.resolve(window.dailymotion);
+  if(_fyDmSdkPromise) return _fyDmSdkPromise;
+  _fyDmSdkPromise=new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src='https://geo.dailymotion.com/libs/player/x8lr5.js';script.async=true;
+    script.onload=()=>window.dailymotion&&typeof window.dailymotion.createPlayer==='function'?resolve(window.dailymotion):reject(new Error('Dailymotion Player SDK unavailable'));
+    script.onerror=()=>reject(new Error('Dailymotion Player SDK failed to load'));
+    document.head.appendChild(script);
+  });
+  return _fyDmSdkPromise;
+}
+function fyGetDailymotionId(v){
+  const raw=String(v?.videoId||v?.url||v?.id||'');
+  const m=raw.match(/(?:dai\.ly\/|dailymotion\.com\/(?:video\/|embed\/video\/))([a-zA-Z0-9]+)/i);
+  return m?m[1]:raw.split(/[/?#]/).filter(Boolean).pop()||'';
+}
+async function fyCreateDailymotionPlayer(slide,v){
+  const media=slide.querySelector('.fy-slide-media');if(!media)return null;
+  const key=String(slide.dataset.videoId);if(_fyDmPlayers.has(key))return _fyDmPlayers.get(key);
+  const id=fyGetDailymotionId(v);if(!id)return null;
+  const hostId='fy-dm-player-'+key.replace(/[^a-zA-Z0-9_-]/g,'');
+  media.innerHTML=`<div class="fy-dm-player-host" id="${hostId}"></div>`;
+  await fyLoadDailymotionSdk();
+  const player=await window.dailymotion.createPlayer(hostId,{video:id,params:{autoplay:true,mute:true,controls:false}});
+  _fyDmPlayers.set(key,player);return player;
+}
+
 
 window.showForYouPage = async ()=>{
   NP.start();
@@ -2623,35 +2653,44 @@ window.showForYouPage = async ()=>{
         // browser/provider policies may still require a tap on some embeds.
         document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const v=videos.find(x=>x.id===other.dataset.videoId);media.innerHTML=v?`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`:'';}});
         if(!slide.classList.contains('is-playing')) window.fyPlaySlide(slide);
+        else {const player=_fyDmPlayers.get(String(slide.dataset.videoId));if(player&&typeof player.play==='function')Promise.resolve(player.play()).catch(()=>{});}
       } else if(!entry.isIntersecting && slide.classList.contains('is-playing')){
-        slide.classList.remove('is-playing'); const media=slide.querySelector('.fy-slide-media'); const v=videos.find(x=>x.id===slide.dataset.videoId); if(v) media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;
+        const player=_fyDmPlayers.get(String(slide.dataset.videoId));
+        if(player&&typeof player.pause==='function')Promise.resolve(player.pause()).catch(()=>{});
+        else {slide.classList.remove('is-playing');const media=slide.querySelector('.fy-slide-media');const v=videos.find(x=>x.id===slide.dataset.videoId);if(v)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
       }
     }),{root:grid,threshold:[0,.68,1]});
     grid.querySelectorAll('.fy-slide').forEach(slide=>window._fySwipeObserver.observe(slide));
   } catch(e){console.error('For You feed error',e);grid.innerHTML='<div style="padding:2rem;text-align:center;color:#aaa">Unable to load videos right now.</div>';}
   NP.done();
 };
-window.fyToggleSlide=(button)=>{
-  const slide=button.closest('.fy-slide'); if(!slide) return;
-  if(slide.classList.contains('is-playing')){
-    slide.classList.remove('is-playing');
-    const media=slide.querySelector('.fy-slide-media'), v=videos.find(x=>x.id===slide.dataset.videoId);
-    if(media&&v) media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;
-  } else window.fyPlaySlide(slide);
+window.fyToggleSlide=async(button)=>{
+  const slide=button.closest('.fy-slide');if(!slide)return;
+  const player=_fyDmPlayers.get(String(slide.dataset.videoId));
+  if(player){
+    const paused=slide.dataset.fyPaused==='1';
+    try{if(paused){await player.play();slide.dataset.fyPaused='0';slide.classList.add('is-playing');}else{await player.pause();slide.dataset.fyPaused='1';slide.classList.remove('is-playing');}}catch(e){console.warn('For You playback toggle failed',e);}
+    return;
+  }
+  if(slide.classList.contains('is-playing')){slide.classList.remove('is-playing');slide.dataset.fyPaused='1';const media=slide.querySelector('.fy-slide-media'),v=videos.find(x=>x.id===slide.dataset.videoId);if(media&&v)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
+  else{slide.dataset.fyPaused='0';window.fyPlaySlide(slide);}
 };
-window.fyPlaySlide=(button)=>{
-  const slide=button.matches&&button.matches('.fy-slide')?button:button.closest('.fy-slide'); if(!slide) return;
-  const v=videos.find(x=>x.id===slide.dataset.videoId); if(!v) return;
-  document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>x.id===other.dataset.videoId);if(ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}});
-  const media=slide.querySelector('.fy-slide-media'); let src=getEmbedUrl(v);
-  if(!src){window.openVideo(v.id);return;}
+window.fyPlaySlide=async(button)=>{
+  const slide=button.matches&&button.matches('.fy-slide')?button:button.closest('.fy-slide');if(!slide)return;
+  const v=videos.find(x=>x.id===slide.dataset.videoId);if(!v)return;
+  document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){const player=_fyDmPlayers.get(String(other.dataset.videoId));if(player&&typeof player.pause==='function')Promise.resolve(player.pause()).catch(()=>{});else{other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>x.id===other.dataset.videoId);if(ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}}});
+  const media=slide.querySelector('.fy-slide-media');let src=getEmbedUrl(v);if(!src){window.openVideo(v.id);return;}
+  if(/geo\.dailymotion\.com\/player\//.test(src)){
+    slide.classList.add('is-playing');slide.dataset.fyPaused='0';
+    try{const player=await fyCreateDailymotionPlayer(slide,v);if(player&&typeof player.play==='function')await player.play();}
+    catch(e){console.error('Dailymotion For You player error',e);media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('fy-player-fallback');}
+    return;
+  }
   const addParam=(url,key,value)=>{try{const u=new URL(url,location.href);if(!u.searchParams.has(key))u.searchParams.set(key,value);return u.href;}catch(e){return url+(url.includes('?')?'&':'?')+key+'='+encodeURIComponent(value);}};
-  if(!/geo\.dailymotion\.com\/player\//.test(src)) src=addParam(src,'autoplay','1');
+  src=addParam(src,'autoplay','1');
   if(/youtube\.com\/embed|youtube-nocookie\.com\/embed/.test(src)){src=addParam(src,'mute','1');src=addParam(src,'playsinline','1');}
-  if(/geo\.dailymotion\.com\/player\//.test(src)){src=addParam(src,'mute','true');src=addParam(src,'controls','false');}
-  if(/rumble\.com\/embed/.test(src)) src=addParam(src,'autoplay','2');
-  media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-  slide.classList.add('is-playing');
+  if(/rumble\.com\/embed/.test(src))src=addParam(src,'autoplay','2');
+  media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('is-playing');slide.dataset.fyPaused='0';
 };
 window.fyOpenVideo=(id)=>{const v=videos.find(x=>x.id===id);if(v)openVideo(id);};
 
