@@ -2612,8 +2612,8 @@ window.showForYouPage = async ()=>{
       <div class="fy-slide-media"><img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="${i<2?'eager':'lazy'}"></div>
       <div class="fy-slide-shade"></div>
       <div class="fy-slide-info"><h2 class="fy-slide-title">${v.title||'Drama video'}</h2><div class="fy-slide-meta">${[v.category, v.views||v.viewsDisplay?fmtViews(v.views||0)+' views':''].filter(Boolean).join(' · ')}</div></div>
-      <div class="fy-slide-actions"><button class="fy-slide-action" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button><button class="fy-slide-action" type="button" aria-label="Open video" onclick="fyOpenVideo('${String(v.id).replace(/'/g,"\\'")}')">↗</button><button class="fy-slide-action fy-playlist-action" type="button" aria-label="Open playlist" title="Playlist" onclick="fyOpenPlaylist('${String(v.id).replace(/'/g,"\\'")}')">☷</button></div>
-      <button class="fy-slide-play" type="button" aria-label="Play video" onclick="fyPlaySlide(this)">▶</button>
+      <button class="fy-tap-toggle" type="button" aria-label="Pause or play video" onclick="fyToggleSlide(this)"></button>
+      <div class="fy-slide-actions"><button class="fy-slide-action" type="button" aria-label="Open video" onclick="fyOpenVideo('${String(v.id).replace(/'/g,"\\'")}')">↗</button><button class="fy-slide-action fy-playlist-action" type="button" aria-label="Open playlist" title="Playlist" onclick="fyOpenPlaylist('${String(v.id).replace(/'/g,"\\'")}')">☷</button></div>
     </article>`).join('');
     if(window._fySwipeObserver) window._fySwipeObserver.disconnect();
     window._fySwipeObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
@@ -2622,7 +2622,7 @@ window.showForYouPage = async ()=>{
         // Only the active slide plays. Start muted autoplay when the slide is mostly visible;
         // browser/provider policies may still require a tap on some embeds.
         document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const v=videos.find(x=>x.id===other.dataset.videoId);media.innerHTML=v?`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`:'';}});
-        if(!slide.classList.contains('is-playing')){ const playButton=slide.querySelector('.fy-slide-play'); if(playButton) window.fyPlaySlide(playButton); }
+        if(!slide.classList.contains('is-playing')) window.fyPlaySlide(slide);
       } else if(!entry.isIntersecting && slide.classList.contains('is-playing')){
         slide.classList.remove('is-playing'); const media=slide.querySelector('.fy-slide-media'); const v=videos.find(x=>x.id===slide.dataset.videoId); if(v) media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;
       }
@@ -2631,8 +2631,16 @@ window.showForYouPage = async ()=>{
   } catch(e){console.error('For You feed error',e);grid.innerHTML='<div style="padding:2rem;text-align:center;color:#aaa">Unable to load videos right now.</div>';}
   NP.done();
 };
-window.fyPlaySlide=(button)=>{
+window.fyToggleSlide=(button)=>{
   const slide=button.closest('.fy-slide'); if(!slide) return;
+  if(slide.classList.contains('is-playing')){
+    slide.classList.remove('is-playing');
+    const media=slide.querySelector('.fy-slide-media'), v=videos.find(x=>x.id===slide.dataset.videoId);
+    if(media&&v) media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;
+  } else window.fyPlaySlide(slide);
+};
+window.fyPlaySlide=(button)=>{
+  const slide=button.matches&&button.matches('.fy-slide')?button:button.closest('.fy-slide'); if(!slide) return;
   const v=videos.find(x=>x.id===slide.dataset.videoId); if(!v) return;
   document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>x.id===other.dataset.videoId);if(ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}});
   const media=slide.querySelector('.fy-slide-media'); let src=getEmbedUrl(v);
