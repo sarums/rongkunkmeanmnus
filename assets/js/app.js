@@ -2618,7 +2618,7 @@ async function fyCreateDailymotionPlayer(slide,v){
   media.innerHTML=`<div class="fy-dm-player-host" id="${hostId}"></div>`;
   const pending=(async()=>{
     await fyLoadDailymotionSdk();
-    const player=await window.dailymotion.createPlayer(hostId,{video:id,params:{autoplay:true,mute:true,playsinline:true}});
+    const player=await window.dailymotion.createPlayer(hostId,{video:id,params:{autostart:true,mute:true,playsinline:true}});
     _fyDmPlayers.set(key,player);
     return player;
   })();
@@ -2696,8 +2696,15 @@ window.fyToggleSlide=async(button)=>{
   }
   const v=videos.find(x=>String(x.id)===key);
   if(v&&/dailymotion/i.test(String(v.platform||v.source||''))){
-    // Do not replace a Dailymotion host with a thumbnail; let the player initializer finish.
+    // Keep the same SDK player mounted so pause/resume does not restart the video.
     slide.dataset.fyPaused='0';await window.fyPlaySlide(slide);return;
+  }
+  if(v&&/rumble/i.test(String(v.platform||v.source||''))){
+    // Standard Rumble iframe has no exposed parent-page pause/play API.
+    // Keep its iframe mounted and allow the provider's native controls instead of resetting it.
+    const media=slide.querySelector('.fy-slide-media');
+    if(media&&media.querySelector('iframe')){slide.classList.add('fy-native-controls');return;}
+    slide.dataset.fyPaused='0';window.fyPlaySlide(slide);return;
   }
   if(slide.classList.contains('is-playing')){slide.classList.remove('is-playing');slide.dataset.fyPaused='1';const media=slide.querySelector('.fy-slide-media');if(media&&v)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
   else{slide.dataset.fyPaused='0';window.fyPlaySlide(slide);}
@@ -2710,14 +2717,14 @@ window.fyPlaySlide=async(button)=>{
   if(/geo\.dailymotion\.com\/player\//.test(src)){
     slide.dataset.fyPaused='0';
     try{const player=await fyCreateDailymotionPlayer(slide,v);if(player&&typeof player.play==='function'){await player.play();slide.dataset.fyPaused='0';slide.classList.add('is-playing');}}
-    catch(e){console.error('Dailymotion For You player error',e);media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('fy-player-fallback');}
+    catch(e){console.error('Dailymotion For You player error',e);media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('fy-player-fallback','fy-native-controls');}
     return;
   }
   const addParam=(url,key,value)=>{try{const u=new URL(url,location.href);if(!u.searchParams.has(key))u.searchParams.set(key,value);return u.href;}catch(e){return url+(url.includes('?')?'&':'?')+key+'='+encodeURIComponent(value);}};
   src=addParam(src,'autoplay','1');
   if(/youtube\.com\/embed|youtube-nocookie\.com\/embed/.test(src)){src=addParam(src,'mute','1');src=addParam(src,'playsinline','1');}
   if(/rumble\.com\/embed/.test(src))src=addParam(src,'autoplay','2');
-  media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('is-playing');slide.dataset.fyPaused='0';
+  media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture; web-share" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('is-playing');if(/rumble\.com\/embed/.test(src))slide.classList.add('fy-native-controls');slide.dataset.fyPaused='0';
 };
 window.fyOpenVideo=(id)=>{const v=videos.find(x=>x.id===id);if(v)openVideo(id);};
 
