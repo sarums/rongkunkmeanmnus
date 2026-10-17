@@ -2590,6 +2590,7 @@ let _fyPool=[], _fyPage=0, _fyObserver=null;
 const FY_BATCH=20;
 let _fyDmSdkPromise=null;
 const _fyDmPlayers=new Map();
+const _fyDmPlayerPromises=new Map();
 function fyLoadDailymotionSdk(){
   if(window.dailymotion&&typeof window.dailymotion.createPlayer==='function') return Promise.resolve(window.dailymotion);
   if(_fyDmSdkPromise) return _fyDmSdkPromise;
@@ -2609,13 +2610,20 @@ function fyGetDailymotionId(v){
 }
 async function fyCreateDailymotionPlayer(slide,v){
   const media=slide.querySelector('.fy-slide-media');if(!media)return null;
-  const key=String(slide.dataset.videoId);if(_fyDmPlayers.has(key))return _fyDmPlayers.get(key);
-  const id=fyGetDailymotionId(v);if(!id)return null;
+  const key=String(slide.dataset.videoId);
+  if(_fyDmPlayers.has(key))return _fyDmPlayers.get(key);
+  if(_fyDmPlayerPromises.has(key))return _fyDmPlayerPromises.get(key);
+  const id=fyGetDailymotionId(v);if(!id)throw new Error('Missing Dailymotion video ID');
   const hostId='fy-dm-player-'+key.replace(/[^a-zA-Z0-9_-]/g,'');
   media.innerHTML=`<div class="fy-dm-player-host" id="${hostId}"></div>`;
-  await fyLoadDailymotionSdk();
-  const player=await window.dailymotion.createPlayer(hostId,{video:id,params:{autoplay:true,mute:true,controls:false}});
-  _fyDmPlayers.set(key,player);return player;
+  const pending=(async()=>{
+    await fyLoadDailymotionSdk();
+    const player=await window.dailymotion.createPlayer(hostId,{video:id,params:{autostart:true,mute:true}});
+    _fyDmPlayers.set(key,player);
+    return player;
+  })();
+  _fyDmPlayerPromises.set(key,pending);
+  try{return await pending;}finally{_fyDmPlayerPromises.delete(key);}
 }
 
 
@@ -2651,13 +2659,19 @@ window.showForYouPage = async ()=>{
       if(entry.isIntersecting && entry.intersectionRatio>=0.68){
         // Only the active slide plays. Start muted autoplay when the slide is mostly visible;
         // browser/provider policies may still require a tap on some embeds.
-        document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const v=videos.find(x=>x.id===other.dataset.videoId);media.innerHTML=v?`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`:'';}});
+        document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){
+          const otherPlayer=_fyDmPlayers.get(String(other.dataset.videoId));
+          if(otherPlayer&&typeof otherPlayer.pause==='function')Promise.resolve(otherPlayer.pause()).catch(()=>{});
+          other.dataset.fyPaused='1';other.classList.remove('is-playing');
+          // Keep the player element mounted: replacing it with a thumbnail breaks resume and resets playback.
+          if(!otherPlayer){const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>String(x.id)===String(other.dataset.videoId));if(media&&ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
+        }});
         if(!slide.classList.contains('is-playing')) window.fyPlaySlide(slide);
-        else {const player=_fyDmPlayers.get(String(slide.dataset.videoId));if(player&&typeof player.play==='function')Promise.resolve(player.play()).catch(()=>{});}
+        else {const player=_fyDmPlayers.get(String(slide.dataset.videoId));if(player&&typeof player.play==='function')Promise.resolve(player.play()).then(()=>{slide.dataset.fyPaused='0';}).catch(()=>{});}
       } else if(!entry.isIntersecting && slide.classList.contains('is-playing')){
         const player=_fyDmPlayers.get(String(slide.dataset.videoId));
-        if(player&&typeof player.pause==='function')Promise.resolve(player.pause()).catch(()=>{});
-        else {slide.classList.remove('is-playing');const media=slide.querySelector('.fy-slide-media');const v=videos.find(x=>x.id===slide.dataset.videoId);if(v)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
+        if(player&&typeof player.pause==='function'){Promise.resolve(player.pause()).catch(()=>{});slide.dataset.fyPaused='1';slide.classList.remove('is-playing');}
+        else {slide.classList.remove('is-playing');slide.dataset.fyPaused='1';const media=slide.querySelector('.fy-slide-media');const v=videos.find(x=>String(x.id)===String(slide.dataset.videoId));if(v&&media)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
       }
     }),{root:grid,threshold:[0,.68,1]});
     grid.querySelectorAll('.fy-slide').forEach(slide=>window._fySwipeObserver.observe(slide));
@@ -2666,23 +2680,36 @@ window.showForYouPage = async ()=>{
 };
 window.fyToggleSlide=async(button)=>{
   const slide=button.closest('.fy-slide');if(!slide)return;
-  const player=_fyDmPlayers.get(String(slide.dataset.videoId));
+  const key=String(slide.dataset.videoId);
+  let player=_fyDmPlayers.get(key);
+  // If the player is still initializing, wait for that same instance instead of replacing its DOM.
+  if(!player&&_fyDmPlayerPromises.has(key)){
+    try{player=await _fyDmPlayerPromises.get(key);}catch(e){console.warn('For You player is still unavailable',e);return;}
+  }
   if(player){
     const paused=slide.dataset.fyPaused==='1';
-    try{if(paused){await player.play();slide.dataset.fyPaused='0';slide.classList.add('is-playing');}else{await player.pause();slide.dataset.fyPaused='1';slide.classList.remove('is-playing');}}catch(e){console.warn('For You playback toggle failed',e);}
+    try{
+      if(paused){await player.play();slide.dataset.fyPaused='0';slide.classList.add('is-playing');}
+      else{await player.pause();slide.dataset.fyPaused='1';slide.classList.remove('is-playing');}
+    }catch(e){console.warn('For You playback toggle failed',e);}
     return;
   }
-  if(slide.classList.contains('is-playing')){slide.classList.remove('is-playing');slide.dataset.fyPaused='1';const media=slide.querySelector('.fy-slide-media'),v=videos.find(x=>x.id===slide.dataset.videoId);if(media&&v)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
+  const v=videos.find(x=>String(x.id)===key);
+  if(v&&/dailymotion/i.test(String(v.platform||v.source||''))){
+    // Do not replace a Dailymotion host with a thumbnail; let the player initializer finish.
+    slide.dataset.fyPaused='0';await window.fyPlaySlide(slide);return;
+  }
+  if(slide.classList.contains('is-playing')){slide.classList.remove('is-playing');slide.dataset.fyPaused='1';const media=slide.querySelector('.fy-slide-media');if(media&&v)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
   else{slide.dataset.fyPaused='0';window.fyPlaySlide(slide);}
 };
 window.fyPlaySlide=async(button)=>{
   const slide=button.matches&&button.matches('.fy-slide')?button:button.closest('.fy-slide');if(!slide)return;
   const v=videos.find(x=>x.id===slide.dataset.videoId);if(!v)return;
-  document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){const player=_fyDmPlayers.get(String(other.dataset.videoId));if(player&&typeof player.pause==='function')Promise.resolve(player.pause()).catch(()=>{});else{other.classList.remove('is-playing');const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>x.id===other.dataset.videoId);if(ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}}});
+  document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){const player=_fyDmPlayers.get(String(other.dataset.videoId));if(player&&typeof player.pause==='function'){Promise.resolve(player.pause()).catch(()=>{});other.dataset.fyPaused='1';other.classList.remove('is-playing');}else{other.classList.remove('is-playing');other.dataset.fyPaused='1';const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>String(x.id)===String(other.dataset.videoId));if(media&&ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}}});
   const media=slide.querySelector('.fy-slide-media');let src=getEmbedUrl(v);if(!src){window.openVideo(v.id);return;}
   if(/geo\.dailymotion\.com\/player\//.test(src)){
     slide.classList.add('is-playing');slide.dataset.fyPaused='0';
-    try{const player=await fyCreateDailymotionPlayer(slide,v);if(player&&typeof player.play==='function')await player.play();}
+    try{const player=await fyCreateDailymotionPlayer(slide,v);if(player&&typeof player.play==='function'){await player.play();slide.dataset.fyPaused='0';slide.classList.add('is-playing');}}
     catch(e){console.error('Dailymotion For You player error',e);media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('fy-player-fallback');}
     return;
   }
