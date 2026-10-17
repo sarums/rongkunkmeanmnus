@@ -2618,7 +2618,7 @@ async function fyCreateDailymotionPlayer(slide,v){
   media.innerHTML=`<div class="fy-dm-player-host" id="${hostId}"></div>`;
   const pending=(async()=>{
     await fyLoadDailymotionSdk();
-    const player=await window.dailymotion.createPlayer(hostId,{video:id,params:{autostart:true,mute:true}});
+    const player=await window.dailymotion.createPlayer(hostId,{video:id,params:{autoplay:true,mute:true,playsinline:true}});
     _fyDmPlayers.set(key,player);
     return player;
   })();
@@ -2708,7 +2708,7 @@ window.fyPlaySlide=async(button)=>{
   document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){const player=_fyDmPlayers.get(String(other.dataset.videoId));if(player&&typeof player.pause==='function'){Promise.resolve(player.pause()).catch(()=>{});other.dataset.fyPaused='1';other.classList.remove('is-playing');}else{other.classList.remove('is-playing');other.dataset.fyPaused='1';const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>String(x.id)===String(other.dataset.videoId));if(media&&ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}}});
   const media=slide.querySelector('.fy-slide-media');let src=getEmbedUrl(v);if(!src){window.openVideo(v.id);return;}
   if(/geo\.dailymotion\.com\/player\//.test(src)){
-    slide.classList.add('is-playing');slide.dataset.fyPaused='0';
+    slide.dataset.fyPaused='0';
     try{const player=await fyCreateDailymotionPlayer(slide,v);if(player&&typeof player.play==='function'){await player.play();slide.dataset.fyPaused='0';slide.classList.add('is-playing');}}
     catch(e){console.error('Dailymotion For You player error',e);media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('fy-player-fallback');}
     return;
