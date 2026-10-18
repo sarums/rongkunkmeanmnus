@@ -2595,19 +2595,30 @@ window.showForYouPage = async ()=>{
   window.scrollTo(0,0);
   if(!window._isPopstate) history.pushState({page:'for-you'},'','/for-you');
   const page=$('page-cat'), title=$('cat-title'), desc=$('cat-desc');
-  if(page) page.classList.add('fy-feed-page');
+  const fyMobile=window.matchMedia('(max-width: 767px)').matches;
+  window._fyMode=fyMobile?'feed':'grid';
+  // Mobile keeps the vertical swipe feed; tablet/desktop shows a normal video card grid.
+  if(page) page.classList.toggle('fy-feed-page',fyMobile);
   if(title) title.textContent='✨ For You';
   if(desc) desc.textContent='Swipe up for the next drama';
   updateMeta({title:'For You | រោងកុនគ្មានមនុស្ស',desc:'Swipe through dramas and videos on រោងកុនគ្មានមនុស្ស.',url:location.href});
   const grid=$('cat-grid');
   if(!grid){NP.done();return;}
-  grid.classList.add('fy-vertical-feed');
+  grid.classList.toggle('fy-vertical-feed',fyMobile);
   grid.innerHTML='<div style="padding:2rem;text-align:center;color:#aaa">Loading your feed…</div>';
   document.querySelectorAll('#bottom-nav a').forEach(a=>a.classList.toggle('active',a.id==='bn-for-you'));
   try {
     if(!videos.length) await new Promise(resolve=>setTimeout(resolve,600));
     const list=[...videos].sort(()=>Math.random()-.5);
     if(!list.length){grid.innerHTML='<div style="padding:3rem 1rem;text-align:center;color:#aaa">No videos yet. Please check back soon.</div>';NP.done();return;}
+    if(!fyMobile){
+      if(window._fySwipeObserver){window._fySwipeObserver.disconnect();window._fySwipeObserver=null;}
+      if(_fyObserver){_fyObserver.disconnect();_fyObserver=null;}
+      _fyPool=list.map(v=>({type:'video',data:v}));_fyPage=0;grid.innerHTML='';
+      _fyObserver=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))_fyRenderBatch(grid);},{rootMargin:'400px'});
+      _fyRenderBatch(grid);
+      NP.done();return;
+    }
     grid.innerHTML=list.map((v,i)=>`<article class="fy-slide" data-fy-index="${i}" data-video-id="${String(v.id).replace(/"/g,'')}" aria-label="${String(v.title||'Drama video').replace(/"/g,'&quot;')}">
       <div class="fy-slide-media"><img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="${i<2?'eager':'lazy'}"></div>
       <div class="fy-slide-shade"></div>
@@ -3453,3 +3464,9 @@ loadAll().then(()=>{
     showBlogPost(window.__blogSlug, window.__blogEp||1);
   }
 });
+
+// Re-render For You when the screen crosses the mobile/desktop breakpoint (e.g. rotate, resize).
+(()=>{const mq=window.matchMedia('(max-width: 767px)');
+  const onChange=()=>{const pc=document.getElementById('page-cat');
+    if(pc&&pc.classList.contains('active')&&location.pathname==='/for-you'&&window._fyMode&&window._fyMode!==(mq.matches?'feed':'grid')){window._isPopstate=true;showForYouPage();window._isPopstate=false;}};
+  mq.addEventListener?mq.addEventListener('change',onChange):mq.addListener(onChange);})();
