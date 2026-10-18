@@ -4,7 +4,7 @@ const SITE_NAME = 'រោងកុនគ្មានមនុស្ស';
 const IMG       = `${SITE_URL}/assets/img/og-default.png`;
 
 // STRICT bot detection - only known crawlers
-const BOT = /facebookexternalhit|facebot|twitterbot|telegrambot|whatsapp|linkedinbot|discordbot|googlebot|bingbot|yandex|applebot|duckduck/i;
+const BOT = /facebookexternalhit|facebot|meta-externalagent|meta-externalfetcher|twitterbot|telegrambot|whatsapp|linkedinbot|discordbot|slackbot|skypeuripreview|viber|pinterest|redditbot|embedly|zalo|kakaotalk|line-poker|snapchat|googlebot|bingbot|yandex|applebot|duckduck/i;
 
 function isBot(ua){ return BOT.test(ua||''); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -16,12 +16,39 @@ async function get(url){
   }catch(e){ return null; }
 }
 
-function getThumb(f){
-  const g = k=>f[k]?.stringValue||'';
-  const p = g('platform')||g('source'), v = g('videoId');
-  return g('customThumb')||g('thumbnail')||
-    (p==='dailymotion'?`https://www.dailymotion.com/thumbnail/video/${v}`:
-     p==='youtube'?`https://img.youtube.com/vi/${v}/hqdefault.jpg`:IMG);
+// ── Thumbnail resolver (shared logic, inlined per edge file) ──
+function fixImg(u){
+  u=(u||'').trim(); if(!u) return '';
+  if(u.startsWith('//')) u='https:'+u;
+  u=u.replace(/^http:\/\//i,'https://');
+  // Google Drive links are often blocked for crawlers; use the public image host instead.
+  const m=u.match(/drive\.google\.com\/(?:uc\?(?:export=\w+&)?id=|file\/d\/|open\?id=)([\w-]+)/i)||u.match(/[?&]id=([\w-]{20,})/);
+  if(/drive\.google\.com/i.test(u)&&m) return `https://lh3.googleusercontent.com/d/${m[1]}=w1280`;
+  return u;
+}
+function cleanId(raw){
+  raw=String(raw||'').trim(); if(!raw) return '';
+  const dm=raw.match(/(?:dai\.ly\/|dailymotion\.com\/(?:video\/|embed\/video\/))([a-zA-Z0-9]+)/i);
+  if(dm) return dm[1];
+  return raw.split(/[/?#]/).filter(Boolean).pop()||'';
+}
+async function resolveThumb(f){
+  const g=k=>f[k]?.stringValue||'';
+  const p=(g('platform')||g('source')).toLowerCase();
+  const custom=g('customThumb')||g('thumbnail');
+  if(custom) return fixImg(custom);
+  const id=cleanId(g('videoId')||g('url'));
+  if(!id) return IMG;
+  if(p==='dailymotion') return `https://www.dailymotion.com/thumbnail/video/${id}`;
+  if(p==='youtube')     return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  if(p==='vimeo')       return `https://vumbnail.com/${id}.jpg`;
+  if(p==='rumble'){
+    try{
+      const r=await fetch(`https://rumble.com/api/Media/oembed.json?url=${encodeURIComponent('https://rumble.com/embed/'+id+'/')}`,{signal:AbortSignal.timeout(3500)});
+      if(r.ok){const j=await r.json(); if(j&&j.thumbnail_url) return fixImg(j.thumbnail_url);}
+    }catch(e){}
+  }
+  return IMG;
 }
 
 function ogHtml(title, desc, img, url, type='video.other'){
@@ -95,7 +122,7 @@ export default async function middleware(req){
         }
         const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
         if(vDoc?.fields){
-          const thumb = getThumb(vDoc.fields);
+          const thumb = await resolveThumb(vDoc.fields);
           if(thumb) img = thumb;
         }
       }
@@ -120,7 +147,7 @@ export default async function middleware(req){
         const vidId  = vids[epNum-1];
         if(vidId){
           const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
-          if(vDoc?.fields){ img=getThumb(vDoc.fields); }
+          if(vDoc?.fields){ img=await resolveThumb(vDoc.fields); }
         }
         title = `${plName} — Episode ${epNum}`;
         desc  = `Watch ${plName} Episode ${epNum} free on ${SITE_NAME}.`;
@@ -129,7 +156,7 @@ export default async function middleware(req){
       const vDoc = await get(`${FIRESTORE}/videos/${parts[0]}`);
       if(vDoc?.fields){
         const g=k=>vDoc.fields[k]?.stringValue||'';
-        title=g('title'); desc=g('description'); img=getThumb(vDoc.fields);
+        title=g('title'); desc=g('description'); img=await resolveThumb(vDoc.fields);
       }
     }
     return ok(title, desc, img, 'video.other');
