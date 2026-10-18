@@ -7,6 +7,44 @@ const FIRESTORE   = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/
 const SITE_URL    = 'https://www.rongkunkmeanmnus.com';
 const SITE_NAME   = 'រោងកុនគ្មានមនុស្ស';
 const DEFAULT_IMG = `${SITE_URL}/assets/img/og-default.png`;
+const IMG = DEFAULT_IMG;
+
+// ── Thumbnail resolver (shared logic, inlined per edge file) ──
+function fixImg(u){
+  u=(u||'').trim(); if(!u) return '';
+  if(u.startsWith('//')) u='https:'+u;
+  u=u.replace(/^http:\/\//i,'https://');
+  // Google Drive links are often blocked for crawlers; use the public image host instead.
+  const m=u.match(/drive\.google\.com\/(?:uc\?(?:export=\w+&)?id=|file\/d\/|open\?id=)([\w-]+)/i)||u.match(/[?&]id=([\w-]{20,})/);
+  if(/drive\.google\.com/i.test(u)&&m) return `https://lh3.googleusercontent.com/d/${m[1]}=w1280`;
+  return u;
+}
+function cleanId(raw){
+  raw=String(raw||'').trim(); if(!raw) return '';
+  const dm=raw.match(/(?:dai\.ly\/|dailymotion\.com\/(?:video\/|embed\/video\/))([a-zA-Z0-9]+)/i);
+  if(dm) return dm[1];
+  return raw.split(/[/?#]/).filter(Boolean).pop()||'';
+}
+async function resolveThumb(f){
+  const g=k=>f[k]?.stringValue||'';
+  const p=(g('platform')||g('source')).toLowerCase();
+  const custom=g('customThumb')||g('thumbnail');
+  if(custom) return fixImg(custom);
+  const id=cleanId(g('videoId')||g('url'));
+  if(!id) return IMG;
+  if(p==='dailymotion') return `https://www.dailymotion.com/thumbnail/video/${id}`;
+  if(p==='youtube')     return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  if(p==='vimeo')       return `https://vumbnail.com/${id}.jpg`;
+  if(p==='rumble'){
+    try{
+      const r=await fetch(`https://rumble.com/api/Media/oembed.json?url=${encodeURIComponent('https://rumble.com/embed/'+id+'/')}`,{signal:AbortSignal.timeout(3500)});
+      if(r.ok){const j=await r.json(); if(j&&j.thumbnail_url) return fixImg(j.thumbnail_url);}
+    }catch(e){}
+  }
+  return IMG;
+}
+
+
 
 export default async function handler(req) {
   const url     = new URL(req.url);
@@ -24,21 +62,14 @@ export default async function handler(req) {
         const doc = await res.json();
         const f   = doc.fields||{};
         const get = k=>f[k]?.stringValue||'';
-        const platform = get('platform')||get('source');
-        const vid      = get('videoId');
-        const custom   = get('customThumb')||get('thumbnail');
-
         if(get('title')) title = get('title');
         if(get('description')) desc = get('description').replace(/<[^>]*>/g,'').slice(0,200);
-
-        if(custom)                        img = custom;
-        else if(platform==='dailymotion') img = `https://www.dailymotion.com/thumbnail/video/${vid}`;
-        else if(platform==='youtube')     img = `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
-        else if(platform==='vimeo')       img = `https://vumbnail.com/${vid}.jpg`;
+        img = await resolveThumb(f);
 
         // Find playlist for correct URL
-        const titleSlug = slugify(title);
-        pageUrl = `${SITE_URL}/watch/${titleSlug.length>=3?titleSlug:videoId}`;
+        // The site's real URLs use Firestore IDs (/watch/VIDEO_ID, /watch/PLAYLIST_ID/ep-N).
+        // og:url must match them, otherwise Facebook re-scrapes a URL that does not resolve and loses the thumbnail.
+        pageUrl = `${SITE_URL}/watch/${videoId}`;
 
         const plRes = await fetch(`${FIRESTORE}/playlists`);
         if(plRes.ok){
@@ -48,11 +79,8 @@ export default async function handler(req) {
             const arr = (pf.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
             const idx = arr.indexOf(videoId);
             if(idx!==-1){
-              const plName = pf.name?.stringValue||'';
-              const plSlug = slugify(plName);
               const plId   = plDoc.name.split('/').pop();
-              const slug   = plSlug.length>=3?plSlug:plId;
-              pageUrl = `${SITE_URL}/watch/${slug}/ep-${idx+1}`;
+              pageUrl = `${SITE_URL}/watch/${plId}/ep-${idx+1}`;
               title   = `${title} — Episode ${idx+1}`;
               break;
             }
