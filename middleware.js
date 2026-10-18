@@ -4,7 +4,7 @@ const SITE_NAME = 'រោងកុនគ្មានមនុស្ស';
 const IMG       = `${SITE_URL}/assets/img/og-default.png`;
 
 // STRICT bot detection - only known crawlers
-const BOT = /facebookexternalhit|facebot|meta-externalagent|meta-externalfetcher|twitterbot|telegrambot|whatsapp|linkedinbot|discordbot|slackbot|skypeuripreview|viber|pinterest|redditbot|embedly|zalo|kakaotalk|line-poker|snapchat|googlebot|bingbot|yandex|applebot|duckduck/i;
+const BOT = /facebookexternalhit|facebot|meta-externalagent|meta-externalfetcher|twitterbot|telegrambot|whatsapp|linkedinbot|discordbot|slackbot|skypeuripreview|viber|pinterest|redditbot|embedly|zalo|kakaotalk|line-poker|snapchat|googlebot|mediapartners-google|adsbot-google|google-inspectiontool|bingbot|yandex|applebot|duckduck/i;
 
 function isBot(ua){ return BOT.test(ua||''); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -78,11 +78,84 @@ function ogHtml(title, desc, img, url, type='video.other'){
 </body></html>`;
 }
 
+
+// ── Home page for crawlers (Googlebot, AdSense/Mediapartners, social bots) ──
+// The normal site is a JavaScript app that shows "Loading..." until Firebase answers.
+// Crawlers get the same information as plain HTML so they never see an empty page.
+function fsTime(f){ const t=f.createdAt?.timestampValue; return t?Date.parse(t)||0:0; }
+function thumbSync(f){
+  const g=k=>f[k]?.stringValue||'';
+  const custom=g('customThumb')||g('thumbnail'); if(custom) return fixImg(custom);
+  const p=(g('platform')||g('source')).toLowerCase(), id=cleanId(g('videoId')||g('url'));
+  if(p==='dailymotion'&&id) return `https://www.dailymotion.com/thumbnail/video/${id}`;
+  if(p==='youtube'&&id)     return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  if(p==='vimeo'&&id)       return `https://vumbnail.com/${id}.jpg`;
+  return IMG;
+}
+async function homeHtml(){
+  const [vRes,pRes,bRes]=await Promise.all([
+    get(`${FIRESTORE}/videos?pageSize=300`),
+    get(`${FIRESTORE}/playlists?pageSize=200`),
+    get(`${FIRESTORE}/blog_posts?pageSize=100`)
+  ]);
+  const videos=(vRes?.documents||[]).map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}))
+    .filter(v=>(v.f.status?.stringValue||'public')!=='draft')
+    .sort((a,b)=>fsTime(b.f)-fsTime(a.f));
+  const playlists=(pRes?.documents||[]).map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}));
+  const posts=(bRes?.documents||[]).map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}))
+    .filter(b=>b.f.status?.stringValue==='published')
+    .sort((a,b)=>fsTime(b.f)-fsTime(a.f)).slice(0,12);
+  const plOf={};
+  playlists.forEach(pl=>(pl.f.videos?.arrayValue?.values||[]).forEach((v,i)=>{plOf[v.stringValue]={id:pl.id,ep:i+1};}));
+  const link=v=>{const m=plOf[v.id];return SITE_URL+(m?`/watch/${m.id}/ep-${m.ep}`:`/watch/${v.id}`);};
+  const title=v=>v.f.title?.stringValue||'Video';
+
+  const latest=videos.slice(0,40).map(v=>`<li><a href="${link(v)}"><img src="${esc(thumbSync(v.f))}" alt="${esc(title(v))}" width="320" height="180" loading="lazy"><h3>${esc(title(v))}</h3></a>${v.f.description?.stringValue?`<p>${esc(v.f.description.stringValue.replace(/<[^>]*>/g,'').slice(0,160))}</p>`:''}</li>`).join('\n');
+  const series=playlists.filter(pl=>(pl.f.videos?.arrayValue?.values||[]).length).slice(0,60).map(pl=>{
+    const n=(pl.f.videos.arrayValue.values||[]).length;
+    return `<li><a href="${SITE_URL}/watch/${pl.id}/ep-1">${esc(pl.f.name?.stringValue||'Series')}</a> — ${n} episode${n>1?'s':''}${pl.f.description?.stringValue?`<p>${esc(pl.f.description.stringValue.replace(/<[^>]*>/g,'').slice(0,200))}</p>`:''}</li>`;
+  }).join('\n');
+  const blog=posts.map(b=>`<li><a href="${SITE_URL}/blog/${esc(b.f.slug?.stringValue||b.id)}">${esc(b.f.title?.stringValue||'Article')}</a>${b.f.excerpt?.stringValue?`<p>${esc(b.f.excerpt.stringValue.replace(/<[^>]*>/g,'').slice(0,160))}</p>`:''}</li>`).join('\n');
+
+  const desc='រោងកុនគ្មានមនុស្ស (RongKunKmeanMnus) — watch Chinese drama and Khmer dubbed series online. Browse the latest episodes, series playlists and drama articles.';
+  const schema=JSON.stringify({"@context":"https://schema.org","@type":"WebSite","name":SITE_NAME,"url":SITE_URL,"description":desc});
+  return `<!DOCTYPE html><html lang="km"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(SITE_NAME)} - Watch Chinese Drama &amp; Khmer Dubbed Series Online</title>
+<meta name="description" content="${esc(desc)}">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="${SITE_URL}/">
+<meta property="og:type" content="website"><meta property="og:site_name" content="${esc(SITE_NAME)}">
+<meta property="og:title" content="${esc(SITE_NAME)} - Watch Videos Online">
+<meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${SITE_URL}/">
+<meta property="og:image" content="${IMG}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${IMG}">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8912019493601229" crossorigin="anonymous"></script>
+<script type="application/ld+json">${schema}</script>
+</head><body>
+<header><h1>${esc(SITE_NAME)} — RongKunKmeanMnus</h1>
+<p>${esc(desc)}</p>
+<nav><a href="${SITE_URL}/">Home</a> | <a href="${SITE_URL}/blog">Blog</a> | <a href="${SITE_URL}/about">About</a> | <a href="${SITE_URL}/contact">Contact</a> | <a href="${SITE_URL}/privacy">Privacy Policy</a> | <a href="${SITE_URL}/terms">Terms</a></nav></header>
+<main>
+${latest?`<section><h2>Latest videos</h2><ul>${latest}</ul></section>`:''}
+${series?`<section><h2>Drama series</h2><ul>${series}</ul></section>`:''}
+${blog?`<section><h2>Drama articles</h2><ul>${blog}</ul></section>`:''}
+</main>
+<footer><p>&copy; ${new Date().getUTCFullYear()} ${esc(SITE_NAME)}. <a href="${SITE_URL}/about">About</a> · <a href="${SITE_URL}/contact">Contact</a> · <a href="${SITE_URL}/privacy">Privacy Policy</a> · <a href="${SITE_URL}/terms">Terms of Service</a></p></footer>
+</body></html>`;
+}
+
 export default async function middleware(req){
   const ua = req.headers.get('user-agent')||'';
   if(!isBot(ua)) return; // real users → pass through to SPA
 
   const {pathname} = new URL(req.url);
+
+  // Home page: full readable content for crawlers
+  if(pathname==='/'||pathname===''){
+    try{
+      return new Response(await homeHtml(),{headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'public,max-age=0,s-maxage=600,stale-while-revalidate=3600'}});
+    }catch(e){ return; } // on any error fall back to the normal page
+  }
   const pageUrl = SITE_URL + pathname;
   const ok=(t,d,i,type)=>new Response(ogHtml(t,d,i,pageUrl,type),{
     headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'public,max-age=3600'}
@@ -166,5 +239,5 @@ export default async function middleware(req){
 }
 
 export const config = {
-  matcher: ['/blog/(.*)', '/watch/(.*)'],
+  matcher: ['/', '/blog/(.*)', '/watch/(.*)'],
 };
