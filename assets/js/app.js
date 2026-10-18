@@ -2588,44 +2588,6 @@ window.playDrama = ()=>{
 // For You page state
 let _fyPool=[], _fyPage=0, _fyObserver=null;
 const FY_BATCH=20;
-let _fyDmSdkPromise=null;
-const _fyDmPlayers=new Map();
-const _fyDmPlayerPromises=new Map();
-function fyLoadDailymotionSdk(){
-  if(window.dailymotion&&typeof window.dailymotion.createPlayer==='function') return Promise.resolve(window.dailymotion);
-  if(_fyDmSdkPromise) return _fyDmSdkPromise;
-  _fyDmSdkPromise=new Promise((resolve,reject)=>{
-    const script=document.createElement('script');
-    script.src='https://geo.dailymotion.com/libs/player/x8lr5.js';script.async=true;
-    script.onload=()=>window.dailymotion&&typeof window.dailymotion.createPlayer==='function'?resolve(window.dailymotion):reject(new Error('Dailymotion Player SDK unavailable'));
-    script.onerror=()=>reject(new Error('Dailymotion Player SDK failed to load'));
-    document.head.appendChild(script);
-  });
-  return _fyDmSdkPromise;
-}
-function fyGetDailymotionId(v){
-  const raw=String(v?.videoId||v?.url||v?.id||'');
-  const m=raw.match(/(?:dai\.ly\/|dailymotion\.com\/(?:video\/|embed\/video\/))([a-zA-Z0-9]+)/i);
-  return m?m[1]:raw.split(/[/?#]/).filter(Boolean).pop()||'';
-}
-async function fyCreateDailymotionPlayer(slide,v){
-  const media=slide.querySelector('.fy-slide-media');if(!media)return null;
-  const key=String(slide.dataset.videoId);
-  if(_fyDmPlayers.has(key))return _fyDmPlayers.get(key);
-  if(_fyDmPlayerPromises.has(key))return _fyDmPlayerPromises.get(key);
-  const id=fyGetDailymotionId(v);if(!id)throw new Error('Missing Dailymotion video ID');
-  const hostId='fy-dm-player-'+key.replace(/[^a-zA-Z0-9_-]/g,'');
-  media.innerHTML=`<div class="fy-dm-player-host" id="${hostId}"></div>`;
-  const pending=(async()=>{
-    await fyLoadDailymotionSdk();
-    const player=await window.dailymotion.createPlayer(hostId,{video:id,params:{autostart:true,mute:true,playsinline:true}});
-    _fyDmPlayers.set(key,player);
-    return player;
-  })();
-  _fyDmPlayerPromises.set(key,pending);
-  try{return await pending;}finally{_fyDmPlayerPromises.delete(key);}
-}
-
 
 window.showForYouPage = async ()=>{
   NP.start();
@@ -2650,75 +2612,42 @@ window.showForYouPage = async ()=>{
       <div class="fy-slide-media"><img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="${i<2?'eager':'lazy'}"></div>
       <div class="fy-slide-shade"></div>
       <div class="fy-slide-info"><h2 class="fy-slide-title">${v.title||'Drama video'}</h2><div class="fy-slide-meta">${[v.category, v.views||v.viewsDisplay?fmtViews(v.views||0)+' views':''].filter(Boolean).join(' · ')}</div></div>
-      <button class="fy-tap-toggle" type="button" aria-label="Pause or play video" onclick="fyToggleSlide(this)"></button>
       <div class="fy-slide-actions"><button class="fy-slide-action" type="button" aria-label="Open video" onclick="fyOpenVideo('${String(v.id).replace(/'/g,"\\'")}')">↗</button><button class="fy-slide-action fy-playlist-action" type="button" aria-label="Open playlist" title="Playlist" onclick="fyOpenPlaylist('${String(v.id).replace(/'/g,"\\'")}')">☷</button></div>
     </article>`).join('');
     if(window._fySwipeObserver) window._fySwipeObserver.disconnect();
     window._fySwipeObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
       const slide=entry.target;
       if(entry.isIntersecting && entry.intersectionRatio>=0.68){
-        // Only the active slide plays. Start muted autoplay when the slide is mostly visible;
-        // browser/provider policies may still require a tap on some embeds.
-        document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){
-          const otherPlayer=_fyDmPlayers.get(String(other.dataset.videoId));
-          if(otherPlayer&&typeof otherPlayer.pause==='function')Promise.resolve(otherPlayer.pause()).catch(()=>{});
-          other.dataset.fyPaused='1';other.classList.remove('is-playing');
-          // Keep the player element mounted: replacing it with a thumbnail breaks resume and resets playback.
-          if(!otherPlayer){const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>String(x.id)===String(other.dataset.videoId));if(media&&ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
-        }});
+        // Mount the original embedded player for the active slide only.
         if(!slide.classList.contains('is-playing')) window.fyPlaySlide(slide);
-        else {const player=_fyDmPlayers.get(String(slide.dataset.videoId));if(player&&typeof player.play==='function')Promise.resolve(player.play()).then(()=>{slide.dataset.fyPaused='0';}).catch(()=>{});}
       } else if(!entry.isIntersecting && slide.classList.contains('is-playing')){
-        const player=_fyDmPlayers.get(String(slide.dataset.videoId));
-        if(player&&typeof player.pause==='function'){Promise.resolve(player.pause()).catch(()=>{});slide.dataset.fyPaused='1';slide.classList.remove('is-playing');}
-        else {slide.classList.remove('is-playing');slide.dataset.fyPaused='1';const media=slide.querySelector('.fy-slide-media');const v=videos.find(x=>String(x.id)===String(slide.dataset.videoId));if(v&&media)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
+        window.fyResetSlide(slide);
       }
     }),{root:grid,threshold:[0,.68,1]});
     grid.querySelectorAll('.fy-slide').forEach(slide=>window._fySwipeObserver.observe(slide));
   } catch(e){console.error('For You feed error',e);grid.innerHTML='<div style="padding:2rem;text-align:center;color:#aaa">Unable to load videos right now.</div>';}
   NP.done();
 };
-window.fyToggleSlide=async(button)=>{
-  const slide=button.closest('.fy-slide');if(!slide)return;
-  const key=String(slide.dataset.videoId);
-  let player=_fyDmPlayers.get(key);
-  // If the player is still initializing, wait for that same instance instead of replacing its DOM.
-  if(!player&&_fyDmPlayerPromises.has(key)){
-    try{player=await _fyDmPlayerPromises.get(key);}catch(e){console.warn('For You player is still unavailable',e);return;}
-  }
-  if(player){
-    const paused=slide.dataset.fyPaused==='1';
-    try{
-      if(paused){await player.play();slide.dataset.fyPaused='0';slide.classList.add('is-playing');}
-      else{await player.pause();slide.dataset.fyPaused='1';slide.classList.remove('is-playing');}
-    }catch(e){console.warn('For You playback toggle failed',e);}
-    return;
-  }
-  const v=videos.find(x=>String(x.id)===key);
-  if(v&&/dailymotion/i.test(String(v.platform||v.source||''))){
-    // Keep the same SDK player mounted so pause/resume does not restart the video.
-    slide.dataset.fyPaused='0';await window.fyPlaySlide(slide);return;
-  }
-  if(v&&/rumble/i.test(String(v.platform||v.source||''))){
-    // Standard Rumble iframe has no exposed parent-page pause/play API.
-    // Keep its iframe mounted and allow the provider's native controls instead of resetting it.
-    const media=slide.querySelector('.fy-slide-media');
-    if(media&&media.querySelector('iframe')){slide.classList.add('fy-native-controls');return;}
-    slide.dataset.fyPaused='0';window.fyPlaySlide(slide);return;
-  }
-  if(slide.classList.contains('is-playing')){slide.classList.remove('is-playing');slide.dataset.fyPaused='1';const media=slide.querySelector('.fy-slide-media');if(media&&v)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}
-  else{slide.dataset.fyPaused='0';window.fyPlaySlide(slide);}
+window.fyResetSlide=(slide)=>{
+  // Unmount the iframe (stops playback) and show the thumbnail again.
+  const v=videos.find(x=>String(x.id)===String(slide.dataset.videoId));
+  const media=slide.querySelector('.fy-slide-media');
+  slide.classList.remove('is-playing');
+  if(media&&v)media.innerHTML=`<img src="${getThumb(v)}" alt="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;
 };
 window.fyPlaySlide=async(button)=>{
   const slide=button.matches&&button.matches('.fy-slide')?button:button.closest('.fy-slide');if(!slide)return;
-  const v=videos.find(x=>x.id===slide.dataset.videoId);if(!v)return;
-  document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide){const player=_fyDmPlayers.get(String(other.dataset.videoId));if(player&&typeof player.pause==='function'){Promise.resolve(player.pause()).catch(()=>{});other.dataset.fyPaused='1';other.classList.remove('is-playing');}else{other.classList.remove('is-playing');other.dataset.fyPaused='1';const media=other.querySelector('.fy-slide-media');const ov=videos.find(x=>String(x.id)===String(other.dataset.videoId));if(media&&ov)media.innerHTML=`<img src="${getThumb(ov)}" alt="${String(ov.title||'Drama video').replace(/"/g,'&quot;')}" loading="lazy">`;}}});
+  const v=videos.find(x=>String(x.id)===String(slide.dataset.videoId));if(!v)return;
+  document.querySelectorAll('.fy-slide.is-playing').forEach(other=>{if(other!==slide)window.fyResetSlide(other);});
   const media=slide.querySelector('.fy-slide-media');let src=getEmbedUrl(v);if(!src){window.openVideo(v.id);return;}
   const addParam=(url,key,value)=>{try{const u=new URL(url,location.href);if(!u.searchParams.has(key))u.searchParams.set(key,value);return u.href;}catch(e){return url+(url.includes('?')?'&':'?')+key+'='+encodeURIComponent(value);}};
+  // Original provider player with its own controls. Autoplay muted so mobile browsers allow it;
+  // the viewer can unmute/pause/seek with the player's native controls.
   src=addParam(src,'autoplay','1');
   if(/youtube\.com\/embed|youtube-nocookie\.com\/embed/.test(src)){src=addParam(src,'mute','1');src=addParam(src,'playsinline','1');}
   if(/rumble\.com\/embed/.test(src))src=addParam(src,'autoplay','2');
-  media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture; web-share" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;slide.classList.add('is-playing');if(/rumble\.com\/embed|geo\.dailymotion\.com\/player/.test(src))slide.classList.add('fy-native-controls');slide.dataset.fyPaused='0';
+  media.innerHTML=`<iframe src="${src.replace(/"/g,'&quot;')}" title="${String(v.title||'Drama video').replace(/"/g,'&quot;')}" allow="autoplay; fullscreen; picture-in-picture; web-share" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  slide.classList.add('is-playing');
 };
 window.fyOpenVideo=(id)=>{const v=videos.find(x=>x.id===id);if(v)openVideo(id);};
 
