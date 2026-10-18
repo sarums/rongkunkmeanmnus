@@ -33,6 +33,10 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 // ── State ──
+
+// Newest first. Sorting here (not with Firestore orderBy) so videos without a createdAt field are not dropped.
+function fyTime(v){const c=v&&v.createdAt;return c?(c.seconds?c.seconds*1000:(c.toMillis?c.toMillis():(new Date(c).getTime()||0))):0;}
+function fyByNewest(a,b){return fyTime(b)-fyTime(a);}
 let videos=[],playlists=[],categories=[],sections=[],allBlogPosts=[];
 let heroVideos=[],heroIndex=0,heroTimer=null;
 let playlistQueue=[],plQueueIdx=0;
@@ -555,11 +559,11 @@ window.goHome=e=>{
 async function silentRefresh(){
   try{
     const[vidSnap,plSnap,secSnap]=await Promise.all([
-      getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
+      getDocs(collection(db,"videos")),
       getDocs(collection(db,"playlists")),
       getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
     ]);
-    const newVideos   = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+    const newVideos   = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft').sort(fyByNewest);
     const newPlaylists= plSnap.docs.map(d=>({id:d.id,...d.data()}));
     const newSections = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
 
@@ -883,12 +887,12 @@ async function loadAll(){
       const[catSnap,plSnap,vidSnap,secSnap]=await Promise.all([
         getDocs(collection(db,"categories")),
         getDocs(collection(db,"playlists")),
-        getDocs(query(collection(db,"videos"),orderBy("createdAt","desc"))),
+        getDocs(collection(db,"videos")),
         getDocs(collection(db,"home_sections")).catch(()=>({docs:[]}))
       ]);
       categories = catSnap.docs.map(d=>({id:d.id,...d.data()}));
       playlists  = plSnap.docs.map(d=>({id:d.id,...d.data()}));
-      videos     = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+      videos     = vidSnap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft').sort(fyByNewest);
       sections   = secSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.display_order||0)-(b.display_order||0));
       // Load blog posts for SEO URL linking
       try{
@@ -953,8 +957,8 @@ function startVideoListener(){
     const onWatch = document.getElementById('page-watch')?.classList.contains('active');
     if(onWatch) return;
     try {
-      const snap = await getDocs(query(collection(db,'videos'),orderBy('createdAt','desc')));
-      const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft');
+      const snap = await getDocs(collection(db,'videos'));
+      const updated = snap.docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft').sort(fyByNewest);
       const addedIds = updated.filter(uv=>!videos.find(v=>v.id===uv.id)).map(v=>v.id);
       if(addedIds.length > 0){
         videos = updated;
@@ -2608,8 +2612,18 @@ window.showForYouPage = async ()=>{
   grid.innerHTML='<div style="padding:2rem;text-align:center;color:#aaa">Loading your feed…</div>';
   document.querySelectorAll('#bottom-nav a').forEach(a=>a.classList.toggle('active',a.id==='bn-for-you'));
   try {
+    // Always pull the latest videos when For You opens, so newly added videos show immediately.
+    try{
+      const fresh=(await getDocs(collection(db,'videos'))).docs.map(d=>({id:d.id,...d.data()})).filter(v=>v.status!=='draft').sort(fyByNewest);
+      if(fresh.length) videos=fresh;
+    }catch(e){console.warn('For You refresh failed, using loaded videos',e);}
     if(!videos.length) await new Promise(resolve=>setTimeout(resolve,600));
-    const list=[...videos].sort(()=>Math.random()-.5);
+    // Videos added in the last 24 hours come first (newest first); everything else is shuffled.
+    const DAY=24*60*60*1000, now=Date.now();
+    const isNew=v=>{const t=fyTime(v);return t&&now-t<DAY;};
+    const fresh24=videos.filter(isNew).sort(fyByNewest);
+    const rest=videos.filter(v=>!isNew(v)).sort(()=>Math.random()-.5);
+    const list=[...fresh24,...rest];
     if(!list.length){grid.innerHTML='<div style="padding:3rem 1rem;text-align:center;color:#aaa">No videos yet. Please check back soon.</div>';NP.done();return;}
     if(!fyMobile){
       if(window._fySwipeObserver){window._fySwipeObserver.disconnect();window._fySwipeObserver=null;}
