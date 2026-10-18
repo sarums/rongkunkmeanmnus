@@ -7,7 +7,7 @@ const SITE_URL  = 'https://www.rongkunkmeanmnus.com';
 const SITE_NAME = 'រោងកុនគ្មានមនុស្ស';
 const IMG       = `${SITE_URL}/assets/img/og-default.png`;
 
-const BOTS = /facebookexternalhit|facebot|twitterbot|telegrambot|whatsapp|googlebot|bingbot|yandexbot|applebot|pinterest|linkedinbot|discordbot/i;
+const BOTS = /facebookexternalhit|facebot|meta-externalagent|meta-externalfetcher|twitterbot|telegrambot|whatsapp|slackbot|skypeuripreview|viber|zalo|kakaotalk|line-poker|snapchat|googlebot|bingbot|yandexbot|applebot|pinterest|linkedinbot|discordbot/i;
 
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -18,14 +18,38 @@ async function fetchFS(path, ms=4000){
   }catch(e){ return null; }
 }
 
-function getImg(f){
-  const g = k=>f[k]?.stringValue||'';
-  const platform = g('platform')||g('source');
-  const vid = g('videoId');
-  const custom = g('customThumb')||g('thumbnail');
-  if(custom) return custom;
-  if(platform==='dailymotion') return `https://www.dailymotion.com/thumbnail/video/${vid}`;
-  if(platform==='youtube') return `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+// ── Thumbnail resolver (shared logic, inlined per edge file) ──
+function fixImg(u){
+  u=(u||'').trim(); if(!u) return '';
+  if(u.startsWith('//')) u='https:'+u;
+  u=u.replace(/^http:\/\//i,'https://');
+  // Google Drive links are often blocked for crawlers; use the public image host instead.
+  const m=u.match(/drive\.google\.com\/(?:uc\?(?:export=\w+&)?id=|file\/d\/|open\?id=)([\w-]+)/i)||u.match(/[?&]id=([\w-]{20,})/);
+  if(/drive\.google\.com/i.test(u)&&m) return `https://lh3.googleusercontent.com/d/${m[1]}=w1280`;
+  return u;
+}
+function cleanId(raw){
+  raw=String(raw||'').trim(); if(!raw) return '';
+  const dm=raw.match(/(?:dai\.ly\/|dailymotion\.com\/(?:video\/|embed\/video\/))([a-zA-Z0-9]+)/i);
+  if(dm) return dm[1];
+  return raw.split(/[/?#]/).filter(Boolean).pop()||'';
+}
+async function resolveThumb(f){
+  const g=k=>f[k]?.stringValue||'';
+  const p=(g('platform')||g('source')).toLowerCase();
+  const custom=g('customThumb')||g('thumbnail');
+  if(custom) return fixImg(custom);
+  const id=cleanId(g('videoId')||g('url'));
+  if(!id) return IMG;
+  if(p==='dailymotion') return `https://www.dailymotion.com/thumbnail/video/${id}`;
+  if(p==='youtube')     return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  if(p==='vimeo')       return `https://vumbnail.com/${id}.jpg`;
+  if(p==='rumble'){
+    try{
+      const r=await fetch(`https://rumble.com/api/Media/oembed.json?url=${encodeURIComponent('https://rumble.com/embed/'+id+'/')}`,{signal:AbortSignal.timeout(3500)});
+      if(r.ok){const j=await r.json(); if(j&&j.thumbnail_url) return fixImg(j.thumbnail_url);}
+    }catch(e){}
+  }
   return IMG;
 }
 
@@ -112,7 +136,7 @@ export default async function handler(req){
             const g = k=>f[k]?.stringValue||'';
             title = `${plName} — Episode ${epNum}`;
             desc  = (g('description')||`Watch ${plName} Episode ${epNum} free on ${SITE_NAME}.`);
-            img   = getImg(f);
+            img   = await resolveThumb(f);
           }
         }
         if(!title||title===SITE_NAME) title = `${plName} — Episode ${epNum}`;
@@ -125,7 +149,7 @@ export default async function handler(req){
         const g = k=>f[k]?.stringValue||'';
         title = g('title')||SITE_NAME;
         desc  = g('description')||`Watch ${title} free on ${SITE_NAME}.`;
-        img   = getImg(f);
+        img   = await resolveThumb(f);
       }
     }
   }catch(e){}
