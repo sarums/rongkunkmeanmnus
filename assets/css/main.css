@@ -1278,8 +1278,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 32px 32px; text-alig
 @media(max-width:390px){.fy-playlist-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}.fy-playlist-heading img{width:88px;height:88px}.fy-playlist-sheet{padding-left:16px;padding-right:16px}}
 @media(min-width:768px){.fy-playlist-popup{display:none!important}}
 
-/* For You: while the original provider player is mounted, keep its native controls clear. */
+/* For You (mobile): show the provider's original player in a normal 16:9 frame so its own
+   controls (play, seek, volume, settings, fullscreen, next/playlist) are fully visible and usable.
+   Our title and buttons sit BELOW the video, never on top of the player. */
 @media (max-width: 767px) {
-  #page-cat.fy-feed-page .fy-slide.is-playing .fy-slide-shade { display:none; }
-  #page-cat.fy-feed-page .fy-slide.is-playing .fy-slide-info { bottom:auto; top:12px; right:82px; }
+  #page-cat.fy-feed-page .fy-slide-media { align-items:center; justify-content:center; }
+  #page-cat.fy-feed-page .fy-slide-media iframe,
+  #page-cat.fy-feed-page .fy-slide-media img {
+    width:100% !important; height:auto !important; aspect-ratio:16/9; flex:none; object-fit:cover; pointer-events:auto;
+  }
+  #page-cat.fy-feed-page .fy-slide-shade { display:none !important; }
+  #page-cat.fy-feed-page .fy-slide-info {
+    top:calc(50% + 28.125vw + 16px) !important; bottom:auto !important; left:16px !important; right:80px !important; padding:0 !important;
+  }
+  #page-cat.fy-feed-page .fy-slide-actions {
+    top:calc(50% + 28.125vw + 12px) !important; bottom:auto !important; right:14px !important;
+    transform:none !important; flex-direction:row !important; gap:10px !important;
+  }
+  #page-cat.fy-feed-page .fy-slide-info { right:120px !important; }
 }
