@@ -9,6 +9,17 @@ const BOT = /facebookexternalhit|facebot|meta-externalagent|meta-externalfetcher
 function isBot(ua){ return BOT.test(ua||''); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+// List a whole Firestore collection (REST returns at most 300 per page).
+async function getAll(col){
+  let out=[],token='';
+  for(let i=0;i<10;i++){
+    const r=await get(`${FIRESTORE}/${col}?pageSize=300${token?`&pageToken=${encodeURIComponent(token)}`:''}`);
+    if(!r) throw new Error('Firestore unavailable: '+col);
+    out=out.concat(r.documents||[]);
+    if(!r.nextPageToken) break; token=r.nextPageToken;
+  }
+  return out;
+}
 async function get(url){
   try{
     const r = await fetch(url, {signal: AbortSignal.timeout(4000)});
@@ -93,16 +104,12 @@ function thumbSync(f){
   return IMG;
 }
 async function homeHtml(){
-  const [vRes,pRes,bRes]=await Promise.all([
-    get(`${FIRESTORE}/videos?pageSize=300`),
-    get(`${FIRESTORE}/playlists?pageSize=200`),
-    get(`${FIRESTORE}/blog_posts?pageSize=100`)
-  ]);
-  const videos=(vRes?.documents||[]).map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}))
+  const [vDocs,pDocs,bDocs]=await Promise.all([getAll('videos'),getAll('playlists'),getAll('blog_posts')]);
+  const videos=vDocs.map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}))
     .filter(v=>(v.f.status?.stringValue||'public')!=='draft')
     .sort((a,b)=>fsTime(b.f)-fsTime(a.f));
-  const playlists=(pRes?.documents||[]).map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}));
-  const posts=(bRes?.documents||[]).map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}))
+  const playlists=pDocs.map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}));
+  const posts=bDocs.map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}))
     .filter(b=>b.f.status?.stringValue==='published')
     .sort((a,b)=>fsTime(b.f)-fsTime(a.f)).slice(0,12);
   const plOf={};
@@ -144,6 +151,128 @@ ${blog?`<section><h2>Drama articles</h2><ul>${blog}</ul></section>`:''}
 </body></html>`;
 }
 
+// ── Shared page shell for crawlers ──
+function stripHtml(h){ return String(h||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim(); }
+function safeHtml(h){
+  return String(h||'')
+    .replace(/<(script|style|iframe|object|embed|form)[\s\S]*?<\/\1>/gi,'')
+    .replace(/<(script|style|iframe|object|embed|form)[^>]*>/gi,'')
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi,'')
+    .replace(/(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi,'$1="#"');
+}
+function shell({title,desc,url,img,type='website',body,schema,status=200}){
+  const t=esc(title), d=esc((desc||'').slice(0,300));
+  const html=`<!DOCTYPE html><html lang="km"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${t}</title>
+<meta name="description" content="${d}">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="${url}">
+<meta property="og:type" content="${type}"><meta property="og:site_name" content="${esc(SITE_NAME)}">
+<meta property="og:title" content="${t}"><meta property="og:description" content="${d}">
+<meta property="og:image" content="${img||IMG}"><meta property="og:url" content="${url}">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${t}">
+<meta name="twitter:description" content="${d}"><meta name="twitter:image" content="${img||IMG}">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8912019493601229" crossorigin="anonymous"></script>
+${schema?`<script type="application/ld+json">${schema}</script>`:''}
+</head><body>
+<header><p><a href="${SITE_URL}/">${esc(SITE_NAME)}</a></p>
+<nav><a href="${SITE_URL}/">Home</a> | <a href="${SITE_URL}/blog">Blog</a> | <a href="${SITE_URL}/about">About</a> | <a href="${SITE_URL}/contact">Contact</a> | <a href="${SITE_URL}/privacy">Privacy Policy</a> | <a href="${SITE_URL}/terms">Terms</a></nav></header>
+<main>${body}</main>
+<footer><p>&copy; ${new Date().getUTCFullYear()} ${esc(SITE_NAME)}. <a href="${SITE_URL}/about">About</a> · <a href="${SITE_URL}/contact">Contact</a> · <a href="${SITE_URL}/privacy">Privacy Policy</a> · <a href="${SITE_URL}/terms">Terms of Service</a></p></footer>
+</body></html>`;
+  return new Response(html,{status,headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':status===200?'public,max-age=0,s-maxage=600,stale-while-revalidate=3600':'public,max-age=300'}});
+}
+function notFound(){
+  return shell({title:`Page not found | ${SITE_NAME}`,desc:'This page does not exist.',url:SITE_URL+'/',body:`<h1>Page not found</h1><p>This page does not exist. <a href="${SITE_URL}/">Go to the home page</a>.</p>`,status:404});
+}
+async function loadAll(){
+  const [vDocs,pDocs]=await Promise.all([getAll('videos'),getAll('playlists')]);
+  const videos=vDocs.map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}));
+  const playlists=pDocs.map(d=>({id:d.name.split('/').pop(),f:d.fields||{}}));
+  return {videos,playlists,vById:Object.fromEntries(videos.map(v=>[v.id,v]))};
+}
+const plIds=pl=>(pl.f.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
+
+async function watchPage(pathname){
+  const parts=pathname.slice(7).split('/').filter(Boolean);
+  const {videos,playlists,vById}=await loadAll();
+  let v=null,pl=null,ep=0;
+  if(parts.length===2 && /^ep-\d+$/.test(parts[1])){
+    pl=playlists.find(x=>x.id===parts[0]); ep=parseInt(parts[1].slice(3))||1;
+    const vid=pl&&plIds(pl)[ep-1]; v=vid?vById[vid]:null;
+  } else if(parts.length===1){
+    v=vById[parts[0]];
+    if(!v && playlists.find(x=>x.id===parts[0])) return notFound(); // playlist needs /ep-N
+  }
+  if(!v || (v.f.status?.stringValue==='draft')) return notFound();
+  const g=(o,k)=>o.f[k]?.stringValue||'';
+  const plName=pl?g(pl,'name'):'';
+  const vTitle=g(v,'title')||SITE_NAME;
+  const title=pl?`${plName} — Episode ${ep}`:vTitle;
+  const url=SITE_URL+pathname;
+  const img=await resolveThumb(v.f);
+  const vDesc=stripHtml(g(v,'description'));
+  const plDesc=pl?stripHtml(g(pl,'description')):'';
+  const desc=(vDesc||plDesc||`Watch ${title} online on ${SITE_NAME}.`).slice(0,300);
+  const ids=pl?plIds(pl):[];
+  const epLinks=ids.map((id,i)=>{const ev=vById[id];const lab=ev?g(ev,'title'):`Episode ${i+1}`;return `<li>${i+1===ep?'<strong>':''}<a href="${SITE_URL}/watch/${pl.id}/ep-${i+1}">Episode ${i+1}${lab?` — ${esc(lab)}`:''}</a>${i+1===ep?'</strong>':''}</li>`;}).join('\n');
+  const dur=g(v,'duration'), cat=g(v,'category');
+  const body=`<article>
+<h1>${esc(title)}</h1>
+${vTitle&&pl?`<p><em>${esc(vTitle)}</em></p>`:''}
+<img src="${esc(img)}" alt="${esc(title)}" width="1280" height="720">
+<ul>${cat?`<li>Category: ${esc(cat)}</li>`:''}${dur?`<li>Duration: ${esc(dur)}</li>`:''}${pl?`<li>Series: <a href="${SITE_URL}/watch/${pl.id}/ep-1">${esc(plName)}</a> (${ids.length} episodes)</li>`:''}</ul>
+${vDesc?`<h2>About this episode</h2><p>${esc(vDesc)}</p>`:''}
+${plDesc?`<h2>About ${esc(plName)}</h2><p>${esc(plDesc)}</p>`:''}
+${pl&&ids.length>1?`<nav><h2>All episodes of ${esc(plName)}</h2><ul>${epLinks}</ul></nav>`:''}
+${pl&&ep>1?`<p><a href="${SITE_URL}/watch/${pl.id}/ep-${ep-1}">← Previous episode</a></p>`:''}
+${pl&&ep<ids.length?`<p><a href="${SITE_URL}/watch/${pl.id}/ep-${ep+1}">Next episode →</a></p>`:''}
+</article>`;
+  const schema=JSON.stringify({"@context":"https://schema.org","@type":"VideoObject","name":title,"description":desc,"thumbnailUrl":img,"uploadDate":(v.f.createdAt?.timestampValue||new Date().toISOString()),"publisher":{"@type":"Organization","name":SITE_NAME,"url":SITE_URL}});
+  return shell({title:`${title} | ${SITE_NAME}`,desc,url,img,type:'video.other',body,schema});
+}
+
+async function blogPage(pathname){
+  const parts=pathname.replace('/blog/','').split('/').filter(Boolean);
+  const slug=parts[0]; const epNum=parts[1]?(parseInt(parts[1])||1):1;
+  const docs=await getAll('blog_posts');
+  const doc=docs.find(d=>{const f=d.fields||{};return (f.slug?.stringValue||d.name.split('/').pop())===slug;});
+  if(!doc?.fields || doc.fields.status?.stringValue==='draft') return notFound();
+  const f=doc.fields, g=k=>f[k]?.stringValue||'';
+  const baseTitle=g('title')||SITE_NAME;
+  const url=SITE_URL+pathname;
+  let img=g('cover')?fixImg(g('cover')):IMG;
+  const rel=(f.relatedVideos?.arrayValue?.values||[]).map(v=>v.stringValue);
+  let epHtml='', ids=[], pl=null, epVideo=null, all=null;
+  if(rel.length){
+    all=await loadAll();
+    pl=all.playlists.find(p=>plIds(p).includes(rel[0]));
+    ids=pl?plIds(pl):rel;
+    const vid=ids[epNum-1]||rel[0];
+    epVideo=all.vById[vid]||null;
+    if(epVideo) img=await resolveThumb(epVideo.f);
+    if(ids.length>1) epHtml=`<nav><h2>Episodes</h2><ul>${ids.map((id,i)=>{const ev=all.vById[id];const lab=ev?(ev.f.title?.stringValue||''):'';return `<li><a href="${SITE_URL}/blog/${esc(slug)}/${i+1}">Episode ${i+1}${lab?` — ${esc(lab)}`:''}</a></li>`;}).join('\n')}</ul></nav>`;
+  }
+  const isEp=parts.length>1 && epNum>1;
+  const title=isEp?`${baseTitle} — Episode ${epNum}`:baseTitle;
+  const excerpt=stripHtml(g('excerpt'));
+  const epDesc=epVideo?stripHtml(epVideo.f.description?.stringValue||''):'';
+  const desc=(isEp&&epDesc?epDesc:(excerpt||stripHtml(g('content')).slice(0,200))).slice(0,300);
+  const body=`<article>
+<h1>${esc(title)}</h1>
+${g('category')?`<p>Category: ${esc(g('category'))}</p>`:''}
+<img src="${esc(img)}" alt="${esc(title)}" width="1280" height="720">
+${isEp
+  ? `${epVideo&&epVideo.f.title?.stringValue?`<h2>${esc(epVideo.f.title.stringValue)}</h2>`:''}${epDesc?`<p>${esc(epDesc)}</p>`:''}<p>This is episode ${epNum} of <a href="${SITE_URL}/blog/${esc(slug)}">${esc(baseTitle)}</a>.</p>`
+  : `${excerpt?`<p><strong>${esc(excerpt)}</strong></p>`:''}<div>${safeHtml(g('content'))}</div>`}
+${epHtml}
+${isEp?`<p><a href="${SITE_URL}/blog/${esc(slug)}">← Read the full article</a></p>`:''}
+</article>`;
+  const schema=JSON.stringify({"@context":"https://schema.org","@type":"Article","headline":title,"description":desc,"image":img,"datePublished":(f.createdAt?.timestampValue||undefined),"mainEntityOfPage":url,"publisher":{"@type":"Organization","name":SITE_NAME,"url":SITE_URL}});
+  return shell({title:`${title} | ${SITE_NAME}`,desc,url,img,type:'article',body,schema});
+}
+
 export default async function middleware(req){
   const ua = req.headers.get('user-agent')||'';
   if(!isBot(ua)) return; // real users → pass through to SPA
@@ -161,78 +290,16 @@ export default async function middleware(req){
     headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'public,max-age=3600'}
   });
 
-  // /blog/slug or /blog/slug/epNum
-  if(pathname.startsWith('/blog/')){
-    const parts = pathname.replace('/blog/','').split('/');
-    const slug  = parts[0];
-    const epNum = parts[1] ? parseInt(parts[1])||1 : 1;
-
-    // Get blog post
-    const res = await get(`${FIRESTORE}/blog_posts?pageSize=200`);
-    const doc = (res?.documents||[]).find(d=>{
-      const f=d.fields||{};
-      return (f.slug?.stringValue||d.name.split('/').pop())===slug;
-    });
-
-    if(doc?.fields){
-      const f = doc.fields, g=k=>f[k]?.stringValue||'';
-      let title = g('title'), desc = g('excerpt'), img = g('cover')||IMG;
-      const relVids = f.relatedVideos?.arrayValue?.values||[];
-
-      // Get episode-specific thumbnail
-      if(relVids.length>0){
-        let vidId = relVids[0].stringValue;
-        // Find playlist and get correct episode
-        const plsData = await get(`${FIRESTORE}/playlists`);
-        for(const plDoc of (plsData?.documents||[])){
-          const pf   = plDoc.fields||{};
-          const vids = (pf.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
-          if(vids.includes(vidId)){
-            const epVidId = vids[epNum-1];
-            if(epVidId) vidId = epVidId;
-            break;
-          }
-        }
-        const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
-        if(vDoc?.fields){
-          const thumb = await resolveThumb(vDoc.fields);
-          if(thumb) img = thumb;
-        }
-      }
-
-      const epLabel = epNum>1 ? ` — Episode ${epNum}` : '';
-      return ok(`${title}${epLabel} | ${SITE_NAME}`, desc, img, 'article');
-    }
-    return ok(`Blog | ${SITE_NAME}`, 'Drama reviews and more.', IMG, 'website');
+  // /blog/slug or /blog/slug/epNum  → full article page for crawlers
+  if(pathname.startsWith('/blog/') && pathname.length>6){
+    try{ const r=await blogPage(pathname); if(r) return r; }catch(e){}
+    return;
   }
 
-  // /watch/PLAYLIST_ID/ep-N
+  // /watch/PLAYLIST_ID/ep-N  or  /watch/VIDEO_ID → full episode page for crawlers
   if(pathname.startsWith('/watch/')){
-    const parts = pathname.slice(7).split('/');
-    let title=SITE_NAME, desc='', img=IMG;
-    if(parts.length>=2 && /^ep-\d+$/.test(parts[1])){
-      const epNum = parseInt(parts[1].replace('ep-',''))||1;
-      const plDoc = await get(`${FIRESTORE}/playlists/${parts[0]}`);
-      if(plDoc?.fields){
-        const pf   = plDoc.fields;
-        const plName = pf.name?.stringValue||'';
-        const vids   = (pf.videos?.arrayValue?.values||[]).map(v=>v.stringValue);
-        const vidId  = vids[epNum-1];
-        if(vidId){
-          const vDoc = await get(`${FIRESTORE}/videos/${vidId}`);
-          if(vDoc?.fields){ img=await resolveThumb(vDoc.fields); }
-        }
-        title = `${plName} — Episode ${epNum}`;
-        desc  = `Watch ${plName} Episode ${epNum} free on ${SITE_NAME}.`;
-      }
-    } else if(parts.length===1){
-      const vDoc = await get(`${FIRESTORE}/videos/${parts[0]}`);
-      if(vDoc?.fields){
-        const g=k=>vDoc.fields[k]?.stringValue||'';
-        title=g('title'); desc=g('description'); img=await resolveThumb(vDoc.fields);
-      }
-    }
-    return ok(title, desc, img, 'video.other');
+    try{ const r=await watchPage(pathname); if(r) return r; }catch(e){}
+    return;
   }
 
   return; // everything else passes through
