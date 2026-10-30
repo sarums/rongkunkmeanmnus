@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Cloudflare Video Test — RongKunKmeanMnus</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#131b2e;--line:#293650;--text:#edf3ff;--muted:#a6b4ce;--accent:#f48120;--blue:#80b7ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182744 0,#0b1020 55%);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}main{width:min(920px,100% - 32px);margin:36px auto 64px}.eyebrow{color:var(--accent);font-weight:750;text-transform:uppercase;letter-spacing:.12em;font-size:.78rem}h1{font-size:clamp(1.8rem,5vw,2.8rem);line-height:1.1;margin:.5rem 0 1rem}p{color:var(--muted)}.panel{background:rgba(19,27,46,.94);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,4vw,28px);margin:18px 0;box-shadow:0 18px 60px #0002}.player{aspect-ratio:16/9;background:#050811;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:grid;place-items:center}.player video{width:100%;height:100%;object-fit:contain;background:#000}.empty{text-align:center;padding:20px;color:var(--muted)}label{display:block;font-weight:650;margin:18px 0 7px}input{display:block;width:100%;background:#0b1222;color:var(--text);border:1px solid #3b4c6c;border-radius:10px;padding:13px 14px;font:inherit}input:focus{outline:2px solid var(--blue);outline-offset:2px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}button,.linkbtn{border:0;border-radius:10px;padding:12px 17px;font:inherit;font-weight:750;cursor:pointer;text-decoration:none}.primary{background:var(--accent);color:#201204}.secondary{background:#25334e;color:var(--text)}.status{margin-top:14px;padding:12px 14px;border-radius:10px;background:#0b1222;color:var(--muted);overflow-wrap:anywhere}.warn{border-left:4px solid var(--accent);padding:12px 15px;background:#2b211b;border-radius:8px;color:#ffdfc4}.steps li{margin:10px 0;color:var(--muted)}code{color:#ffd0a5;overflow-wrap:anywhere}a{color:#9bc7ff}.small{font-size:.9rem}.pill{display:inline-block;padding:4px 9px;border:1px solid #465571;border-radius:99px;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body><main>
+  <div class="eyebrow">RongKunKmeanMnus · separate test page</div>
+  <h1>Cloudflare video test</h1>
+  <p>This is a separate sandbox page. It does not change your existing video pages, Rumble embeds, Dailymotion embeds, or payment code.</p>
+  <div class="panel">
+    <span class="pill">Test playback only</span>
+    <h2>Play a video stored in Cloudflare R2</h2>
+    <p>Paste the full URL of an MP4 file that you have uploaded to R2 and made reachable through a public/custom domain or a test Worker URL. This page does not upload files to Cloudflare.</p>
+    <div class="player" id="playerBox"><div class="empty">Your test video will appear here.</div></div>
+    <label for="videoUrl">Video URL (.mp4 recommended)</label>
+    <input id="videoUrl" type="url" placeholder="https://your-test-domain.example/video.mp4" autocomplete="url">
+    <div class="actions"><button class="primary" id="playBtn" type="button">Load video</button><button class="secondary" id="clearBtn" type="button">Clear</button></div>
+    <div class="status" id="status" role="status" aria-live="polite">Ready. Enter a video URL to test playback.</div>
+  </div>
+  <div class="panel">
+    <h2>How to test with the free R2 allowance</h2>
+    <ol class="steps">
+      <li>Open <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener noreferrer">Cloudflare Dashboard</a> and create an R2 bucket.</li>
+      <li>Upload a small MP4 test file (keep it under the free storage allowance).</li>
+      <li>For this basic test, provide access to the file through a test URL. Do not put private credentials, API tokens, or secret keys in this page.</li>
+      <li>Paste that URL above and press <b>Load video</b>. If it fails, check the URL, browser console, and whether the file can be fetched by the browser.</li>
+    </ol>
+    <div class="warn"><b>Security warning:</b> A publicly accessible R2 video URL can be shared by anyone. This page is not a paywall and does not verify KHQR payments. For paid videos, keep the bucket private and use a backend/Cloudflare Worker to verify access and serve time-limited access. Never expose R2 secret keys in browser JavaScript.</div>
+    <p class="small">Cloudflare R2 currently lists a free monthly allowance of 10 GB-month of Standard storage, 1 million Class A operations, and 10 million Class B operations. R2 is object storage, not an automatic video-transcoding/streaming service. Check <a href="https://developers.cloudflare.com/r2/pricing/" target="_blank" rel="noopener noreferrer">current R2 pricing</a> before use.</p>
+  </div>
+  <p class="small"><a href="/">← Back to RongKunKmeanMnus home</a></p>
+</main>
+<script>
+(() => {
+  const urlInput = document.getElementById('videoUrl');
+  const playerBox = document.getElementById('playerBox');
+  const status = document.getElementById('status');
+  function loadVideo() {
+    const raw = urlInput.value.trim();
+    if (!raw) { status.textContent = 'Please paste a video URL first.'; return; }
+    let parsed;
+    try { parsed = new URL(raw); } catch (_) { status.textContent = 'That does not look like a valid URL.'; return; }
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') { status.textContent = 'Use an HTTPS or HTTP URL.'; return; }
+    const video = document.createElement('video');
+    video.controls = true; video.playsInline = true; video.preload = 'metadata';
+    video.src = parsed.href;
+    video.addEventListener('loadedmetadata', () => { status.textContent = `Video loaded. Duration: ${Number.isFinite(video.duration) ? Math.round(video.duration) + ' seconds' : 'unknown'}. Press play to test.`; });
+    video.addEventListener('error', () => { status.textContent = 'Could not load this video. Check that the URL points directly to a supported video file, is reachable over HTTPS, and allows browser access. This may also be a CORS or permissions issue.'; });
+    playerBox.replaceChildren(video);
+    status.textContent = 'Trying to load video…';
+  }
+  document.getElementById('playBtn').addEventListener('click', loadVideo);
+  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadVideo(); });
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    urlInput.value = '';
+    playerBox.innerHTML = '<div class="empty">Your test video will appear here.</div>';
+    status.textContent = 'Cleared. Enter a video URL to test playback.';
+  });
+})();
+</script>
+</body>
+</html>
