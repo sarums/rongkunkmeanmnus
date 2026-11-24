@@ -1778,16 +1778,42 @@ window.openVideo=async (id,push=true)=>{
           <button class="mobile-sheet-close" type="button" aria-label="Close playlist" onclick="toggleMobilePlaylist()">×</button>
         </div>
         <div class="mobile-sheet-tabs">
-          <button type="button" class="mobile-sheet-tab" data-tab="synopsis" onclick="setMobilePlaylistTab('synopsis')">Synopsis</button>
           <button type="button" class="mobile-sheet-tab active" data-tab="episodes" onclick="setMobilePlaylistTab('episodes')">Episodes</button>
+          <button type="button" class="mobile-sheet-tab" data-tab="synopsis" onclick="setMobilePlaylistTab('synopsis')">Synopsis</button>
+          <button type="button" class="mobile-sheet-tab" data-tab="coffee" onclick="setMobilePlaylistTab('coffee')">កាហ្វេទឹកក</button>
         </div>
-        <div id="mobile-playlist-synopsis" class="mobile-playlist-synopsis" hidden>${synopsisText}</div>`;
+        <div id="mobile-playlist-synopsis" class="mobile-playlist-synopsis" hidden>${synopsisText}</div>
+        <div id="mobile-coffee-panel" class="mobile-coffee-panel" hidden>
+          <div class="mobile-coffee-card">
+            <div class="mobile-coffee-intro">
+              <div class="mobile-coffee-icon">☕</div>
+              <div>
+                <div class="mobile-coffee-title">អរគុណសម្រាប់ការគាំទ្រ!</div>
+                <div class="mobile-coffee-note">ការគាំទ្ររបស់អ្នក ជួយឱ្យយើងបន្តបង្កើតមាតិកាល្អៗ 🙏</div>
+              </div>
+            </div>
+            <div class="mobile-coffee-currencies">
+              <button type="button" class="active" data-coffee-currency="USD" onclick="setMobileCoffeeCurrency('USD')">USD $</button>
+              <button type="button" data-coffee-currency="KHR" onclick="setMobileCoffeeCurrency('KHR')">KHR ៛</button>
+            </div>
+            <div class="mobile-coffee-amounts" id="mobile-coffee-amounts"></div>
+            <div class="mobile-coffee-custom">
+              <input id="mobile-coffee-custom" type="number" min="0.1" step="0.1" placeholder="Custom amount">
+              <button type="button" onclick="applyMobileCoffeeCustom()">Set</button>
+            </div>
+            <div class="mobile-coffee-qr" id="mobile-coffee-qr" aria-label="Bakong donation QR"></div>
+            <div class="mobile-coffee-amount" id="mobile-coffee-amount">$0.50</div>
+            <div class="mobile-coffee-hint">Scan with a Bakong-enabled banking app · SOK SARUM</div>
+            <a class="mobile-coffee-open" href="/donate">View full donation page ↗</a>
+          </div>
+        </div>`;
       const items=document.getElementById('playlist-items');
       const rangesNow=document.getElementById('mobile-episode-ranges');
       const panel=document.getElementById('playlist-panel');
       if(panel && detail.parentNode!==panel){
         panel.insertBefore(detail, rangesNow || items || panel.firstChild);
       }
+      initializeMobileCoffeeTab();
       const search=document.getElementById('mobile-episode-search');
       if(search) search.style.display='none';
     }
@@ -3388,15 +3414,112 @@ window.setMobileEpisodeRange = (range)=>{
   if(ranges) ranges.style.display = '';
 };
 
+// ── MOBILE PLAYLIST COFFEE / BAKONG DONATION TAB ──────────
+const MOBILE_COFFEE_CONFIG = {
+  account: 'sarom@aclb',
+  merchant: 'SOK SARUM',
+  city: 'Phnom Penh',
+  presets: { USD:[0.5,1,2,5,10,20], KHR:[2000,4000,10000,20000,40000,80000] }
+};
+let mobileCoffeeCurrency = 'USD';
+let mobileCoffeeAmount = 0.5;
+
+function mobileCoffeeTlv(tag, value){
+  value=String(value);
+  return tag + String(value.length).padStart(2,'0') + value;
+}
+function mobileCoffeeCrc16(value){
+  let crc=0xFFFF;
+  for(let i=0;i<value.length;i++){
+    crc ^= value.charCodeAt(i)<<8;
+    for(let bit=0;bit<8;bit++) crc=(crc&0x8000)?((crc<<1)^0x1021)&0xFFFF:(crc<<1)&0xFFFF;
+  }
+  return crc.toString(16).toUpperCase().padStart(4,'0');
+}
+function mobileCoffeeBuildQr(amount){
+  const currency=mobileCoffeeCurrency==='KHR'?'116':'840';
+  const formatted=mobileCoffeeCurrency==='KHR'?String(Math.round(amount)):Number(amount).toFixed(2);
+  let payload=mobileCoffeeTlv('00','01')+mobileCoffeeTlv('01',amount>0?'12':'11')+
+    mobileCoffeeTlv('29',mobileCoffeeTlv('00',MOBILE_COFFEE_CONFIG.account))+
+    mobileCoffeeTlv('52','5999')+mobileCoffeeTlv('53',currency)+
+    (amount>0?mobileCoffeeTlv('54',formatted):'')+
+    mobileCoffeeTlv('58','KH')+mobileCoffeeTlv('59',MOBILE_COFFEE_CONFIG.merchant.slice(0,25))+
+    mobileCoffeeTlv('60',MOBILE_COFFEE_CONFIG.city.slice(0,15))+
+    (amount>0?mobileCoffeeTlv('99',mobileCoffeeTlv('00',String(Date.now()))+mobileCoffeeTlv('01',String(Date.now()+86400000))):'')+'6304';
+  return payload+mobileCoffeeCrc16(payload);
+}
+function mobileCoffeeFormat(amount){
+  return mobileCoffeeCurrency==='KHR'?Math.round(amount).toLocaleString('en-US')+' ៛':'$'+Number(amount).toFixed(2);
+}
+function renderMobileCoffeeQr(){
+  const qrBox=document.getElementById('mobile-coffee-qr');
+  const amountLabel=document.getElementById('mobile-coffee-amount');
+  if(!qrBox||!amountLabel) return;
+  amountLabel.textContent=mobileCoffeeFormat(mobileCoffeeAmount);
+  if(typeof qrcode!=='function'){
+    qrBox.innerHTML='<span style="color:#333;font-size:12px">QR library is loading…</span>';
+    return;
+  }
+  try{
+    const qr=qrcode(0,'M');
+    qr.addData(mobileCoffeeBuildQr(mobileCoffeeAmount));
+    qr.make();
+    qrBox.innerHTML=qr.createSvgTag({cellSize:4,margin:0,scalable:true});
+  }catch(error){
+    console.error('Could not generate donation QR:',error);
+    qrBox.innerHTML='<span style="color:#333;font-size:12px">Unable to create QR code. Please use the full donation page.</span>';
+  }
+}
+function renderMobileCoffeeAmounts(){
+  const wrap=document.getElementById('mobile-coffee-amounts');
+  if(!wrap) return;
+  wrap.innerHTML=MOBILE_COFFEE_CONFIG.presets[mobileCoffeeCurrency].map(amount=>
+    `<button type="button" class="${amount===mobileCoffeeAmount?'active':''}" data-amount="${amount}" onclick="selectMobileCoffeeAmount(${amount})">${mobileCoffeeFormat(amount)}</button>`
+  ).join('');
+  document.querySelectorAll('[data-coffee-currency]').forEach(button=>
+    button.classList.toggle('active',button.dataset.coffeeCurrency===mobileCoffeeCurrency)
+  );
+}
+window.selectMobileCoffeeAmount=(amount)=>{
+  mobileCoffeeAmount=Number(amount);
+  renderMobileCoffeeAmounts();
+  renderMobileCoffeeQr();
+};
+window.setMobileCoffeeCurrency=(currency)=>{
+  if(!MOBILE_COFFEE_CONFIG.presets[currency]) return;
+  mobileCoffeeCurrency=currency;
+  mobileCoffeeAmount=MOBILE_COFFEE_CONFIG.presets[currency][0];
+  renderMobileCoffeeAmounts();
+  renderMobileCoffeeQr();
+};
+window.applyMobileCoffeeCustom=()=>{
+  const input=document.getElementById('mobile-coffee-custom');
+  const amount=Number(input&&input.value);
+  if(!Number.isFinite(amount)||amount<=0){ if(input) input.focus(); return; }
+  mobileCoffeeAmount=mobileCoffeeCurrency==='KHR'?Math.round(amount):Math.round(amount*100)/100;
+  renderMobileCoffeeAmounts();
+  renderMobileCoffeeQr();
+};
+function initializeMobileCoffeeTab(){
+  const panel=document.getElementById('mobile-coffee-panel');
+  if(!panel||panel.dataset.initialized==='true') return;
+  panel.dataset.initialized='true';
+  renderMobileCoffeeAmounts();
+  renderMobileCoffeeQr();
+}
+
 window.setMobilePlaylistTab = (tab)=>{
   const synopsis=document.getElementById('mobile-playlist-synopsis');
+  const coffee=document.getElementById('mobile-coffee-panel');
   const ranges=document.getElementById('mobile-episode-ranges');
   const items=document.getElementById('playlist-items');
   document.querySelectorAll('.mobile-sheet-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.tab===tab));
-  const isSynopsis=tab==='synopsis';
+  const isSynopsis=tab==='synopsis', isCoffee=tab==='coffee', isEpisodes=tab==='episodes';
   if(synopsis){ synopsis.hidden=!isSynopsis; synopsis.toggleAttribute('hidden', !isSynopsis); }
-  if(ranges){ ranges.hidden=isSynopsis; ranges.toggleAttribute('hidden', isSynopsis); ranges.style.display=isSynopsis?'none':''; }
-  if(items){ items.hidden=isSynopsis; items.toggleAttribute('hidden', isSynopsis); items.style.display=isSynopsis?'none':'grid'; }
+  if(coffee){ coffee.hidden=!isCoffee; coffee.toggleAttribute('hidden', !isCoffee); }
+  if(ranges){ ranges.hidden=!isEpisodes; ranges.toggleAttribute('hidden', !isEpisodes); ranges.style.display=isEpisodes?'':'none'; }
+  if(items){ items.hidden=!isEpisodes; items.toggleAttribute('hidden', !isEpisodes); items.style.display=isEpisodes?'grid':'none'; }
+  if(isCoffee) initializeMobileCoffeeTab();
 };
 
 window.toggleMobilePlaylist = ()=>{
