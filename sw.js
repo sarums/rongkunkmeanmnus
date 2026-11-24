@@ -3,8 +3,8 @@
 //  v6 — Network first for HTML, CSS, and JS
 // ═══════════════════════════════════════════
 
-const CACHE_NAME  = 'rkmn-v15-network-first-assets';
-const ASSET_CACHE = 'rkmn-assets-v14-network-first-assets';
+const CACHE_NAME  = 'rkmn-v16-coffee-tab-20261124';
+const ASSET_CACHE = 'rkmn-assets-v15-coffee-tab-20261124';
 
 // Static assets to pre-cache
 const STATIC_ASSETS = [
